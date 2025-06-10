@@ -11,6 +11,22 @@ local AffixTooltip = CreateFrame("GameTooltip", "DJ_AffixTooltip", UIParent, "Ga
 -- Persistent drop rate cache to avoid recalculating on every page change
 local dropRateCache = {}
 
+-- Smart global cache for attunement and forge data
+local smartCache = {
+    attunement = {}, -- itemID -> progress
+    forge = {},      -- itemID -> forgeLevel
+    lastUpdate = 0,  -- timestamp of last cache update
+    processing = false, -- flag to prevent concurrent processing
+    updateQueue = {} -- queue of items to update
+}
+
+-- Initialize smart cache from saved variables if available
+if Journal_charDB.smartCache then
+    smartCache.attunement = Journal_charDB.smartCache.attunement or {}
+    smartCache.forge = Journal_charDB.smartCache.forge or {}
+    smartCache.lastUpdate = Journal_charDB.smartCache.lastUpdate or 0
+end
+
 -- Function to get cached drop rate for an item
 local function GetCachedDropRate(itemId, dungeonName)
     local cacheKey = (dungeonName or "unknown") .. "_" .. itemId
@@ -39,6 +55,94 @@ local function ClearDungeonDropRateCache(dungeonName)
             dropRateCache[cacheKey] = nil
         end
     end
+end
+
+-- Smart cache functions
+local function GetCachedAttunement(itemID)
+    return smartCache.attunement[itemID]
+end
+
+local function GetCachedForge(itemID)
+    return smartCache.forge[itemID]
+end
+
+local function SetCachedAttunement(itemID, progress)
+    smartCache.attunement[itemID] = progress
+end
+
+local function SetCachedForge(itemID, forgeLevel)
+    smartCache.forge[itemID] = forgeLevel
+end
+
+-- Background processing function to update cache in batches
+local function ProcessCacheUpdates()
+    if smartCache.processing or #smartCache.updateQueue == 0 then
+        return
+    end
+    
+    smartCache.processing = true
+    local batchSize = 5 -- Process 5 items per frame to avoid lag
+    local processed = 0
+    
+    while processed < batchSize and #smartCache.updateQueue > 0 do
+        local itemID = table.remove(smartCache.updateQueue, 1)
+        
+        -- Only update if not already cached
+        if smartCache.attunement[itemID] == nil then
+            local progress = 0
+            if _G.GetItemAttuneProgress then
+                progress = _G.GetItemAttuneProgress(itemID) or 0
+            elseif _G.GetItemLinkAttuneProgress then
+                local itemLink = "item:" .. itemID
+                progress = _G.GetItemLinkAttuneProgress(itemLink) or 0
+            end
+            SetCachedAttunement(itemID, progress)
+            
+            -- Only get forge level if attuned
+            if progress >= 100 and smartCache.forge[itemID] == nil then
+                local forgeLevel = _G.GetItemAttuneForge and _G.GetItemAttuneForge(itemID) or 0
+                SetCachedForge(itemID, forgeLevel)
+            end
+        end
+        
+        processed = processed + 1
+    end
+    
+    smartCache.processing = false
+    
+    -- Continue processing if there are more items
+    if #smartCache.updateQueue > 0 then
+        C_Timer.After(0.1, ProcessCacheUpdates)
+    else
+        -- Save cache when processing is complete
+        SaveSmartCache()
+    end
+end
+
+-- Function to queue items for cache updates
+local function QueueCacheUpdate(itemID)
+    if not smartCache.attunement[itemID] then
+        table.insert(smartCache.updateQueue, itemID)
+        -- Start processing if not already running
+        if not smartCache.processing and #smartCache.updateQueue == 1 then
+            C_Timer.After(0.1, ProcessCacheUpdates)
+        end
+    end
+end
+
+-- Function to save cache to saved variables
+local function SaveSmartCache()
+    Journal_charDB.smartCache = {
+        attunement = smartCache.attunement,
+        forge = smartCache.forge,
+        lastUpdate = GetTime()
+    }
+end
+
+-- Function to invalidate cache for a specific item (call when item is attuned)
+local function InvalidateItemCache(itemID)
+    smartCache.attunement[itemID] = nil
+    smartCache.forge[itemID] = nil
 end
 
 -- Custom tooltip positioning function
@@ -532,12 +636,20 @@ prevPageButton:SetPoint("RIGHT", pageText, "LEFT", -5, 0)
 nextPageButton:SetPoint("LEFT", pageText, "RIGHT", 5, 0)
 
 local function UpdatePage(offset)
+    -- Only update if we have valid pages
+    if totalPages <= 1 then
+        return
+    end
+    
     Journal_charDB.currentItemPage = Journal_charDB.currentItemPage + offset
+    
+    -- Wrap around pages
     if Journal_charDB.currentItemPage < 1 then
         Journal_charDB.currentItemPage = totalPages
     elseif Journal_charDB.currentItemPage > totalPages then
         Journal_charDB.currentItemPage = 1
     end
+    
     if _G.currentDungeon then
         LoadDungeonDetail(_G.currentDungeon)
     end
@@ -850,9 +962,16 @@ local function PrepareItemsToShow(dungeon)
             local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
             shouldAdd = (canAttune == 1) and (attuneProgress < 100)
         elseif filterIcon == "Attuned" then
-            -- Show only fully attuned items
-            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+            -- Show only fully attuned items - use item ID-based function
+            local attuneProgress = 0
+            if _G.GetItemAttuneProgress then
+                attuneProgress = _G.GetItemAttuneProgress(itemID) or 0
+            elseif _G.GetItemLinkAttuneProgress then
+                local itemLink = "item:" .. itemID
+                attuneProgress = _G.GetItemLinkAttuneProgress(itemLink) or 0
+            end
             shouldAdd = (attuneProgress >= 100)
+
         end
         
         -- Apply equipment-specific filtering if enabled
@@ -909,6 +1028,72 @@ local function PrepareItemsToShow(dungeon)
         end
     end
 
+    -- Pre-cache attunement data and drop rates directly on items to avoid repeated API calls during sorting
+    local currentDungeon = _G.currentDungeon
+    local dungeonName = currentDungeon and currentDungeon.name
+    
+    for i, item in ipairs(itemsToShow) do
+        if not item.isSpecial then
+            -- Use smart cache for instant results
+            local progress = GetCachedAttunement(item.baseID)
+            local forge = GetCachedForge(item.baseID)
+            local dropRate = 0
+            
+            if progress == nil then
+                -- Not in cache, get immediately for visible items
+                if _G.GetItemAttuneProgress then
+                    progress = _G.GetItemAttuneProgress(item.baseID) or 0
+                elseif _G.GetItemLinkAttuneProgress then
+                    local itemLink = "item:" .. item.baseID
+                    progress = _G.GetItemLinkAttuneProgress(itemLink) or 0
+                else
+                    progress = 0
+                end
+                
+                -- Cache the progress immediately
+                SetCachedAttunement(item.baseID, progress)
+                
+                -- Get forge level immediately if attuned
+                if progress >= 100 then
+                    forge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(item.baseID) or 0
+                    SetCachedForge(item.baseID, forge)
+                else
+                    forge = 0
+                end
+            else
+                -- Use cached values
+                if progress >= 100 and forge == nil then
+                    -- Attuned but forge not cached, get it immediately
+                    forge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(item.baseID) or 0
+                    SetCachedForge(item.baseID, forge)
+                end
+                
+                -- Only get drop rate for non-attuned items
+                if progress == 0 then
+                    dropRate = GetCachedDropRate(item.baseID, dungeonName)
+                end
+            end
+            
+
+            
+            -- Store cache data directly on the item
+            item.cachedProgress = progress
+            item.cachedForge = forge or 0
+            item.cachedDropRate = dropRate
+            item.cachedAttuned = progress >= 100
+            item.cachedInProgress = progress > 0 and progress < 100
+            item.cachedNonAttuned = progress == 0
+        else
+            -- Special items
+            item.cachedProgress = 0
+            item.cachedForge = 0
+            item.cachedDropRate = 0
+            item.cachedAttuned = false
+            item.cachedInProgress = false
+            item.cachedNonAttuned = true
+        end
+    end
+
     -- Sort items: special items first, then favorites, then by attunement status
     table.sort(itemsToShow, function(a, b)
         -- Special items first
@@ -921,17 +1106,9 @@ local function PrepareItemsToShow(dungeon)
         if aFav and not bFav then return true end
         if not aFav and bFav then return false end
 
-        -- Check attunement status for both items
-        local aProgress = _G.GetItemLinkAttuneProgress and _G.GetItemLinkAttuneProgress(a.itemLink) or 0
-        local bProgress = _G.GetItemLinkAttuneProgress and _G.GetItemLinkAttuneProgress(b.itemLink) or 0
-        local aAttuned = aProgress >= 100
-        local bAttuned = bProgress >= 100
-        local aInProgress = aProgress > 0 and aProgress < 100
-        local bInProgress = bProgress > 0 and bProgress < 100
-
         -- Determine sorting groups: 1=Attuned, 2=Non-attuned, 3=In-progress
-        local aGroup = aAttuned and 1 or (aInProgress and 3 or 2)
-        local bGroup = bAttuned and 1 or (bInProgress and 3 or 2)
+        local aGroup = a.cachedAttuned and 1 or (a.cachedInProgress and 3 or 2)
+        local bGroup = b.cachedAttuned and 1 or (b.cachedInProgress and 3 or 2)
         
         -- First sort by group priority
         if aGroup ~= bGroup then
@@ -940,26 +1117,26 @@ local function PrepareItemsToShow(dungeon)
         
         -- Within the same group, apply specific sorting
         if aGroup == 1 then
-            -- Both attuned: sort by forge level (higher forge level first)
-            local aForge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(a.baseID) or 0
-            local bForge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(b.baseID) or 0
+            -- Both attuned: ONLY sort by forge level (higher forge level first)
+            local aForge = a.cachedForge
+            local bForge = b.cachedForge
+
+            
             if aForge ~= bForge then
-                return aForge > bForge -- Higher forge level first
+                return aForge > bForge -- Higher forge level first (3=Lightforged, 2=Warforged, 1=Titanforged, 0=Normal)
             end
         elseif aGroup == 2 then
-            -- Both non-attuned: sort by drop rate (highest to lowest)
-            local currentDungeon = _G.currentDungeon
-            local dungeonName = currentDungeon and currentDungeon.name
-            local aDropRate = GetCachedDropRate(a.baseID, dungeonName)
-            local bDropRate = GetCachedDropRate(b.baseID, dungeonName)
+            -- Both non-attuned: ONLY sort by drop rate (highest to lowest)
+            local aDropRate = a.cachedDropRate
+            local bDropRate = b.cachedDropRate
             
             if aDropRate ~= bDropRate then
                 return aDropRate > bDropRate -- Higher drop rate first
             end
         elseif aGroup == 3 then
-            -- Both in progress: sort by progress percentage (higher progress first)
-            if aProgress ~= bProgress then
-                return aProgress > bProgress
+            -- Both in progress: ONLY sort by progress percentage (higher progress first)
+            if a.cachedProgress ~= b.cachedProgress then
+                return a.cachedProgress > b.cachedProgress
             end
         end
 
@@ -973,6 +1150,8 @@ end
 local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
     wipe(displayedItems)
     local query = (Journal_charDB.itemSearchQuery or ""):lower()
+    
+
     
     -- Initialize filters if not already initialized
     if not Journal_charDB.itemFilters then
@@ -1132,6 +1311,9 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
                 end
             end
         end
+        
+
+        
         itemsToShow = filtered
     end
 
@@ -1139,13 +1321,19 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
         table.insert(displayedItems, v)
     end
 
+
     totalPages = math.ceil(#displayedItems / MAX_ITEMS_PER_PAGE)
     if totalPages < 1 then
         totalPages = 1
     end
+    
+    -- Ensure current page is within valid range
     if Journal_charDB.currentItemPage > totalPages then
         Journal_charDB.currentItemPage = totalPages
+    elseif Journal_charDB.currentItemPage < 1 then
+        Journal_charDB.currentItemPage = 1
     end
+    
     pageText:SetText(("Page %d/%d"):format(Journal_charDB.currentItemPage, totalPages))
 
     HideAllItemButtons()
@@ -1191,22 +1379,14 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
         -- Create button first
         local btn = AcquireItemButton(dungeon.index or 9999, shownItems)
         if not btn then
-            print("Failed to create button for item", shownItems)
             return
         end
 
-        -- Get attunement and forge status
-        local attuneProgress = _G.GetItemLinkAttuneProgress and _G.GetItemLinkAttuneProgress(iLink) or 0
+        -- Use cached attunement and forge status from PrepareItemsToShow
+        local attuneProgress = info.cachedProgress or 0
         local attuneText = ""
         local attuneColor = {1, 1, 1} -- Default white
-        local forgeLevel = 0
-        
-        -- Try different methods to get forge level
-        if _G.GetItemAttuneForge then
-            forgeLevel = _G.GetItemAttuneForge(adjID) or 0
-        elseif _G.GetItemLinkTitanforge then
-            forgeLevel = _G.GetItemLinkTitanforge(iLink) or 0
-        end
+        local forgeLevel = info.cachedForge or 0
         
         local forgeText = ""
         -- Set forge text based on level
@@ -1385,8 +1565,7 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
         btn:SetPoint("TOPLEFT", itemsListContainer, "TOPLEFT", col * 185, -row * 40)
         btn:Show()
 
-        -- Debug print to verify forge level and text
-        -- print("Item:", iName, "Forge Level:", forgeLevel, "Forge Text:", forgeText, "Status Text:", statusText, "Link:", iLink)
+
     end
 
     local displayedCount = endIndex - startIndex + 1
@@ -1397,6 +1576,9 @@ end
 function LoadDungeonDetail(dungeon)
     if not dungeon then return end
 
+    -- Reset forge debug counter for fresh output
+    _G.forgeDebugPrinted = 0
+    
     if not Journal_charDB.recacheScheduled then
         Journal_charDB.recacheScheduled = {}
     end
@@ -1879,41 +2061,7 @@ SlashCmdList["DJREPORT"] = function(msg)
     msg = string.lower(string.trim(msg or ""))
     if msg == "report" then
         PrintAttunementReport()
-    elseif msg:find("^mythic ") then
-        local itemID = tonumber(msg:match("mythic (%d+)"))
-        print("|cFFFFD700[DJ Debug]|r System Status:")
-        print("  GetItemTagsCustom available: " .. tostring(_G.GetItemTagsCustom ~= nil))
-        
-        if itemID and _G.GetItemTagsCustom then
-            local itemTags1, itemTags2 = _G.GetItemTagsCustom(itemID)
-            if itemTags1 then
-                local isMythic = bit.band(itemTags1, 0x80) ~= 0
-                print("|cFFFFD700[DJ Debug]|r Item " .. itemID .. ":")
-                print("  Raw tags1: " .. tostring(itemTags1))
-                print("  Raw tags2: " .. tostring(itemTags2 or "nil"))
-                print("  Tags1 binary: " .. string.format("0x%X", itemTags1))
-                print("  Is Mythic (0x80): " .. tostring(isMythic))
-                print("  Bit check result: " .. tostring(bit.band(itemTags1, 0x80)))
-                
-                -- Test other common bits on first tag value
-                local bits = {0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200}
-                for _, bitval in ipairs(bits) do
-                    local hasbit = bit.band(itemTags1, bitval) ~= 0
-                    if hasbit then
-                        print("  Has bit " .. string.format("0x%X", bitval) .. ": true")
-                    end
-                end
-            else
-                print("|cFFFFD700[DJ Debug]|r Item " .. itemID .. " has no tags or GetItemTagsCustom returned nil")
-            end
-        else
-            print("|cFFFFD700[DJ Debug]|r Usage: /dj mythic <itemID>")
-            if not itemID then
-                print("  Please provide a valid item ID")
-            elseif not _G.GetItemTagsCustom then
-                print("  GetItemTagsCustom is not available")
-            end
-        end
+
     elseif msg == "" then
         -- Open the dungeon journal
         if DungeonJournalFrame then
@@ -1965,11 +2113,27 @@ function ToggleJournal()
     end
 end
 
+-- Event handler for cache invalidation when items are attuned
+local smartCacheFrame = CreateFrame("Frame")
+smartCacheFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+smartCacheFrame:SetScript("OnEvent", function(self, event, message)
+    -- Watch for attunement completion messages and invalidate cache
+    if event == "CHAT_MSG_SYSTEM" and message then
+        -- Look for attunement-related messages (this may need adjustment based on actual messages)
+        if message:find("attuned") or message:find("Attunement") then
+            -- For now, we'll do a simple cache refresh - could be made smarter
+            -- by parsing the message to extract specific item IDs
+            smartCache.lastUpdate = GetTime()
+        end
+    end
+end)
+
 _G.DungeonJournalFrame = DungeonJournalFrame
 _G.LoadDungeonDetail   = LoadDungeonDetail
 _G.UpdateDungeonNames  = UpdateDungeonNames
 _G.RefreshAllAttunableText = RefreshAllAttunableText
 _G.PrintAttunementReport = PrintAttunementReport
+_G.InvalidateItemCache = InvalidateItemCache -- Expose for external use
 
 -- Add escape key functionality to close the journal
 table.insert(UISpecialFrames, "DungeonJournalFrame")
