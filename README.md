@@ -15,4 +15,3 @@ A Synastria created World of Warcraft addon for tracking item attunement progres
 
 - `/dj` - Toggle the Dungeon Journal
 - `/dj report` - Display attunement progress report
-- `/dj mythic <itemID>` - Debug mythic detection for an item
