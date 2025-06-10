@@ -8,13 +8,64 @@ BINDING_NAME_TOGGLEJOURNAL = "Toggle Dungeon Journal"
 -- Create a custom tooltip for affix display to avoid conflicts
 local AffixTooltip = CreateFrame("GameTooltip", "DJ_AffixTooltip", UIParent, "GameTooltipTemplate")
 
--- Create a custom tooltip for item display to avoid conflicts with other GameTooltip usage
-local ItemTooltip = CreateFrame("GameTooltip", "DJ_ItemTooltip", UIParent, "GameTooltipTemplate")
+-- Custom tooltip positioning function
+local function GameTooltip_SetDefaultAnchor(tooltip, parent)      
+    tooltip:SetOwner(parent, "ANCHOR_NONE")
+    tooltip:ClearAllPoints()
+    tooltip:SetPoint("TOPLEFT", dungeonDetailFrame, "TOPRIGHT", 60, 0)
+    tooltip.default = 1
+end
+
+-- Bounty system configuration
+local BOUNTY_ICON = {
+    SIZE = 16,
+    TEXTURE = 'Interface/MoneyFrame/UI-GoldIcon',
+}
+
+-- Helper function to extract item ID from item link
+local function GetItemIDFromLink(itemLink)
+    if not itemLink then return nil end
+    local itemID = string.match(itemLink, "item:(%d+)")
+    return tonumber(itemID)
+end
+
+-- Check if an item is bountied
+local function IsItemBountied(itemId)
+    if not itemId or not _G.GetCustomGameData then return false end
+    local bountiedValue = _G.GetCustomGameData(31, itemId)
+    return (bountiedValue or 0) > 0
+end
+
+-- Set bounty icon on a frame, positioned relative to an icon
+local function SetFrameBounty(frame, itemLink, iconFrame)
+    local bountyFrameName = (frame:GetName() or "UnnamedFrame") .. '_Bounty'
+    local bountyFrame = _G[bountyFrameName]
+    local itemId = GetItemIDFromLink(itemLink)
+
+    if itemId and IsItemBountied(itemId) then
+        if not bountyFrame then
+            bountyFrame = CreateFrame('Frame', bountyFrameName, frame)
+            bountyFrame:SetWidth(BOUNTY_ICON.SIZE)
+            bountyFrame:SetHeight(BOUNTY_ICON.SIZE)
+            bountyFrame:SetFrameLevel(frame:GetFrameLevel() + 1)
+            bountyFrame.texture = bountyFrame:CreateTexture(nil, 'OVERLAY')
+            bountyFrame.texture:SetAllPoints()
+            bountyFrame.texture:SetTexture(BOUNTY_ICON.TEXTURE)
+        end
+        bountyFrame:SetParent(frame)
+        -- Position relative to the icon frame instead of the button frame
+        local targetFrame = iconFrame or frame
+        bountyFrame:SetPoint('TOPRIGHT', targetFrame, 'TOPRIGHT', -2, -2)
+        bountyFrame:Show()
+    elseif bountyFrame then
+        bountyFrame:Hide()
+    end
+end
 
 -- Custom affix names for each dungeon
 local DUNGEON_AFFIX_NAMES = {
     ["Hellfire Ramparts"] = "Scorched Earth",
-    ["Blood Furnace"] = "Shadow Dancer",
+    ["The Blood Furnace"] = "Shadow Dancer",
     ["Shattered Halls"] = "Blood Frenzy",
     ["The Mechanar"] = "Lightning Rod",
     ["The Botanica"] = "Thorn in Your Side",
@@ -51,7 +102,7 @@ local DUNGEON_AFFIX_NAMES = {
 -- Thank you so much Anthaney <3 for the affixes writeup!
 local DUNGEON_AFFIXES = {
     ["Hellfire Ramparts"] = "Burning ground. |cFFFF6600Felfire|r - Stacking |cFFFF4500fire damage|r when standing in it.",
-    ["Blood Furnace"] = "Shadow Pools. |cFF9966CCPool of Shadow|r - Taking |cFF9966CCshadow damage|r when standing in it. Also |cFF00FF00increasing damage done|r.",
+    ["The Blood Furnace"] = "Shadow Pools. |cFF9966CCPool of Shadow|r - Taking |cFF9966CCshadow damage|r when standing in it. Also |cFF00FF00increasing damage done|r.",
     ["Shattered Halls"] = "Killing an enemy grants you |cFFFF6600Enrage|r - |cFFFFFF00100%|r more |cFFFF4500damage taken|r and |cFF00FF00dealt|r.",
     ["The Mechanar"] = "Killing an enemy shoots |cFF66CCFFchain lightning|r at you.",
     ["The Botanica"] = "Enemies have |cFFFF6600thorns|r. Occurs every |cFFFFFF003|r seconds.",
@@ -512,7 +563,8 @@ local function AcquireItemButton(dIndex, iIndex)
         return _G.itemButtonCache[dIndex][iIndex]
     end
 
-    local btn = CreateFrame("Button", nil, itemsListContainer)
+    local btnName = "DJ_ItemButton_" .. dIndex .. "_" .. iIndex
+    local btn = CreateFrame("Button", btnName, itemsListContainer)
     btn:SetSize(180, 40)
 
     local iconTex = btn:CreateTexture(nil, "ARTWORK")
@@ -542,14 +594,14 @@ local function AcquireItemButton(dIndex, iIndex)
     btn:RegisterForClicks("LeftButtonUp")
     btn:SetScript("OnEnter", function(self)
         if self.itemLink then
-            ItemTooltip:SetOwner(DungeonJournalFrame, "ANCHOR_NONE")
-            ItemTooltip:ClearAllPoints()
-            ItemTooltip:SetHyperlink(self.itemLink)
-            ItemTooltip:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPRIGHT", 10, 0)
-            ItemTooltip:Show()
+            GameTooltip_SetDefaultAnchor(GameTooltip, self)
+            GameTooltip:SetHyperlink(self.itemLink)
+            GameTooltip:Show()
         end
     end)
-    btn:SetScript("OnLeave", function() ItemTooltip:Hide() end)
+    btn:SetScript("OnLeave", function(self) 
+        GameTooltip:Hide() 
+    end)
 
     btn:SetScript("OnClick", function(self, button)
         if button == "LeftButton" and IsShiftKeyDown() and self.itemLink then
@@ -1263,6 +1315,9 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
             btn.favoriteIcon:Hide()
         end
 
+        -- Add bounty icon if item is bountied (positioned on the item icon)
+        SetFrameBounty(btn, iLink, btn.iconTex)
+
         local col = (shownItems - 1) % NUM_COLS
         local row = math.floor((shownItems - 1) / NUM_COLS)
         btn:ClearAllPoints()
@@ -1323,14 +1378,6 @@ function LoadDungeonDetail(dungeon)
 
     local titleTextStr = dungeon.name or "Unknown Dungeon"
     dungeonTitleText:SetText(titleTextStr)
-
-    -- DEBUG: Print all dungeon properties
-    print("DEBUG: Dungeon name:", dungeon.name)
-    print("DEBUG: Dungeon keys:")
-    for k, v in pairs(dungeon) do
-        print("  ", k, "=", tostring(v))
-    end
-    print("DEBUG: affixspell specifically:", dungeon.affixspell)
 
     -- Add book icon if dungeon has affix data
     if not dungeonDetailFrame.bookIcon and DUNGEON_AFFIXES[dungeon.name] then
