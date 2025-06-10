@@ -1,0 +1,11 @@
+<Bindings>
+    <Binding name="TOGGLEJOURNAL" header="THEJOURNAL">
+        if DungeonJournalFrame:IsShown() then
+            DungeonJournalFrame:Hide()
+        else
+            DungeonJournalFrame:Show()
+            RefreshAllAttunableText()
+            SortDungeonsByAttunement()
+        end
+    </Binding>
+</Bindings> 
