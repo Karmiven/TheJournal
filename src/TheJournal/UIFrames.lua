@@ -319,9 +319,9 @@ end
 
 -- Source Count Filter Icon Button (3 states: All, 1 source, >1 source)
 local sourceCountOptions = {
-    { state = 0, text = "All Items", icon = "Interface\\Icons\\INV_Misc_QuestionMark" },
-    { state = 1, text = "1 Source", icon = "Interface\\Icons\\Spell_ChargePositive" },
-    { state = 999, text = ">1 Source", icon = "Interface\\Icons\\Spell_ChargeNegative" }
+    { state = 0, text = "All Items", icon = "Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\AllSources.blp" },
+    { state = 1, text = "1 Source", icon = "Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\1Source.blp" },
+    { state = 999, text = ">1 Source", icon = "Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\MoreThan1Source.blp" }
 }
 
 local currentSourceIndex = 1
@@ -652,9 +652,9 @@ end
 -- Removed UpdateToggleEquippableButtonText and toggleEquippableButton logic
 
 local filterTypeOptions = {
-    { state = "All",     icon = "Interface\\Icons\\achievement_kirintor_offensive" },
-    { state = "Attunable", icon = "Interface\\Icons\\ui_jailerstower_defense" },
-    { state = "Attuned", icon = "Interface\\Icons\\ui_jailerstower_defense_disabled" }
+    { state = "All",     icon = "Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\AllItems.blp" },
+    { state = "Attunable", icon ="Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\AttunableItems.blp" },
+    { state = "Attuned", icon = "Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\AttunedItems.blp" }
 }
 
 local currentFilterIndex = 1
@@ -1299,7 +1299,7 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
         end
 
         -- Set button properties
-        btn.iconTex:SetTexture(iTexture or "Interface\\Icons\\INV_Misc_QuestionMark")
+        btn.iconTex:SetTexture(iTexture or "Interface\\Addons\\TheJournal\\Assets\\FilterIcons\\AllItems.blp")
         btn.itemText:SetText(color.hex .. iName .. "|r")
         btn.dropLocationText:SetText(statusColor .. statusText .. "|r")
         btn.dropLocationText:SetTextColor(1, 1, 1) 
