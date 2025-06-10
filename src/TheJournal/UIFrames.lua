@@ -8,6 +8,39 @@ BINDING_NAME_TOGGLEJOURNAL = "Toggle Dungeon Journal"
 -- Create a custom tooltip for affix display to avoid conflicts
 local AffixTooltip = CreateFrame("GameTooltip", "DJ_AffixTooltip", UIParent, "GameTooltipTemplate")
 
+-- Persistent drop rate cache to avoid recalculating on every page change
+local dropRateCache = {}
+
+-- Function to get cached drop rate for an item
+local function GetCachedDropRate(itemId, dungeonName)
+    local cacheKey = (dungeonName or "unknown") .. "_" .. itemId
+    
+    if dropRateCache[cacheKey] ~= nil then
+        return dropRateCache[cacheKey]
+    end
+    
+    -- Calculate and cache the drop rate
+    local dropRate = 0
+    if _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
+        local bestSource = _G.ItemLocAPI:GetBestSource(itemId, dungeonName)
+        dropRate = bestSource and bestSource.chance or 0
+    end
+    
+    dropRateCache[cacheKey] = dropRate
+    return dropRate
+end
+
+-- Function to clear drop rate cache for a specific dungeon (call when switching dungeons)
+local function ClearDungeonDropRateCache(dungeonName)
+    if not dungeonName then return end
+    
+    for cacheKey, _ in pairs(dropRateCache) do
+        if cacheKey:find(dungeonName .. "_", 1, true) == 1 then
+            dropRateCache[cacheKey] = nil
+        end
+    end
+end
+
 -- Custom tooltip positioning function
 local function GameTooltip_SetDefaultAnchor(tooltip, parent)      
     tooltip:SetOwner(parent, "ANCHOR_NONE")
@@ -876,7 +909,7 @@ local function PrepareItemsToShow(dungeon)
         end
     end
 
-    -- Sort items: special items first, then favorites, then by forge level and attunement
+    -- Sort items: special items first, then favorites, then by attunement status
     table.sort(itemsToShow, function(a, b)
         -- Special items first
         if a.isSpecial and not b.isSpecial then return true end
@@ -888,18 +921,46 @@ local function PrepareItemsToShow(dungeon)
         if aFav and not bFav then return true end
         if not aFav and bFav then return false end
 
-        -- Then by forge level
-        local aForge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(a.baseID) or 0
-        local bForge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(b.baseID) or 0
-        if aForge ~= bForge then
-            return aForge > bForge -- Higher forge level first
-        end
-
-        -- Then by attunement progress
+        -- Check attunement status for both items
         local aProgress = _G.GetItemLinkAttuneProgress and _G.GetItemLinkAttuneProgress(a.itemLink) or 0
         local bProgress = _G.GetItemLinkAttuneProgress and _G.GetItemLinkAttuneProgress(b.itemLink) or 0
-        if aProgress ~= bProgress then
-            return aProgress > bProgress -- Higher progress first
+        local aAttuned = aProgress >= 100
+        local bAttuned = bProgress >= 100
+        local aInProgress = aProgress > 0 and aProgress < 100
+        local bInProgress = bProgress > 0 and bProgress < 100
+
+        -- Determine sorting groups: 1=Attuned, 2=Non-attuned, 3=In-progress
+        local aGroup = aAttuned and 1 or (aInProgress and 3 or 2)
+        local bGroup = bAttuned and 1 or (bInProgress and 3 or 2)
+        
+        -- First sort by group priority
+        if aGroup ~= bGroup then
+            return aGroup < bGroup -- Lower group number comes first
+        end
+        
+        -- Within the same group, apply specific sorting
+        if aGroup == 1 then
+            -- Both attuned: sort by forge level (higher forge level first)
+            local aForge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(a.baseID) or 0
+            local bForge = _G.GetItemAttuneForge and _G.GetItemAttuneForge(b.baseID) or 0
+            if aForge ~= bForge then
+                return aForge > bForge -- Higher forge level first
+            end
+        elseif aGroup == 2 then
+            -- Both non-attuned: sort by drop rate (highest to lowest)
+            local currentDungeon = _G.currentDungeon
+            local dungeonName = currentDungeon and currentDungeon.name
+            local aDropRate = GetCachedDropRate(a.baseID, dungeonName)
+            local bDropRate = GetCachedDropRate(b.baseID, dungeonName)
+            
+            if aDropRate ~= bDropRate then
+                return aDropRate > bDropRate -- Higher drop rate first
+            end
+        elseif aGroup == 3 then
+            -- Both in progress: sort by progress percentage (higher progress first)
+            if aProgress ~= bProgress then
+                return aProgress > bProgress
+            end
         end
 
         -- Finally by index
@@ -1171,7 +1232,7 @@ local function DisplayItemsList(dungeon, versionIndex, itemsToShow)
                     attuneColor = {1, 1, 1} -- White for normal
                 end
             else
-                attuneText = attuneProgress .. "%"
+                attuneText = "Attune in Progress - " .. string.format("%.2f", attuneProgress) .. "%"
                 attuneColor = {0.5, 0.5, 0.5} -- Gray for in-progress
             end
         end
@@ -1371,6 +1432,13 @@ function LoadDungeonDetail(dungeon)
     end
     HideAllItemButtons()
     _G.currentDungeon = dungeon
+    
+    -- Clear drop rate cache only when switching to a different dungeon
+    if _G.lastLoadedDungeon ~= dungeon.name then
+        ClearDungeonDropRateCache(_G.lastLoadedDungeon)
+        _G.lastLoadedDungeon = dungeon.name
+    end
+    
     DungeonJournalFrame.BackgroundTexture:SetTexture("Interface\\AddOns\\TheJournal\\Assets\\interface_open.blp")
     previewFrame:Hide()
     dungeonDetailFrame:Show()
