@@ -189,7 +189,10 @@ end
 -------------------------------------------------------------------
 -- Helper: Setup Mouse Handlers for Level Up Logic
 -------------------------------------------------------------------
-local function SetupMouseHandlers(bossKey)
+local function SetupMouseHandlers(bossKey, dungeon)
+    -- Cache the dungeon data for use in mouse handlers
+    modelFrame.cachedDungeon = dungeon
+    
     modelFrame:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" then
             self.isDragging = true
@@ -203,8 +206,33 @@ local function SetupMouseHandlers(bossKey)
             local currentX = GetCursorPosition()
             local dragDist = math.abs(currentX - self.dragStartX)
             self.isDragging = false
+            
+            -- Handle double-tap detection for .findnpc command
             if dragDist < 5 then
                 self:SetSequenceTime(119, 3)
+                
+                -- Double-tap detection
+                local currentTime = GetTime()
+                if not self.lastClickTime then
+                    self.lastClickTime = 0
+                end
+                
+                local timeSinceLastClick = currentTime - self.lastClickTime
+                
+                if timeSinceLastClick <= 0.5 then -- Double-tap within 0.5 seconds
+                    -- Get the current boss data to access the boss name from cached dungeon
+                    local cachedDungeon = self.cachedDungeon
+                    
+                    if cachedDungeon and cachedDungeon.bosses and cachedDungeon.currentBossIndex then
+                        local currentBoss = cachedDungeon.bosses[cachedDungeon.currentBossIndex]
+                        if currentBoss and currentBoss.name then
+                            SendChatMessage(".findnpc " .. currentBoss.name, "SAY")
+                        end
+                    end
+                    self.lastClickTime = 0 -- Reset to prevent triple-tap issues
+                else
+                    self.lastClickTime = currentTime
+                end
             end
 
             if Journal_charDB.leveledBoss[bossKey] then
@@ -276,7 +304,7 @@ local function ShowBoss(dungeon)
     SetupStoryPopup()
     SetupBossNameLabel(bossData)
     SetupSpellIcons()
-    SetupMouseHandlers(bossKey)
+    SetupMouseHandlers(bossKey, dungeon)
 
     local popup = modelFrame.storyPopup
     popup:Hide()

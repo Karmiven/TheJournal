@@ -5,6 +5,7 @@ local itemdir = "Interface\\Addons\\TheJournal\\Assets\\Magister Kalendris.blp"
 
 table.insert(Journal.djDungeons, {
     name = "Violet Hold",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-VioletHold.blp",
     bosses = {
         {
@@ -20,6 +21,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Naxxramas",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Naxxramas.blp",
     bosses = {
         {
@@ -34,6 +36,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Deadmines",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Deadmines.blp",
     bosses = {
         {
@@ -48,6 +51,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Shadowfang Keep",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ShadowfangKeep.blp",
     bosses = {
         {
@@ -62,6 +66,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Ulduar",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Ulduar.blp",
     bosses = {
         {
@@ -76,6 +81,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Ruby Sanctum",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-RubySanctum.blp",
     bosses = {
         {
@@ -90,6 +96,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Trial of the Crusader",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TrialoftheCrusader.blp",
     bosses = {
         {
@@ -104,6 +111,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Obsidian Sanctum",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ObsidianSanctum.blp",
     bosses = {
         {
@@ -118,6 +126,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Icecream Citadel",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-IcecrownCitadel.blp",
     bosses = {
         {
@@ -132,6 +141,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons,{
     name = "Onyxia's Lair",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Onyxia.blp",
     bosses = {
         {
@@ -146,6 +156,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons, {
     name = "Eye of Eternity",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-EyeofEternity.blp",
     bosses = {
         {
@@ -159,6 +170,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name = "Vault of Archavon",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-VaultofArchavon.blp",
     bosses = {
         {
@@ -173,6 +185,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons,{
     name = "Utgarde Pinnacle",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-UtgardePinnacle.blp",
     bosses = {
         {
@@ -187,6 +200,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons,{
     name = "Ahn'kahet: The Old Kingdom",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-AhnkahetTheOldKingdom.blp",
     bosses = {
         {
@@ -201,6 +215,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons,{
     name = "Utgarde Keep",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-UtgardeKeep.blp",
     bosses = {
         {
@@ -215,6 +230,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons,{
     name = "Gundrak",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Gundrak.blp",
     bosses = {
         {
@@ -227,6 +243,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons,{
     name = "Halls of Stone",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HallsofStone.blp",
     bosses = {
         {
@@ -239,6 +256,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons,{
     name = "Halls of Lightning",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HallsofLightning.blp",
     bosses = {
         {
@@ -251,6 +269,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons,{
     name = "Trial of the Champion",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TrialOfTheChampion.blp",
     bosses = {
         {
@@ -263,6 +282,7 @@ table.insert(Journal.djDungeons,{
 
 table.insert(Journal.djDungeons, {
     name = "Azjol-Nerub", -- UI-EJ-DUNGEONBUTTON-VaultofArchavon
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-AzjolNerub.blp",
     bosses = {
         {
@@ -277,6 +297,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Drak'Tharon Keep", -- UI-EJ-DUNGEONBUTTON-VaultofArchavon
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-DrakTharonKeep.blp",
     bosses = {
         {
@@ -291,6 +312,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Halls of Reflection", -- UI-EJ-DUNGEONBUTTON-VaultofArchavon
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HallsofReflection.blp",
     bosses = {
         {
@@ -305,6 +327,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Pit of Saron",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-PitofSaron.blp",
     bosses = {
         {
@@ -318,6 +341,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Ragefire Chasm",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-RagefireChasm.blp",
     bosses = {
         {
@@ -338,6 +362,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Wailing Caverns",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-WailingCaverns.blp",
     bosses = {
         {
@@ -364,6 +389,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Stockade",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TheStockade.blp",
     bosses = {
         {
@@ -390,6 +416,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Gnomeregan",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Gnomeregan.blp",
     bosses = {
         {
@@ -416,6 +443,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Razorfen Kraul",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-RazorfenKraul.blp",
     bosses = {
         {
@@ -442,6 +470,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Razorfen Downs",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-RazorfenDowns.blp",
     bosses = {
         {
@@ -468,6 +497,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Scarlet Monastery",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ScarletMonastery.blp",
     bosses = {
         {
@@ -500,6 +530,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Uldaman",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Uldaman.blp",
     bosses = {
         {
@@ -532,6 +563,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Zul'Farrak",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ZulFarrak.blp",
     bosses = {
         {
@@ -558,6 +590,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Maraudon",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Maraudon.blp",
     bosses = {
         {
@@ -596,6 +629,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Sunken Temple",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SunkenTemple.blp",
     bosses = {
         {
@@ -622,6 +656,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Dire Maul",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-DireMaul.blp",
     bosses = {
         {
@@ -672,6 +707,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Stratholme",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Stratholme.blp",
     bosses = {
         {
@@ -710,6 +746,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Scholomance",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Scholomance.blp",
     bosses = {
         {
@@ -748,6 +785,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Ahn'Qiraj Temple",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TempleofAhnQiraj.blp",
     bosses = {
         {
@@ -783,6 +821,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Hellfire Ramparts",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HellfireCitadel.blp",
     bosses = {
         {
@@ -809,6 +848,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Blood Furnace",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HellfireRaid.blp",
     bosses = {
         {
@@ -835,6 +875,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Slave Pens",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-CoilfangReservoir.blp",
     bosses = {
         {
@@ -861,6 +902,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Underbog",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-CoilfangReservoir.blp",
     bosses = {
         {
@@ -893,6 +935,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Mana-Tombs",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TempestKeep.blp",
     bosses = {
         {
@@ -925,6 +968,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Auchenai Crypts",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Auchindoun",
     bosses = {
         {
@@ -945,6 +989,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Blackfathom Depths",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BlackfathomDeeps",
     bosses = {
         {
@@ -965,6 +1010,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Sethekk Halls",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Auchindoun",
     bosses = {
         {
@@ -991,6 +1037,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Shadow Labyrinth",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Auchindoun",
     bosses = {
         {
@@ -1017,6 +1064,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Steamvault",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-CoilfangReservoir.blp",
     bosses = {
         {
@@ -1043,6 +1091,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Botanica",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TempestKeep.blp",
     bosses = {
         {
@@ -1081,6 +1130,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Mechanar",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TempestKeep.blp",
     bosses = {
         {
@@ -1107,6 +1157,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Arcatraz",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TempestKeep.blp",
     bosses = {
         {
@@ -1139,6 +1190,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Old Hillsbrad Foothills",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TheCullingOfStratholme.blp",
     bosses = {
         {
@@ -1165,6 +1217,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Black Morass",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-CavernsOfTime.blp",
     bosses = {
         {
@@ -1185,6 +1238,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Shattered Halls",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HellfireCitadel.blp",
     bosses = {
         {
@@ -1198,6 +1252,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Blackrock Spire",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BlackrockSpire.blp",
     bosses = {
         {
@@ -1211,6 +1266,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Blackrock Depths",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BlackrockDepths.blp",
     bosses = {
         {
@@ -1224,6 +1280,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Magisters' Terrace",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-MagistersTerrace.blp",
     bosses = {
         {
@@ -1260,6 +1317,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Oculus",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TheOculus.blp",
     bosses = {
         {
@@ -1292,6 +1350,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Nexus",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TheNexus.blp",
     bosses = {
         {
@@ -1324,6 +1383,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Culling of Stratholme",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TheCullingOfStratholme.blp",
     bosses = {
         {
@@ -1356,6 +1416,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "The Forge of Souls",
+    category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TheForgeofSouls.blp",
     bosses = {
         {
@@ -1380,6 +1441,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Molten Core",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-MoltenCore.blp",
     bosses = {
         {
@@ -1448,6 +1510,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Blackwing Lair",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BlackwingLair.blp",
     bosses = {
         {
@@ -1505,6 +1568,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Zul'Gurub",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ZulGurub.blp",
     bosses = {
         {
@@ -1573,6 +1637,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Ruins of Ahn'Qiraj",
+    category = "CLASSIC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-RuinsofAhnQiraj.blp",
     bosses = {
         {
@@ -1621,6 +1686,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Karazhan",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Karazhan.blp",
     bosses = {
         {
@@ -1689,6 +1755,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Gruul's Lair",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-GruulsLair.blp",
     bosses = {
         {
@@ -1709,6 +1776,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Magtheridon's Lair",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-MagtheridonsLair.blp",
     bosses = {
         {
@@ -1723,6 +1791,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Serpentshrine Cavern",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-CoilfangReservoir.blp",
     bosses = {
         {
@@ -1767,6 +1836,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Tempest Keep: The Eye",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TempestKeep.blp",
     bosses = {
         {
@@ -1799,6 +1869,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Hyjal Summit",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-CavernsOfTime.blp",
     bosses = {
         {
@@ -1837,6 +1908,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Black Temple",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BlackTemple.blp",
     bosses = {
         {
@@ -1899,6 +1971,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Zul'Aman",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ZulAman.blp",
     bosses = {
         {
@@ -1943,6 +2016,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Sunwell Plateau",
+    category = "TBC",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SunwellPlateau.blp",
     bosses = {
         {
@@ -1995,6 +2069,57 @@ table.insert(Journal.djDungeons, {
         }
     },
     items = {24669,24670,24671,24672,24673,24674,24675,24676,24677,24678,24679,24680,24681,24682,24683,24684,24685,24686,24687,24688,24689,24690,24691,24692,24781,24783,24784,24785,24786,24787,24788,24789,24790,24791,24792,24793,24794,24795,24796,24797,24798,24799,24800,24801,24802,24803,24804,24805,24894,24895,24896,24897,24898,24899,24900,24901,24902,24903,24904,24905,24906,24907,24908,24909,24910,24911,24912,24913,24914,24915,24916,24917,25006,25007,25008,25009,25010,25011,25012,25013,25014,25015,25016,25017,25018,25019,25020,25021,25022,25023,25024,25025,25026,25027,25028,25029,25041,25042,25043,25055,25056,25057,25069,25070,25071,25083,25084,25085,25097,25098,25099,25111,25112,25113,25125,25126,25127,25139,25140,25141,25153,25154,25155,25167,25168,25169,25181,25182,25183,25195,25196,25197,25209,25210,25211,25223,25224,25225,25237,25238,25239,25251,25252,25253,25265,25266,25267,25279,25280,25281,25293,25294,25295,25307,25308,25309,25321,25322,25323,25335,25336,25337,25341,25342,25343,25344,25345,25346,25347,25348,25357,25358,25359,25360,25361,25362,25363,25364,25373,25374,25375,25376,25377,25378,25379,25380,25389,25390,25391,25392,25393,25394,25395,25396,28542,28543,28544,31190,31284,31285,31286,31287,31288,31289,31290,31291,31292,31293,31294,31295,31297,31298,31299,31303,31304,31305,31306,31308,31319,31320,31321,31322,31326,31328,31329,31330,31333,31334,31335,31336,31338,31339,31340,31342,31343,34164,34165,34166,34167,34168,34169,34170,34176,34177,34178,34179,34180,34181,34182,34183,34184,34185,34186,34188,34189,34190,34192,34193,34194,34195,34196,34197,34198,34199,34202,34203,34204,34205,34206,34208,34210,34211,34213,34214,34215,34216,34228,34229,34230,34231,34232,34233,34234,34240,34241,34242,34243,34244,34245,34247,34329,34331,34332,34333,34334,34335,34336,34337,34339,34340,34341,34342,34343,34344,34345,34346,34347,34348,34349,34350,34351,34352,34427,34428,34429,34430,35282,35283,35284,35733},
+})
+
+table.insert(Journal.djDungeons, {
+    name = "Shattrath",
+    category = "TBC",
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Shattrath.blp",
+    bosses = {
+        {
+            bossID = 18525,
+            spells = {},
+            name = "G'eras",
+            flat = itemdir,
+        },
+        {
+            bossID = 21432,
+            spells = {},
+            name = "Almaador",
+            flat = itemdir,
+        },
+        {
+            bossID = 25967,
+            spells = {},
+            name = "Zephyr",
+            flat = itemdir,
+        },
+        {
+            bossID = 18756,
+            spells = {},
+            name = "Haris Pilton",
+            flat = itemdir,
+        },
+        {
+            bossID = 21655,
+            spells = {},
+            name = "Nakodu",
+            flat = itemdir,
+        },
+        {
+            bossID = 27722,
+            spells = {},
+            name = "Drolig Blastpipe",
+            flat = itemdir,
+        },
+        {
+            bossID = 21905,
+            spells = {},
+            name = "Veynna Dawnstar",
+            flat = itemdir,
+        },
+    },
+    items = {2300,2303,2308,2309,2310,2314,2315,2316,2568,2569,2578,2580,2582,2583,2584,2848,2849,2850,2851,2852,2854,2857,2865,2866,2868,2870,3469,3472,3473,3480,3482,3483,3487,3488,3489,3491,3719,3835,3836,3842,3844,3848,4237,4239,4242,4243,4246,4247,4249,4251,4253,4257,4259,4307,4308,4309,4310,4312,4314,4316,4318,4320,4324,4326,4343,4368,4385,5540,5542,5739,5766,5961,5962,5964,5966,6040,6214,6238,6241,6350,7026,7046,7048,7050,7051,7052,7054,7055,7057,7058,7062,7064,7281,7282,7285,7348,7374,7377,7378,7387,7918,7919,7920,7922,7930,7931,7933,7938,7939,7941,7945,7956,7957,7958,7963,8175,8176,8185,8189,8191,8193,8197,8198,9998,9999,10001,10003,10019,10021,10024,10026,10027,10041,10042,10044,10046,10047,10500,10502,10503,10504,10508,12251,12252,12259,12405,12406,12408,12409,12410,12414,12773,12775,13856,13857,13858,13860,13863,13864,13865,13866,13867,13869,13870,13871,14100,14101,14103,14106,14108,14111,14112,14128,14130,14132,14141,14142,14143,14144,15084,15085,15086,15087,15088,15090,15091,15092,15093,15094,15095,15096,15995,15999,16008,20818,20820,20821,20823,20826,20827,20828,20832,20907,20909,20955,20960,20961,20964,21748,21755,21764,21765,21767,21768,21775,21779,21790,21791,21849,21850,21851,21852,21853,21932,21933,21934,23482,23484,23487,23488,23489,23490,23491,23493,23494,23497,23498,23499,23563,23564,23565,23742,24074,24075,24076,24077,24078,24637,24638,24639,24640,24641,24642,24643,24644,24645,24646,24647,24648,24649,24650,24651,24652,24653,24654,24655,24656,24657,24658,24659,24660,24661,24662,24663,24664,24665,24666,24667,24668,24749,24750,24751,24752,24753,24754,24755,24756,24757,24758,24759,24760,24761,24762,24763,24764,24765,24766,24767,24768,24769,24770,24771,24772,24773,24774,24775,24776,24777,24778,24779,24780,24862,24863,24864,24865,24866,24867,24868,24869,24870,24871,24872,24873,24874,24875,24876,24877,24878,24879,24880,24881,24882,24883,24884,24885,24886,24887,24888,24889,24890,24891,24892,24893,24974,24975,24976,24977,24978,24979,24980,24981,24982,24983,24984,24985,24986,24987,24988,24989,24990,24991,24992,24993,24994,24995,24996,24997,24998,24999,25000,25001,25002,25003,25004,25005,25037,25038,25039,25040,25051,25052,25053,25054,25065,25066,25067,25068,25079,25080,25081,25082,25093,25094,25095,25096,25107,25108,25109,25110,25121,25122,25123,25124,25135,25136,25137,25138,25149,25150,25151,25152,25163,25164,25165,25166,25177,25178,25179,25180,25191,25192,25193,25194,25205,25206,25207,25208,25219,25220,25221,25222,25233,25234,25235,25236,25247,25248,25249,25250,25261,25262,25263,25264,25275,25276,25277,25278,25289,25290,25291,25292,25303,25304,25305,25306,25317,25318,25319,25320,25331,25332,25333,25334,25341,25342,25343,25344,25345,25346,25347,25348,25357,25358,25359,25360,25361,25362,25363,25364,25373,25374,25375,25376,25377,25378,25379,25380,25389,25390,25391,25392,25393,25394,25395,25396,25438,25439,25654,25655,25656,25657,25659,25660,25661,25662,25668,25669,25670,25671,25673,25674,25675,25676,25926,25927,25928,25978,28425,28426,28427,28428,28429,28430,28431,28432,28433,28434,28435,28436,28438,28439,28440,28441,28442,28483,28484,28485,28538,28539,28540,28541,28963,28964,28966,28967,28968,29011,29012,29015,29016,29017,29019,29020,29021,29022,29023,29028,29029,29030,29031,29032,29033,29034,29035,29036,29037,29038,29039,29040,29042,29043,29044,29045,29046,29047,29048,29049,29050,29053,29054,29055,29056,29057,29058,29059,29060,29061,29062,29063,29064,29065,29066,29067,29068,29069,29070,29071,29072,29073,29074,29075,29076,29077,29078,29079,29080,29081,29082,29083,29084,29085,29086,29087,29088,29089,29090,29091,29092,29093,29094,29095,29096,29097,29098,29099,29100,29123,29124,29125,29126,29127,29128,29129,29130,29131,29132,29133,29134,29157,29158,29159,29160,29175,29176,29177,29179,29180,29201,29202,29203,29204,29266,29267,29268,29269,29270,29271,29272,29273,29274,29275,29367,29368,29369,29370,29373,29374,29375,29376,29379,29381,29382,29383,29384,29385,29386,29387,30069,30070,30071,30072,30073,30074,30076,30077,30086,30087,30088,30089,30093,30113,30114,30115,30116,30117,30118,30119,30120,30121,30122,30123,30124,30125,30126,30127,30129,30130,30131,30132,30133,30134,30135,30136,30137,30138,30139,30140,30141,30142,30143,30144,30145,30146,30148,30149,30150,30151,30152,30153,30154,30159,30160,30161,30162,30163,30164,30165,30166,30167,30168,30169,30170,30171,30172,30173,30185,30189,30190,30192,30194,30196,30205,30206,30207,30210,30211,30212,30213,30214,30215,30216,30217,30219,30220,30221,30222,30223,30228,30229,30230,30231,30232,30233,30234,30235,30368,30369,30370,30371,30372,30373,30374,30375,30419,30420,30421,30422,30761,30762,30763,30764,30766,30767,30768,30769,30770,30772,30773,30774,30776,30778,30779,30780,30804,30830,30832,30834,30835,30836,30841,30859,30860,31080,31460,31461,31462,31464,31465,31724,31726,31727,31746,31747,31748,31749,32083,32084,32085,32086,32087,32088,32089,32090,32461,32472,32473,32474,32475,32476,32478,32479,32480,32494,32495,32508,32756,32772,32774,32776,33192,33207,33222,33279,33280,33287,33291,33296,33304,33324,33325,33331,33333,33334,33386,33484,33501,33512,33513,33514,33515,33516,33517,33518,33519,33520,33522,33523,33524,33527,33528,33529,33530,33531,33532,33534,33535,33536,33537,33538,33539,33540,33552,33557,33559,33566,33577,33578,33579,33580,33582,33583,33584,33585,33586,33587,33588,33589,33593,33810,33832,33965,33970,33972,33973,33974,34049,34050,34162,34163,34887,34888,34889,34890,34891,34892,34893,34894,34895,34896,34898,34900,34901,34902,34903,34904,34905,34906,34910,34911,34912,34914,34916,34917,34918,34919,34921,34922,34923,34924,34925,34926,34927,34928,34929,34930,34931,34932,34933,34934,34935,34936,34937,34938,34939,34940,34941,34942,34943,34944,34945,34946,34947,34949,34950,34951,34952,34985,34986,34987,34988,34989,34990,34991,34992,34993,34994,34995,34996,34997,34998,34999,35000,35001,35002,35003,35004,35005,35006,35007,35008,35009,35010,35011,35012,35013,35014,35015,35016,35017,35018,35022,35023,35024,35025,35026,35037,35038,35047,35053,35054,35055,35056,35057,35058,35064,35065,35071,35072,35073,35074,35075,35076,35082,35083,35084,35085,35086,35087,35093,35094,35095,35096,35097,35098,35099,35100,35101,35102,35103,35107,35108,35109,35110,35111,35112,35113,35114,35115,35321,35324,35326,35330,35331,35333,35335,35340,35341,35344,35345,35357,35359,35361,35362,35368,35370,35373,35375,35378,35380,35381,35382,35388,35389,35391,35395,35404,35405,35407,35411,35412,35416,36737,41186,41187,41188,41189,41190,43515,43654,43655,43656,43657,43660,43661,43663,43664,43666,43667,45626,45627,45631},
 })
 
 --[[

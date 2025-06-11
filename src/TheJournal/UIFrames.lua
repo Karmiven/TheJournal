@@ -1723,8 +1723,58 @@ end
 
 local dungeonSearchBox = CreateFrame("EditBox", "DJ_SearchEditBox", previewFrame, "InputBoxTemplate")
 dungeonSearchBox:SetSize(150, 20)
-dungeonSearchBox:SetPoint("CENTER", previewFrame, "CENTER", 0, 185)
+dungeonSearchBox:SetPoint("CENTER", previewFrame, "CENTER", -80, 185)
 dungeonSearchBox:SetAutoFocus(false)
+
+-- Category filter dropdown
+local categoryDropdown = CreateFrame("Frame", "DJ_CategoryDropdown", previewFrame, "UIDropDownMenuTemplate")
+categoryDropdown:SetPoint("CENTER", previewFrame, "CENTER", 80, 185)
+
+-- Initialize dropdown settings
+Journal_charDB.selectedCategory = Journal_charDB.selectedCategory or "All"
+
+local function CategoryDropdown_OnClick(self)
+    Journal_charDB.selectedCategory = self.value
+    UIDropDownMenu_SetSelectedID(categoryDropdown, self:GetID())
+    -- Filter dungeons by category
+    FilterDungeonsByCategory()
+end
+
+local function CategoryDropdown_Initialize(self, level)
+    local info = UIDropDownMenu_CreateInfo()
+    
+    -- All Categories option
+    info.text = "All Expansions"
+    info.value = "All"
+    info.func = CategoryDropdown_OnClick
+    info.checked = (Journal_charDB.selectedCategory == "All")
+    UIDropDownMenu_AddButton(info, level)
+    
+    -- CLASSIC option
+    info.text = "Classic"
+    info.value = "CLASSIC"
+    info.func = CategoryDropdown_OnClick
+    info.checked = (Journal_charDB.selectedCategory == "CLASSIC")
+    UIDropDownMenu_AddButton(info, level)
+    
+    -- TBC option
+    info.text = "Burning Crusade"
+    info.value = "TBC"
+    info.func = CategoryDropdown_OnClick
+    info.checked = (Journal_charDB.selectedCategory == "TBC")
+    UIDropDownMenu_AddButton(info, level)
+    
+    -- WOTLK option
+    info.text = "Wrath of the Lich King"
+    info.value = "WOTLK"
+    info.func = CategoryDropdown_OnClick
+    info.checked = (Journal_charDB.selectedCategory == "WOTLK")
+    UIDropDownMenu_AddButton(info, level)
+end
+
+UIDropDownMenu_Initialize(categoryDropdown, CategoryDropdown_Initialize)
+UIDropDownMenu_SetWidth(categoryDropdown, 120)
+UIDropDownMenu_SetText(categoryDropdown, "All Expansions")
 
 local dungeonButtons = {}
 
@@ -2138,18 +2188,31 @@ _G.InvalidateItemCache = InvalidateItemCache -- Expose for external use
 -- Add escape key functionality to close the journal
 table.insert(UISpecialFrames, "DungeonJournalFrame")
 
-dungeonSearchBox:SetScript("OnTextChanged", function(self, userInput)
-    local query = self:GetText():lower()
+-- Combined filtering function for both search and category
+function FilterDungeonsByCategory()
+    local query = dungeonSearchBox:GetText():lower()
+    local selectedCategory = Journal_charDB.selectedCategory or "All"
     local filtered = {}
+    
     for _, btn in ipairs(dungeonButtons) do
         local dName = (btn.dungeon.name or ""):lower()
-        if query == "" or dName:find(query, 1, true) then
+        local dCategory = btn.dungeon.category or "CLASSIC" -- Default to CLASSIC if no category
+        
+        -- Check if dungeon matches search query
+        local matchesSearch = (query == "" or dName:find(query, 1, true))
+        
+        -- Check if dungeon matches category filter
+        local matchesCategory = (selectedCategory == "All" or dCategory == selectedCategory)
+        
+        if matchesSearch and matchesCategory then
             btn:Show()
             table.insert(filtered, btn)
         else
             btn:Hide()
         end
     end
+    
+    -- Reposition visible buttons
     for index, btn in ipairs(filtered) do
         local col = (index - 1) % numDungeonCols
         local row = math.floor((index - 1) / numDungeonCols)
@@ -2158,6 +2221,22 @@ dungeonSearchBox:SetScript("OnTextChanged", function(self, userInput)
         btn:ClearAllPoints()
         btn:SetPoint("TOPLEFT", gridContainer, "TOPLEFT", xOff, yOff)
     end
+    
+    -- Update grid height based on filtered results
+    local totalRows = math.ceil(#filtered / numDungeonCols)
+    gridContainer:SetHeight(math.max(totalRows * dungeonButtonHeight, dungeonButtonHeight))
+    
+    -- Update dropdown text
+    local categoryText = selectedCategory == "All" and "All Expansions" or 
+                        selectedCategory == "CLASSIC" and "Classic" or
+                        selectedCategory == "TBC" and "Burning Crusade" or
+                        selectedCategory == "WOTLK" and "Wrath of the Lich King" or
+                        "All Expansions"
+    UIDropDownMenu_SetText(categoryDropdown, categoryText)
+end
+
+dungeonSearchBox:SetScript("OnTextChanged", function(self, userInput)
+    FilterDungeonsByCategory()
 end)
 
 -- Function to generate attunement report
