@@ -2,21 +2,57 @@
 -- # CONSTANTS / CONFIG
 -- ##################################################################
 
-_G.debugPrint = function(msg, ...)
-    if false then -- set to true to enable debug
-        print("|cff66ccff[DJ_Debug]|r", msg, ...)
-    end
-end
-
 
 _G.BOSS_TRANSFORMS = {
-    [12201] = {
+    [12201] = { -- Princess Theradras
         facing = 0,
         x = 0,
         y = 0,
         z = 0,
         scale = 0.9,
     },
+    [15931] = { -- Grobbulus
+        facing = 0,
+        x = 0.4,
+        y = 2.5,
+        z = 0,
+        scale = 0.3,
+    },
+    [30549] = { -- Baron Rivendare (under sw)
+        facing = 0,
+        x = -0.5,
+        y = 1.3,
+        z = 0,
+        scale = 0.9,
+    },
+    [16011] = { -- Loatheb
+        facing = 0,
+        x = 0,
+        y = 1.3,
+        z = 0,
+        scale = 0.8,
+    },
+    [16064] = { -- Thane Korth'azz
+        facing = 0,
+        x = 0,
+        y = 0,
+        z = 0,
+        scale = 0.6,
+    },
+    [15989] = { -- Flying mob - position it higher and closer to get better angle
+        facing = 0,
+        x = 0,
+        y = 6,  -- Move up significantly so we look UP at it instead of down
+        z = 2,  -- Move it closer to the camera
+        scale = 0.3,
+    },
+    [16063] = { -- Sir Zeliek
+        facing = 0,
+        x = -0.4,
+        y = 1.4,
+        z = 0,
+        scale = 0.9,
+    }
 }
 
 _G.armorSlotList = {

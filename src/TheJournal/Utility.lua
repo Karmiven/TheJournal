@@ -15,6 +15,30 @@ if not C_Timer then
             end
         end)
     end
+    
+    function C_Timer.NewTicker(delay, func, iterations)
+        local f = CreateFrame("Frame")
+        f.elapsed = 0
+        f.count = 0
+        f.maxIterations = iterations or nil -- nil means infinite
+        f:SetScript("OnUpdate", function(self, elapsed)
+            self.elapsed = self.elapsed + elapsed
+            if self.elapsed >= delay then
+                self.elapsed = 0
+                self.count = self.count + 1
+                func()
+                if self.maxIterations and self.count >= self.maxIterations then
+                    self:SetScript("OnUpdate", nil)
+                end
+            end
+        end)
+        -- Return an object with Cancel method
+        return {
+            Cancel = function()
+                f:SetScript("OnUpdate", nil)
+            end
+        }
+    end
 end
 
 local function IsInList(tbl, value)
@@ -93,7 +117,7 @@ end
 function IsItemEquippableByClass(itemID, filterIcon)
     local itemName, link, quality, _, _, itemType, itemSubType, _, equipLoc = GetItemInfo(itemID)
     if not itemName then
-        debugPrint("IsItemEquippableByClass:", itemID, "not cached => false")
+        -- debugPrint("IsItemEquippableByClass:", itemID, "not cached => false")
         return false
     end
 
@@ -254,7 +278,7 @@ local function CacheItem(itemID)
     local tip = CreateFrame("GameTooltip", nil, UIParent)
     tip:SetOwner(UIParent, "ANCHOR_NONE")
     tip:SetHyperlink("item:" .. itemID)
-    debugPrint("Caching item:", itemID)
+    -- debugPrint("Caching item:", itemID)
     tip:Hide()
     tip = nil
 end
@@ -288,11 +312,61 @@ end
 
 
 local function ClearSpellFrames()
-    if spellContainer then
-        for _, child in ipairs({ spellContainer:GetChildren() }) do
-            child:Hide()
-            child:SetParent(nil)
+    -- Clear spell frames from the spell container
+    if _G.dungeonDetailFrame and _G.dungeonDetailFrame.bossNav and _G.dungeonDetailFrame.bossNav.spellContainer then
+        local spellContainer = _G.dungeonDetailFrame.bossNav.spellContainer
+        
+        -- Get all children frames
+        local children = { spellContainer:GetChildren() }
+        
+        -- Properly clean up each child frame
+        for i = 1, #children do
+            local child = children[i]
+            if child then
+                -- Clear all points and scripts first
+                child:ClearAllPoints()
+                child:SetScript("OnEnter", nil)
+                child:SetScript("OnLeave", nil)
+                child:EnableMouse(false)
+                
+                -- Hide and remove from parent
+                child:Hide()
+                child:SetParent(nil)
+                
+                -- Clear the texture references to prevent memory leaks
+                local regions = { child:GetRegions() }
+                for j = 1, #regions do
+                    local region = regions[j]
+                    if region and region.SetTexture then
+                        region:SetTexture(nil)
+                    end
+                end
+            end
         end
+        
+        -- Clear the container itself
+        spellContainer:Hide()
+        spellContainer:SetSize(1, 1)
+    end
+    
+    -- Also clear any orphaned global spell frames by name pattern
+    for i = 1, 20 do  -- Assume max 20 spell frames
+        local frameName = "DJ_SpellIcon" .. i
+        local frame = _G[frameName]
+        if frame then
+            frame:ClearAllPoints()
+            frame:SetScript("OnEnter", nil)
+            frame:SetScript("OnLeave", nil)
+            frame:EnableMouse(false)
+            frame:Hide()
+            frame:SetParent(nil)
+            _G[frameName] = nil
+        end
+    end
+    
+    -- Hide tooltip if it's still showing
+    if GameTooltip:IsShown() then
+        GameTooltip:Hide()
     end
 end
 
@@ -338,14 +412,14 @@ local function GetDynamicDungeonItems(dungeon)
     if useItemLoc and _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
         local dynamicItems = _G.ItemLocAPI:GetDungeonItems(dungeon)
         if dynamicItems and #dynamicItems > 0 then
-            debugPrint("Using dynamic ItemLoc data for", dungeon.name, "- found", #dynamicItems, "items")
+            --debugPrint("Using dynamic ItemLoc data for", dungeon.name, "- found", #dynamicItems, "items")
             return dynamicItems
         end
     end
     
     -- Fallback to static item list
     if dungeon.items then
-        debugPrint("Using static item list for", dungeon.name, "- found", #dungeon.items, "items")
+        --debugPrint("Using static item list for", dungeon.name, "- found", #dungeon.items, "items")
         return dungeon.items
     end
     

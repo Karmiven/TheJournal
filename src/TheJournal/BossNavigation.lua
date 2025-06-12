@@ -1,7 +1,7 @@
 -- ##################################################################
 -- # BOSS DISPLAY & NAVIGATION
 -- ##################################################################
--- This module handles displaying a boss’s model, its associated story popup,
+-- This module handles displaying a boss's model, its associated story popup,
 -- and provides navigation (left/right) between bosses in a dungeon.
 --
 -- Note: It assumes that some globals exist (e.g., dungeonDetailFrame, Journal_charDB, debugPrint)
@@ -45,20 +45,31 @@ local BOSS_TRANSFORMS = _G.BOSS_TRANSFORMS or {}
 -------------------------------------------------------------------
 -- Helper: ApplyBossTransforms
 -- Called once the model is loaded to apply custom transforms.
--- NOTE: We pass in npcID here; still
--- uses bossID as the table key
+-- Uses bossID as the key for BOSS_TRANSFORMS table
 -------------------------------------------------------------------
-local function ApplyBossTransforms(frame, displayID)
-    local transform = BOSS_TRANSFORMS[displayID]
+local function ApplyBossTransforms(frame, bossID)
+    local transform = BOSS_TRANSFORMS[bossID]
     if transform then
         frame:SetFacing(transform.facing or 0)
         -- PlayerModel uses param order: (z, x, y)
         frame:SetPosition(transform.z or 0, transform.x or 0, transform.y or 0)
-        frame:SetScale(transform.scale or 1)
+        frame:SetModelScale(transform.scale or 1)  -- Use SetModelScale for actual 3D model scaling
+        
+        -- Try alternative camera methods for flying mobs (more widely supported)
+        if transform.cameraDistance then
+            pcall(function() frame:SetCameraDistance(transform.cameraDistance) end)
+        end
+        if transform.cameraTarget then
+            pcall(function() frame:SetCameraTarget(transform.cameraTarget.x or 0, transform.cameraTarget.y or 0, transform.cameraTarget.z or 0) end)
+        end
+        -- Try SetPitch with error protection in case it's not available
+        if transform.pitch then
+            pcall(function() frame:SetPitch(transform.pitch) end)
+        end
     else
         frame:SetFacing(0)
         frame:SetPosition(0, 0, 0)
-        frame:SetScale(1)
+        frame:SetModelScale(1)  -- Use SetModelScale for actual 3D model scaling
     end
 end
 
@@ -71,7 +82,7 @@ local function SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
     modelFrame = modelFrame or CreateFrame("DressUpModel", "Val_modelFrame", dungeonDetailFrame)
     modelFrame:SetSize(200, 400)
     modelFrame:SetPoint("LEFT", dungeonDetailFrame, "CENTER", -290, -70)
-    modelFrame:SetFrameStrata("MEDIUM")
+    modelFrame:SetFrameStrata("FULLSCREEN") -- Ensure model frame appears above other addons
     modelFrame:EnableMouse(true)
     modelFrame:Show()
 
@@ -101,17 +112,21 @@ local function SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
 
     modelFrame:ClearModel()
 
-    -- Attempt to get displayID from the global NPC_DisplayID_Map.
-    if bossData.bossID then
-        modelFrame:SetCreature(bossData.bossID)
-        ApplyBossTransforms(modelFrame, displayID)
-    else
-    end
-
     -- Set neutral defaults before loading
     modelFrame:SetFacing(0)
     modelFrame:SetPosition(0, 0, 0)
-    modelFrame:SetScale(1)
+    modelFrame:SetModelScale(1)
+
+    -- Attempt to set creature model with error protection
+    if bossData.bossID then
+        local success = pcall(function()
+            modelFrame:SetCreature(bossData.bossID)
+        end)
+        if success then
+            -- Apply transforms after model is set
+            ApplyBossTransforms(modelFrame, bossData.bossID)
+        end
+    end
 
     -- Retrieve and set the saved click count for level-up
     modelFrame.levelUpClickCount = (Journal_charDB.levelUpClickCount and Journal_charDB.levelUpClickCount[bossKey]) or 0
@@ -170,19 +185,163 @@ local function SetupBossNameLabel(bossData)
     bossNameFontString:ClearAllPoints()
     bossNameFontString:SetPoint("TOP", dungeonDetailFrame, "TOP", -180, -50)
     bossNameFontString:SetText(bossData.name or "Unknown Boss")
+    
+    -- Setup rare icon if boss is marked as rare
+    if bossData.rare then
+        if not dungeonDetailFrame.rareIcon then
+            -- Create rare icon frame
+            dungeonDetailFrame.rareIcon = CreateFrame("Frame", nil, dungeonDetailFrame)
+            dungeonDetailFrame.rareIcon:SetSize(20, 20)
+            dungeonDetailFrame.rareIcon:SetFrameLevel(dungeonDetailFrame:GetFrameLevel() + 2)
+            
+            -- Create icon texture
+            dungeonDetailFrame.rareIcon.texture = dungeonDetailFrame.rareIcon:CreateTexture(nil, "OVERLAY")
+            dungeonDetailFrame.rareIcon.texture:SetAllPoints()
+            dungeonDetailFrame.rareIcon.texture:SetTexture("Interface\\Icons\\INV_Misc_Gem_01") -- Using a gem icon as rare indicator
+            
+            -- Enable mouse interaction for tooltip
+            dungeonDetailFrame.rareIcon:EnableMouse(true)
+            dungeonDetailFrame.rareIcon:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+                GameTooltip:SetText("|cFFFFD700Rare NPC|r")
+                GameTooltip:AddLine("Not needed for Dungeon Challenge", 1, 1, 1)
+                GameTooltip:Show()
+            end)
+            dungeonDetailFrame.rareIcon:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
+        end
+        
+        -- Position rare icon to the right of the boss name
+        dungeonDetailFrame.rareIcon:ClearAllPoints()
+        dungeonDetailFrame.rareIcon:SetPoint("LEFT", bossNameFontString, "RIGHT", 10, 0)
+        dungeonDetailFrame.rareIcon:Show()
+    else
+        -- Hide rare icon if boss is not rare
+        if dungeonDetailFrame.rareIcon then
+            dungeonDetailFrame.rareIcon:Hide()
+        end
+    end
+    
     return bossNameFontString
 end
 
 -------------------------------------------------------------------
 -- Helper: Setup Spell Icons Container
 -------------------------------------------------------------------
-local function SetupSpellIcons()
+local function SetupSpellIcons(bossData)
     ClearSpellFrames()
-    if dungeonDetailFrame.bossNav and dungeonDetailFrame.bossNav.spellContainer then
-        local spellContainer = dungeonDetailFrame.bossNav.spellContainer
-        spellContainer:ClearAllPoints()
-        spellContainer:SetPoint("TOP", bossNameFontString, "BOTTOM", 0, -10)
-        spellContainer:Show()
+    if not dungeonDetailFrame.bossNav or not dungeonDetailFrame.bossNav.spellContainer then
+        return
+    end
+    
+    local spellContainer = dungeonDetailFrame.bossNav.spellContainer
+    spellContainer:ClearAllPoints()
+    
+    -- Position spells higher on the model frame
+    spellContainer:SetPoint("BOTTOM", modelFrame, "BOTTOM", 0, 35)
+    
+    if not bossData or not bossData.spells or #bossData.spells == 0 then
+        spellContainer:Hide()
+        return
+    end
+    
+    -- Calculate dimensions for spell display
+    local numSpells = #bossData.spells
+    local spellIconSize = 24
+    local spacing = 5
+    
+    -- Determine layout based on number of spells
+    local rows = {}
+    if numSpells <= 4 then
+        -- Single row for 4 or fewer spells
+        rows[1] = numSpells
+    else
+        -- Multiple rows for 5+ spells, stack in sets of 5
+        local remaining = numSpells
+        local rowIndex = 1
+        while remaining > 0 do
+            local spellsInRow = math.min(5, remaining)
+            rows[rowIndex] = spellsInRow
+            remaining = remaining - spellsInRow
+            rowIndex = rowIndex + 1
+        end
+    end
+    
+    -- Calculate container dimensions
+    local maxRowWidth = 0
+    for _, spellsInRow in ipairs(rows) do
+        local rowWidth = spellsInRow * spellIconSize + (spellsInRow - 1) * spacing
+        if rowWidth > maxRowWidth then
+            maxRowWidth = rowWidth
+        end
+    end
+    
+    local totalHeight = #rows * spellIconSize + (#rows - 1) * spacing
+    spellContainer:SetSize(maxRowWidth, totalHeight + 10)
+    spellContainer:Show()
+    
+    -- Create spell icons with proper positioning
+    local spellIndex = 1
+    for rowIndex, spellsInRow in ipairs(rows) do
+        local rowWidth = spellsInRow * spellIconSize + (spellsInRow - 1) * spacing
+        local rowStartX = (maxRowWidth - rowWidth) / 2 + 12  -- Center the row
+        local rowY = (totalHeight / 2) - ((rowIndex - 1) * (spellIconSize + spacing)) - (spellIconSize / 2)
+        
+        for colIndex = 1, spellsInRow do
+            local spellData = bossData.spells[spellIndex]
+            if not spellData then break end
+            
+            local spellFrame = CreateFrame("Frame", "DJ_SpellIcon" .. spellIndex, spellContainer)
+            spellFrame:SetSize(spellIconSize, spellIconSize)
+            
+            local xOffset = rowStartX + (colIndex - 1) * (spellIconSize + spacing)
+            spellFrame:SetPoint("CENTER", spellContainer, "CENTER", xOffset - (maxRowWidth / 2), rowY)
+            
+            -- Create icon texture
+            local iconTexture = spellFrame:CreateTexture(nil, "ARTWORK")
+            iconTexture:SetAllPoints()
+            iconTexture:SetTexture(spellData.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+            -- Zoom in 10% to hide edges for cleaner look
+            iconTexture:SetTexCoord(0.1, 0.9, 0.1, 0.9)
+            
+            -- Add border
+            local border = spellFrame:CreateTexture(nil, "BORDER")
+            border:SetAllPoints()
+            border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+            
+            -- Enable mouse interaction for tooltip
+            spellFrame:EnableMouse(true)
+            spellFrame:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                GameTooltip:SetText(spellData.name or "Unknown Spell", 1, 1, 1)
+                
+                if spellData.description then
+                    GameTooltip:AddLine(spellData.description, 1, 0.8, 0, true)
+                end
+                
+                -- Add spell details
+                if spellData.duration and spellData.duration > 0 then
+                    GameTooltip:AddLine("Duration: " .. spellData.duration .. "s", 0.7, 0.7, 1)
+                end
+                
+                if spellData.cooldown and spellData.cooldown > 0 then
+                    GameTooltip:AddLine("Cooldown: " .. spellData.cooldown .. "s", 0.7, 0.7, 1)
+                end
+                
+                if spellData.casttime and spellData.casttime > 0 then
+                    GameTooltip:AddLine("Cast time: " .. spellData.casttime .. "s", 0.7, 0.7, 1)
+                end
+                
+                GameTooltip:Show()
+            end)
+            
+            spellFrame:SetScript("OnLeave", function(self)
+                GameTooltip:Hide()
+            end)
+            
+            spellIndex = spellIndex + 1
+        end
     end
 end
 
@@ -281,18 +440,26 @@ local function ShowBoss(dungeon)
     dungeon.currentBossIndex = dungeon.currentBossIndex or 1
     local index = dungeon.currentBossIndex
 
-    if activeDungeon == dungeon and activeBossIndex == index then
-        return
-    end
-
-    activeDungeon = dungeon
-    activeBossIndex = index
-
+    -- Check if we need to update (prevent unnecessary refreshes)
     local bossData = dungeon.bosses[index]
     if not bossData then
         return
     end
-
+    
+    -- Only refresh if boss actually changed to reduce distracting flicker
+    local needsRefresh = false
+    if activeDungeon ~= dungeon or activeBossIndex ~= index then
+        needsRefresh = true
+    end
+    
+    -- Update tracking variables
+    activeDungeon = dungeon
+    activeBossIndex = index
+    
+    -- Only clear and refresh if needed
+    if needsRefresh then
+        ClearSpellFrames()
+    end
 
     Journal_charDB.leveledBoss = Journal_charDB.leveledBoss or {}
     Journal_charDB.levelUpClickCount = Journal_charDB.levelUpClickCount or {}
@@ -300,26 +467,44 @@ local function ShowBoss(dungeon)
     local bossKey = bossData.bossID or (dungeon.name .. bossData.name)
     local bossLeveled = Journal_charDB.leveledBoss[bossKey] or false
 
-    SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
-    SetupStoryPopup()
-    SetupBossNameLabel(bossData)
-    SetupSpellIcons()
-    SetupMouseHandlers(bossKey, dungeon)
+    -- Only do full setup if boss actually changed
+    if needsRefresh then
+        -- Ensure spell container is properly initialized before setting up spells
+        if dungeonDetailFrame.bossNav and dungeonDetailFrame.bossNav.spellContainer then
+            dungeonDetailFrame.bossNav.spellContainer:Show()
+        end
 
-    local popup = modelFrame.storyPopup
-    popup:Hide()
-
-    local story = bossData.story or ""
-    popup.text:SetText(story)
-    popup.text:SetWidth(popup:GetWidth() - 20)
-    local textHeight = popup.text:GetStringHeight()
-    local newHeight = textHeight + 30
-    popup:SetHeight(newHeight < 200 and 200 or newHeight)
-
-    if bossLeveled then
-        modelFrame.storyButton:Show()
+        SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
+        SetupStoryPopup()
+        SetupBossNameLabel(bossData)
+        SetupSpellIcons(bossData)  -- This will handle the new layout
+        SetupMouseHandlers(bossKey, dungeon)
     else
-        modelFrame.storyButton:Hide()
+        -- Just update spell icons and boss name if no full refresh needed
+        SetupBossNameLabel(bossData)
+        SetupSpellIcons(bossData)
+    end
+
+    -- Only update story popup if we did a full refresh
+    if needsRefresh and modelFrame.storyPopup then
+        local popup = modelFrame.storyPopup
+        popup:Hide()
+
+        local story = bossData.story or ""
+        popup.text:SetText(story)
+        popup.text:SetWidth(popup:GetWidth() - 20)
+        local textHeight = popup.text:GetStringHeight()
+        local newHeight = textHeight + 30
+        popup:SetHeight(newHeight < 200 and 200 or newHeight)
+    end
+
+    -- Always update story button visibility based on boss level status
+    if modelFrame.storyButton then
+        if bossLeveled then
+            modelFrame.storyButton:Show()
+        else
+            modelFrame.storyButton:Hide()
+        end
     end
 end
 
@@ -371,9 +556,13 @@ local function CreateBossNavigation(dungeonDetailFrame, dungeon)
         bossNav.spellContainer = CreateFrame("Frame", "DJ_SpellContainer", dungeonDetailFrame)
         bossNav.spellContainer:SetSize(300, 30)
         bossNav.spellContainer:SetPoint("TOP", bossNav.bossNameFontString, "BOTTOM", 0, -10)
+        bossNav.spellContainer:EnableMouse(false)  -- Prevent mouse interference
     else
+        -- Clear existing spell frames when recreating
+        ClearSpellFrames()
         bossNav.spellContainer:ClearAllPoints()
         bossNav.spellContainer:SetPoint("TOP", bossNav.bossNameFontString, "BOTTOM", 0, -10)
+        bossNav.spellContainer:SetSize(300, 30)  -- Reset size
     end
     bossNav.spellContainer:Show()
 

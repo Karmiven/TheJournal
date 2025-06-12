@@ -5,7 +5,9 @@
 BINDING_HEADER_THEJOURNAL = "The Journal"
 BINDING_NAME_TOGGLEJOURNAL = "Toggle Dungeon Journal"
 
--- Create a custom tooltip for affix display to avoid conflicts
+-- TODO Add a Random Item Quest button in the bottom right, pick random item in world that is unattuned = must attune that 1 item - tehnix, Could reward player with a Journal Point, these are shared to friends in the leaderboard and are total bragging rights
+-- TODO On tooltip, check if any friends can attune that item and missing it, with our previous logic in TestBoE if so, add a tooltip to the item that says "Unattuned: <friend>"
+
 local AffixTooltip = CreateFrame("GameTooltip", "DJ_AffixTooltip", UIParent, "GameTooltipTemplate")
 
 -- Persistent drop rate cache to avoid recalculating on every page change
@@ -26,6 +28,54 @@ if Journal_charDB.smartCache then
     smartCache.forge = Journal_charDB.smartCache.forge or {}
     smartCache.lastUpdate = Journal_charDB.smartCache.lastUpdate or 0
 end
+
+-- Initialize persistent friends data
+Journal_charDB.friendsAttunementData = Journal_charDB.friendsAttunementData or {}
+Journal_charDB.friendsJournalPoints = Journal_charDB.friendsJournalPoints or {}
+
+-- Initialize global friends data from saved variables
+if not _G.FRIENDS_ATTUNEMENT_DATA then
+    _G.FRIENDS_ATTUNEMENT_DATA = {}
+end
+
+if not _G.FRIENDS_JOURNAL_POINTS then
+    _G.FRIENDS_JOURNAL_POINTS = {}
+end
+
+-- Load saved friends data
+local friendsLoaded = 0
+for playerName, data in pairs(Journal_charDB.friendsAttunementData) do
+    _G.FRIENDS_ATTUNEMENT_DATA[playerName] = data
+    friendsLoaded = friendsLoaded + 1
+end
+
+local pointsLoaded = 0
+for playerName, points in pairs(Journal_charDB.friendsJournalPoints) do
+    _G.FRIENDS_JOURNAL_POINTS[playerName] = points
+    pointsLoaded = pointsLoaded + 1
+end
+
+if friendsLoaded > 0 or pointsLoaded > 0 then
+    print("|cFF00FF00[DJ Friends]|r Loaded " .. friendsLoaded .. " friends with attunement data and " .. pointsLoaded .. " friends with journal points")
+end
+
+-- Add ourselves to the leaderboard on initial load
+C_Timer.After(1, function()
+    if _G.AddSelfToFriendsData then
+        _G.AddSelfToFriendsData()
+        local playerName = UnitName("player")
+        if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
+            _G.FRIENDS_ATTUNEMENT_DATA[playerName] = _G.FRIENDS_DATA[playerName]
+            -- Also add our journal points
+            if Journal_charDB.journalPoints and Journal_charDB.journalPoints > 0 then
+                _G.FRIENDS_JOURNAL_POINTS[playerName] = Journal_charDB.journalPoints
+            end
+            if Journal_charDB then
+                SaveFriendsData()
+            end
+        end
+    end
+end)
 
 -- Function to get cached drop rate for an item
 local function GetCachedDropRate(itemId, dungeonName)
@@ -139,17 +189,36 @@ local function SaveSmartCache()
     }
 end
 
+-- Function to save friends data to saved variables
+local function SaveFriendsData()
+    -- Initialize tables if they don't exist
+    Journal_charDB.friendsAttunementData = Journal_charDB.friendsAttunementData or {}
+    Journal_charDB.friendsJournalPoints = Journal_charDB.friendsJournalPoints or {}
+    
+    -- Initialize global tables if they don't exist
+    _G.FRIENDS_ATTUNEMENT_DATA = _G.FRIENDS_ATTUNEMENT_DATA or {}
+    _G.FRIENDS_JOURNAL_POINTS = _G.FRIENDS_JOURNAL_POINTS or {}
+    
+    -- Save attunement data (don't clear existing data, only update)
+    for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
+        Journal_charDB.friendsAttunementData[playerName] = data
+    end
+    
+    -- Save journal points data (don't clear existing data, only update)
+    for playerName, points in pairs(_G.FRIENDS_JOURNAL_POINTS) do
+        Journal_charDB.friendsJournalPoints[playerName] = points
+    end
+end
+
 -- Function to invalidate cache for a specific item (call when item is attuned)
 local function InvalidateItemCache(itemID)
     smartCache.attunement[itemID] = nil
     smartCache.forge[itemID] = nil
 end
 
--- Custom tooltip positioning function
+-- Custom tooltip positioning function - using consistent ANCHOR_RIGHT positioning
 local function GameTooltip_SetDefaultAnchor(tooltip, parent)      
-    tooltip:SetOwner(parent, "ANCHOR_NONE")
-    tooltip:ClearAllPoints()
-    tooltip:SetPoint("TOPLEFT", dungeonDetailFrame, "TOPRIGHT", 60, 0)
+    tooltip:SetOwner(parent, "ANCHOR_RIGHT")
     tooltip.default = 1
 end
 
@@ -280,6 +349,7 @@ DungeonJournalFrame:SetPoint("CENTER")
 DungeonJournalFrame:SetClampedToScreen(true)
 DungeonJournalFrame:EnableMouse(true)
 DungeonJournalFrame:SetMovable(true)
+DungeonJournalFrame:SetFrameStrata("FULLSCREEN") -- Ensure frame appears above other addons
 
 DungeonJournalFrame:RegisterForDrag("LeftButton", "RightButton")
 DungeonJournalFrame:SetScript("OnDragStart", function(self, button)
@@ -312,6 +382,9 @@ Journal_charDB.currentItemPage     = Journal_charDB.currentItemPage or 1
 Journal_charDB.currentVersionIndex = Journal_charDB.currentVersionIndex or 1
 Journal_charDB.itemSearchQuery     = Journal_charDB.itemSearchQuery or ""
 
+-- Initialize DJ_Settings if not already done
+_G.DJ_Settings = _G.DJ_Settings or { onlyEquipable = false, filterType = "All" }
+
 DJ_Settings.filterType          = DJ_Settings.filterType or "All"
 DJ_Settings.onlyEquipable       = DJ_Settings.onlyEquipable or false
 DJ_Settings.attuneFilter        = DJ_Settings.attuneFilter or "All"
@@ -329,7 +402,7 @@ local totalPages         = 1
 local filterTypeButton = CreateFrame("Button", nil, DungeonJournalFrame)
 filterTypeButton:SetSize(24, 24)
 filterTypeButton:SetPoint("RIGHT", mainCloseButton, "LEFT", 5, -25)
-filterTypeButton:SetFrameStrata("DIALOG")
+filterTypeButton:SetFrameStrata("FULLSCREEN")
 filterTypeButton:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 20)
 
 local function UpdateFilterTooltipText(button)
@@ -369,15 +442,37 @@ local scrollFrame = CreateFrame("ScrollFrame", "DungeonGridScrollFrame", preview
 scrollFrame:SetSize(585, math.floor(430 * 0.82))
 scrollFrame:SetPoint("TOP", titleText, "BOTTOM", 20, -38)
 
+-- Custom sleek scrollbar styling
 local scrollBar = _G[scrollFrame:GetName() .. "ScrollBar"]
 if scrollBar then
     scrollBar:SetWidth(8)
     scrollBar:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -70, 0)
     scrollBar:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", -70, 0)
+    
+    -- Create custom white 8x8 texture for the scrollbar track (WotLK 3.3.5a compatible)
+    local trackTexture = scrollBar:CreateTexture(nil, "BACKGROUND")
+    trackTexture:SetAllPoints(scrollBar)
+    trackTexture:SetTexture("Interface\\Buttons\\WHITE8X8") -- Use built-in white texture
+    trackTexture:SetVertexColor(1, 1, 1, 0.3) -- White with 30% opacity
+    
+    -- Style the thumb (draggable part) with red color
     local thumb = _G[scrollFrame:GetName() .. "ScrollBarThumbTexture"]
     if thumb then
-        thumb:SetTexture("Interface\\Buttons\\UI-ScrollBar-Knob")
-        thumb:SetVertexColor(0.6, 0.6, 0.6)
+        thumb:SetTexture("Interface\\Buttons\\WHITE8X8") -- Use built-in white texture
+        thumb:SetVertexColor(0.8, 0.2, 0.2, 0.9) -- Red color (204, 51, 51) with 90% opacity
+        thumb:SetSize(8, 20) -- Make thumb more sleek
+    end
+    
+    -- Hide the default up/down buttons for cleaner look
+    local upButton = _G[scrollFrame:GetName() .. "ScrollBarScrollUpButton"]
+    local downButton = _G[scrollFrame:GetName() .. "ScrollBarScrollDownButton"]
+    if upButton then upButton:Hide() end
+    if downButton then downButton:Hide() end
+    
+    -- Adjust thumb position since we hid the buttons
+    if thumb then
+        thumb:ClearAllPoints()
+        thumb:SetPoint("TOP", scrollBar, "TOP", 0, 0)
     end
 end
 
@@ -391,6 +486,7 @@ scrollFrame:SetScrollChild(gridContainer)
 dungeonDetailFrame = CreateFrame("Frame", "DungeonDetailFrame", DungeonJournalFrame)
 dungeonDetailFrame:SetSize(456, 336)
 dungeonDetailFrame:SetPoint("TOP", DungeonJournalFrame, "TOP", 0, -10)
+dungeonDetailFrame:SetFrameStrata("FULLSCREEN") -- Ensure detail frame appears above other addons
 dungeonDetailFrame:Hide()
 
 local dungeonTitleText = dungeonDetailFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -432,7 +528,7 @@ local itemSearchBox = CreateFrame("EditBox", "DJ_ItemSearchBox", DungeonJournalF
 itemSearchBox:SetSize(120, 20)
 itemSearchBox:SetAutoFocus(false)
 itemSearchBox:SetPoint("RIGHT", filterTypeButton, "LEFT", -10, 0)
-itemSearchBox:SetFrameStrata("DIALOG")
+itemSearchBox:SetFrameStrata("FULLSCREEN")
 itemSearchBox:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 20)
 itemSearchBox:SetText(Journal_charDB.itemSearchQuery or "")
 itemSearchBox:SetScript("OnTextChanged", function(self, userInput)
@@ -474,7 +570,7 @@ end
 local sourceCountButton = CreateFrame("Button", nil, DungeonJournalFrame)
 sourceCountButton:SetSize(24, 24)
 sourceCountButton:SetPoint("RIGHT", itemSearchBox, "LEFT", -10, 0)
-sourceCountButton:SetFrameStrata("DIALOG")
+sourceCountButton:SetFrameStrata("FULLSCREEN")
 sourceCountButton:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 20)
 
 local function UpdateSourceCountButton()
@@ -515,7 +611,7 @@ end)
 
 sourceCountButton:SetScript("OnEnter", function(self)
     local opt = sourceCountOptions[currentSourceIndex]
-    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText("|cFF87CEEB" .. "Source Count Filter: " .. opt.text .. "|r")
     GameTooltip:AddLine("All Items: Show all items", 1, 1, 1)
     GameTooltip:AddLine("1 Source: Show items with only 1 drop source", 1, 1, 1)
@@ -547,7 +643,7 @@ end
 local mythicFilterButton = CreateFrame("Button", nil, DungeonJournalFrame)
 mythicFilterButton:SetSize(24, 24)
 mythicFilterButton:SetPoint("RIGHT", sourceCountButton, "LEFT", -5, 0)
-mythicFilterButton:SetFrameStrata("DIALOG")
+mythicFilterButton:SetFrameStrata("FULLSCREEN")
 mythicFilterButton:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 20)
 
 local function UpdateMythicFilterButton()
@@ -590,7 +686,7 @@ end)
 
 mythicFilterButton:SetScript("OnEnter", function(self)
     local opt = mythicFilterOptions[currentMythicIndex]
-    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetText("|cFFFF6600" .. "Mythic Filter: " .. opt.text .. "|r")
     GameTooltip:AddLine("All Difficulties: Show all items", 1, 1, 1)
     GameTooltip:AddLine("Mythic Only: Show only mythic items", 1, 1, 1)
@@ -692,6 +788,22 @@ backButton:SetScript("OnClick", function()
         dungeonDetailFrame:Hide()
         previewFrame:Show()
         HideDungeonInteriorUI()
+        -- Show friends frame again when returning to main view and position it properly for preview
+        if friendsFrame then
+            friendsFrame:ClearAllPoints()
+            friendsFrame:SetPoint("TOPLEFT", previewFrame, "TOPRIGHT", 10, -20)
+            friendsFrame:SetHeight(380) -- Fill more vertical space on preview
+            friendsFrame:Show()
+        end
+        if randomQuestIcon then
+            randomQuestIcon:Hide()
+        end
+        if previewQuestIcon then
+            previewQuestIcon:Hide()
+        end
+        if questPopoutFrame then
+            questPopoutFrame:Hide()
+        end
         -- Refresh attuneable text when returning to main screen
         RefreshAllAttunableText()
         -- Sort dungeons by attunement progress
@@ -1577,7 +1689,7 @@ function LoadDungeonDetail(dungeon)
     if not dungeon then return end
 
     -- Reset forge debug counter for fresh output
-    _G.forgeDebugPrinted = 0
+    
     
     if not Journal_charDB.recacheScheduled then
         Journal_charDB.recacheScheduled = {}
@@ -1975,7 +2087,7 @@ do
             end
             
             self.tex:SetVertexColor(0.7, 0.7, 0.7)
-            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM", 0, -5)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(d.name)
             GameTooltip:Show()
         end)
@@ -2007,13 +2119,29 @@ end
 HideDungeonInteriorUI()
 previewFrame:Show()
 
+-- Hide ALL quest icons initially (only show quest icons when inside dungeons)
+if previewQuestIcon then
+    previewQuestIcon:Hide()
+end
+if randomQuestIcon then
+    randomQuestIcon:Hide()
+end
+
+-- Show friends frame on initial load with proper preview positioning
+if friendsFrame then
+    friendsFrame:ClearAllPoints()
+    friendsFrame:SetPoint("TOPLEFT", previewFrame, "TOPRIGHT", 10, -20)
+    friendsFrame:SetHeight(380)
+    friendsFrame:Show()
+end
+
 -- Refresh attuneable text when preview frame is shown
 RefreshAllAttunableText()
 
--- Create small paper report button next to back button
-local reportButton = CreateFrame("Button", nil, DungeonJournalFrame)
-reportButton:SetSize(20, 20)
-reportButton:SetPoint("TOPRIGHT", DungeonJournalFrame, "TOPRIGHT", -35, -9)
+-- Create small paper report button next to back button (properly aligned with main frame)
+local reportButton = CreateFrame("Button", "DJ_MainReportButton", DungeonJournalFrame)
+reportButton:SetSize(22, 22)
+reportButton:SetPoint("TOPRIGHT", DungeonJournalFrame, "TOPRIGHT", -32, -8)
 
 -- Create button background
 local reportBg = reportButton:CreateTexture(nil, "BACKGROUND")
@@ -2111,7 +2239,59 @@ SlashCmdList["DJREPORT"] = function(msg)
     msg = string.lower(string.trim(msg or ""))
     if msg == "report" then
         PrintAttunementReport()
-
+    elseif msg == "debug" then
+        _G.debug = not _G.debug
+        print("|cFFFFD700[DJ Debug]|r Debug mode " .. (_G.debug and "ENABLED" or "DISABLED"))
+        if _G.debug then
+            print("|cFF00FF00[DJ DEBUG]|r Debug test message - this confirms debug is working!")
+        end
+    elseif msg == "clearcache" then
+        if _G.Journal_FriendCache then
+            _G.Journal_FriendCache.friends = {}
+            -- Don't clear saved friends data, only the temporary cache
+            print("|cFFFFD700[DJ Cache]|r Cleared friends cache (persistent data preserved)")
+            UpdateAttunementFriendsDisplay()
+        end
+    elseif msg == "showcache" then
+        if _G.Journal_FriendCache and _G.Journal_FriendCache.friends then
+            local count = 0
+            for playerName, data in pairs(_G.Journal_FriendCache.friends) do
+                count = count + 1
+            end
+            print("|cFFFFD700[DJ Cache]|r " .. count .. " friends in cache:")
+            for playerName, data in pairs(_G.Journal_FriendCache.friends) do
+                local timeDiff = GetTime() - (data.timestamp or 0)
+                local age = "Unknown"
+                if timeDiff < 3600 then
+                    age = math.floor(timeDiff / 60) .. "m ago"
+                elseif timeDiff < 86400 then
+                    age = math.floor(timeDiff / 3600) .. "h ago"
+                else
+                    age = math.floor(timeDiff / 86400) .. "d ago"
+                end
+                print("|cFF87CEEB  " .. playerName .. "|r (" .. (data.class or "Unknown") .. ") - " .. (data.percentage or 0) .. "% - " .. age)
+            end
+        end
+    elseif msg:find("^hide ") then
+        local playerName = msg:match("hide (.+)")
+        if playerName then
+            playerName = playerName:gsub("^%l", string.upper) -- Capitalize first letter
+            if _G.HidePlayer then
+                _G.HidePlayer(playerName, true)
+            else
+                print("|cFFFF0000[DJ Cache]|r Hide function not available")
+            end
+        end
+    elseif msg:find("^unhide ") then
+        local playerName = msg:match("unhide (.+)")
+        if playerName then
+            playerName = playerName:gsub("^%l", string.upper) -- Capitalize first letter
+            if _G.HidePlayer then
+                _G.HidePlayer(playerName, false)
+            else
+                print("|cFFFF0000[DJ Cache]|r Hide function not available")
+            end
+        end
     elseif msg == "" then
         -- Open the dungeon journal
         if DungeonJournalFrame then
@@ -2128,6 +2308,19 @@ SlashCmdList["DJREPORT"] = function(msg)
         print("|cFF87CEEB/j|r - Toggle Dungeon Journal (shortcut)")
         print("|cFF87CEEB/ej|r - Toggle Dungeon Journal (shortcut)")
         print("|cFF87CEEB/dj report|r - Show attunement progress report")
+        print("|cFF87CEEB/dj clearcache|r - Clear friends cache")
+        print("|cFF87CEEB/dj showcache|r - Show cached friends")
+        print("|cFF87CEEB/dj hide <name>|r - Hide player from leaderboard")
+        print("|cFF87CEEB/dj unhide <name>|r - Unhide player from leaderboard")
+        print("|cFF87CEEB/dj testboe <item>|r - Test if friends need BOE item")
+        print("|cFF87CEEB/testboe <item>|r - Same as above (standalone command)")
+        print("|cFF87CEEB|r")
+        print("|cFF87CEEB[Auto BOE Testing]|r When hovering over BOE items:")
+        print("|cFF87CEEB• Automatically queries friends if they need the item|r")
+        print("|cFF87CEEB• Whispers friends who need it with FULL item links|r")
+        print("|cFF87CEEB• Preserves affix and forge level information|r")
+        print("|cFF87CEEB• Shows responses in tooltip with smart throttling|r")
+        print("|cFF87CEEB• Works with item names, IDs, or links|r")
     end
 end
 
@@ -2136,8 +2329,188 @@ SLASH_DJ2 = "/tj"
 SLASH_DJ3 = "/j"
 SLASH_DJ4 = "/ej"
 SlashCmdList["DJ"] = function(msg)
+    msg = string.lower(string.trim(msg or ""))
     if msg == "report" then
         PrintAttunementReport()
+    elseif msg == "friends" then
+        if _G.AttunementFriendsFrame then
+            if _G.AttunementFriendsFrame:IsShown() then
+                _G.AttunementFriendsFrame:Hide()
+            else
+                _G.AttunementFriendsFrame:Show()
+            end
+        end
+    elseif msg == "share" then
+        SendAttunementData()
+    elseif msg == "request" then
+        RequestAttunementData()
+    elseif msg == "debug" then
+        _G.debug = not _G.debug
+        print("|cFFFFD700[DJ Debug]|r Debug mode " .. (_G.debug and "ENABLED" or "DISABLED"))
+        if _G.debug then
+            print("|cFF00FF00[DJ DEBUG]|r Debug test message - this confirms debug is working!")
+        end
+    elseif msg:find("^testboe") then
+        print("|cFF00FFFF[Manual BOE DEBUG]|r Processing testboe command with message: " .. tostring(msg))
+        
+        local originalItemLink = nil
+        local itemLink = nil
+        local itemName = nil
+        local itemID = nil
+
+        -- First, try to extract item ID from any format in the message
+        itemID = tonumber(msg:match("item:(%d+)")) or tonumber(msg:match("testboe%s+(%d+)"))
+        print("|cFF00FFFF[Manual BOE DEBUG]|r Extracted item ID: " .. tostring(itemID))
+        
+        -- If we have an item ID, check if we captured the original link before chat processing
+        if itemID and _G.ORIGINAL_ITEM_LINKS and _G.ORIGINAL_ITEM_LINKS[itemID] then
+            originalItemLink = _G.ORIGINAL_ITEM_LINKS[itemID]
+            itemLink = originalItemLink
+            print("|cFF00FF00[Manual BOE]|r Using PRE-CAPTURED original item link: " .. originalItemLink)
+            -- Clear it after use to prevent stale data
+            _G.ORIGINAL_ITEM_LINKS[itemID] = nil
+        else
+            print("|cFF00FFFF[Manual BOE DEBUG]|r No pre-captured link found for ID " .. tostring(itemID))
+            if _G.ORIGINAL_ITEM_LINKS then
+                print("|cFF00FFFF[Manual BOE DEBUG]|r Available pre-captured IDs:")
+                for id, link in pairs(_G.ORIGINAL_ITEM_LINKS) do
+                    print("|cFF00FFFF[Manual BOE DEBUG]|r   ID " .. id .. ": " .. link)
+                end
+            end
+        end
+        
+        -- If no pre-captured link, try to extract from current message (likely already processed)
+        if not originalItemLink then
+            originalItemLink = msg:match("|c%x+|h%[.-%]|h|r")
+            if originalItemLink then
+                itemID = tonumber(originalItemLink:match("item:(%d+)"))
+                itemLink = originalItemLink
+                print("|cFFFFFF00[Manual BOE]|r Found item link in message (may be processed): " .. originalItemLink)
+            end
+        end
+        
+        -- If still no link, try to parse item name for basic lookup
+        if not itemID then
+            local bracketName = msg:match("%[(.-)%]")
+            if bracketName then
+                itemName = bracketName
+            else
+                itemName = msg:match("testboe%s+(.+)")
+            end
+            
+            -- Try to get basic item info (this will NOT have affixes/forge data)
+            if itemName then
+                local foundName, foundLink = GetItemInfo(itemName)
+                if foundLink then
+                    itemLink = foundLink
+                    itemID = tonumber(foundLink:match("item:(%d+)"))
+                    itemName = foundName
+                    print("|cFFFF0000[Manual BOE WARNING]|r Using basic item link (NO AFFIXES): " .. foundLink)
+                else
+                    print("|cFFFFD700[DJ BOE Test]|r Searching for item: " .. itemName)
+                end
+            end
+        end
+        
+        if not itemLink and not itemName then
+            print("|cFFFFD700[DJ BOE Test]|r Usage: /dj testboe <item>")
+            print("|cFFFFD700[DJ BOE Test]|r Examples:")
+            print("|cFFFFD700[DJ BOE Test]|r   /dj testboe [Brimstone Igniter]")
+            print("|cFFFFD700[DJ BOE Test]|r   /dj testboe Brimstone Igniter")
+            print("|cFFFFD700[DJ BOE Test]|r   /dj testboe 19019")
+            print("|cFFFFD700[DJ BOE Test]|r This will check if friends need this item for attunement")
+            return
+        end
+        
+        -- Try to parse as item ID if it's a number
+        if not itemID and itemName and tonumber(itemName) then
+            itemID = tonumber(itemName)
+            local foundName, foundLink = GetItemInfo(itemID)
+            if foundLink then
+                itemLink = foundLink
+                itemName = foundName
+            else
+                itemLink = "item:" .. itemID
+            end
+        end
+        
+        -- Final fallback - use what we have
+        if not itemID and itemLink then
+            itemID = tonumber(itemLink:match("item:(%d+)"))
+        end
+        
+        local displayName = itemName or ("Item " .. (itemID or "Unknown"))
+        print("|cFFFFD700[DJ BOE Test]|r Checking if friends need " .. displayName .. "...")
+        
+                 -- Query friends about this item
+         if _G.QueryItemFromFriends and itemID then
+             local linkToQuery = originalItemLink or itemLink or ("item:" .. itemID)
+             _G.QueryItemFromFriends(itemID, linkToQuery)
+             print("|cFF00FF00[DJ BOE Test]|r Sent query to online friends/guildies about " .. displayName)
+             
+             -- Set up a timer to check for responses and whisper friends who need it
+             local function CheckResponsesAndWhisper()
+                 if _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
+                     local friendsWhoNeed = {}
+                     local friendsWhoCanUpgrade = {}
+                     
+                     for friendName, response in pairs(_G.ITEM_QUERY_RESPONSES[itemID]) do
+                         -- Check recent responses (within last 10 seconds for manual test)
+                         if GetTime() - response.timestamp < 10 then
+                             -- ALWAYS use the stored full item link (with affixes/forge level) - this is the original tested link
+                             local fullItemLink = _G.QUERIED_ITEM_LINKS and _G.QUERIED_ITEM_LINKS[itemID]
+                             if not fullItemLink then
+                                 -- Only fallback if we somehow don't have the stored link
+                                 fullItemLink = itemLink or ("item:" .. itemID)
+                                 print("|cFFFF0000[Manual BOE WARNING]|r Using fallback link instead of stored full link for " .. (displayName or itemID))
+                             end
+                             
+                             if response.needsItem then
+                                 table.insert(friendsWhoNeed, friendName)
+                                 SendChatMessage("Hey! I have " .. fullItemLink .. " - you need this for attunement right?", "WHISPER", nil, friendName)
+                                 print("|cFF00FF00[Manual BOE]|r Whispered " .. friendName .. " about " .. displayName .. " (using stored full link)")
+                             elseif response.canUpgrade then
+                                 local forgeText = ""
+                                 if response.currentForge == 1 then forgeText = " (Titanforged)"
+                                 elseif response.currentForge == 2 then forgeText = " (Warforged)"
+                                 elseif response.currentForge == 3 then forgeText = " (Lightforged)"
+                                 end
+                                 table.insert(friendsWhoCanUpgrade, friendName)
+                                 SendChatMessage("I have " .. fullItemLink .. " if you want to upgrade your" .. forgeText .. " version", "WHISPER", nil, friendName)
+                                 print("|cFFFFFF00[Manual BOE]|r Whispered " .. friendName .. " about upgrade opportunity (using stored full link)")
+                             end
+                         end
+                     end
+                     
+                     if #friendsWhoNeed > 0 or #friendsWhoCanUpgrade > 0 then
+                         print("|cFF00FF00[Manual BOE Results]|r Whispered " .. (#friendsWhoNeed + #friendsWhoCanUpgrade) .. " friends about " .. displayName)
+                     else
+                         print("|cFF888888[Manual BOE Results]|r No friends need " .. displayName .. " (or no responses yet)")
+                     end
+        else
+                     print("|cFF888888[Manual BOE Results]|r No responses received for " .. displayName .. " yet")
+                 end
+             end
+             
+             -- Store the item link for use in whispers - ONLY store if we have the original
+             if originalItemLink then
+                 _G.QUERIED_ITEM_LINKS = _G.QUERIED_ITEM_LINKS or {}
+                 _G.QUERIED_ITEM_LINKS[itemID] = originalItemLink
+                 print("|cFF00FF00[Manual BOE]|r Stored ORIGINAL item link with affixes/forge data for ID " .. itemID)
+             elseif itemLink then
+                 -- Warn that we're using a basic link without affix data
+                 _G.QUERIED_ITEM_LINKS = _G.QUERIED_ITEM_LINKS or {}
+                 _G.QUERIED_ITEM_LINKS[itemID] = itemLink
+                 print("|cFFFF0000[Manual BOE WARNING]|r Stored BASIC item link (NO AFFIXES) for ID " .. itemID .. " - friends will not see forge/affix data!")
+             else
+                 print("|cFFFF0000[Manual BOE ERROR]|r No item link available to store for ID " .. (itemID or "unknown"))
+             end
+             
+             -- Check for responses after 3 seconds
+             C_Timer.After(3, CheckResponsesAndWhisper)
+         else
+             print("|cFFFF0000[DJ BOE Test]|r Could not query item: " .. tostring(itemLink or itemName or "Unknown"))
+        end
     elseif msg == "" then
         if DungeonJournalFrame:IsShown() then
             HideJournal()
@@ -2151,8 +2524,15 @@ SlashCmdList["DJ"] = function(msg)
         print("|cFF87CEEB/j|r - Toggle Dungeon Journal (shortcut)")
         print("|cFF87CEEB/ej|r - Toggle Dungeon Journal (shortcut)")
         print("|cFF87CEEB/dj report|r - Show attunement progress report")
+        print("|cFF87CEEB/dj friends|r - Toggle friends attunement panel")
+        print("|cFF87CEEB/dj share|r - Share your attunement progress (guild/party/friends)")
+        print("|cFF87CEEB/dj request|r - Request attunement data (guild/party/friends)")
+        print("|cFF87CEEB/dj debug|r - Toggle debug mode for BOE tooltips")
+        print("|cFF87CEEB/dj testboe [Item Link]|r - Check if friends need BOE item")
     end
 end
+
+-- Removed separate testboe command - now integrated into main /dj command
 
 -- Create the keybind function
 function ToggleJournal()
@@ -2182,6 +2562,7 @@ _G.DungeonJournalFrame = DungeonJournalFrame
 _G.LoadDungeonDetail   = LoadDungeonDetail
 _G.UpdateDungeonNames  = UpdateDungeonNames
 _G.RefreshAllAttunableText = RefreshAllAttunableText
+_G.SortDungeonsByAttunement = SortDungeonsByAttunement
 _G.PrintAttunementReport = PrintAttunementReport
 _G.InvalidateItemCache = InvalidateItemCache -- Expose for external use
 
@@ -2354,43 +2735,6 @@ function HideJournal()
     end
 end
 
--- Update the slash command to use the new functions
-SlashCmdList["DJ"] = function(msg)
-    if msg == "report" then
-        PrintAttunementReport()
-    elseif msg == "" then
-        if DungeonJournalFrame:IsShown() then
-            HideJournal()
-        else
-            ShowJournal()
-        end
-    else
-        print("|cFFFFD700[Dungeon Journal]|r Available commands:")
-        print("|cFF87CEEB/dj|r - Toggle Dungeon Journal")
-        print("|cFF87CEEB/tj|r - Toggle Dungeon Journal (shortcut)")
-        print("|cFF87CEEB/j|r - Toggle Dungeon Journal (shortcut)")
-        print("|cFF87CEEB/ej|r - Toggle Dungeon Journal (shortcut)")
-        print("|cFF87CEEB/dj report|r - Show attunement progress report")
-    end
-end
-
--- Update the back button to use the new functions
-backButton:SetScript("OnClick", function()
-    if dungeonDetailFrame:IsShown() then
-        -- Restore the main interface background when returning to preview
-        DungeonJournalFrame.BackgroundTexture:SetTexture("Interface\\AddOns\\TheJournal\\Assets\\interface_base.blp")
-        dungeonDetailFrame:Hide()
-        previewFrame:Show()
-        HideDungeonInteriorUI()
-        -- Refresh attuneable text and sort when returning to main screen
-        RefreshAllAttunableText()
-        SortDungeonsByAttunement()
-    elseif previewFrame:IsShown() then
-        if RuneCollection then RuneCollection:Show() end
-        HideJournal()
-    end
-end)
-
 -- Update the keybind function to use the new functions
 function ToggleJournal()
     if DungeonJournalFrame:IsShown() then
@@ -2404,3 +2748,1680 @@ end
 _G.ShowJournal = ShowJournal
 _G.HideJournal = HideJournal
 _G.ToggleJournal = ToggleJournal
+_G.ProcessBOETooltip = ProcessBOETooltip
+
+-- ##################################################################
+-- # FRIENDS ATTUNEMENT FRAME
+-- ##################################################################
+
+-- Create Friends Attunement frame in the main UI (positioned outside dungeon layout)
+local friendsFrame = CreateFrame("Frame", "AttunementFriendsFrame", DungeonJournalFrame)
+friendsFrame:SetSize(250, 400)
+friendsFrame:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPRIGHT", 10, -50)
+friendsFrame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 32, edgeSize = 16,
+    insets = { left = 5, right = 5, top = 5, bottom = 5 }
+})
+friendsFrame:SetBackdropColor(0.1, 0.1, 0.2, 0.8)
+friendsFrame:SetBackdropBorderColor(0.4, 0.4, 0.6, 1)
+friendsFrame:EnableMouse(true)
+
+-- Frame title
+local friendsTitle = friendsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+friendsTitle:SetPoint("TOP", friendsFrame, "TOP", 0, -10)
+friendsTitle:SetText("|cFFFFD700Attunement Leaderboard|r")
+
+-- Refresh button
+local refreshButton = CreateFrame("Button", nil, friendsFrame, "UIPanelButtonTemplate")
+refreshButton:SetSize(60, 20)
+refreshButton:SetPoint("TOPRIGHT", friendsFrame, "TOPRIGHT", -10, -35)
+refreshButton:SetText("Refresh")
+refreshButton:SetScript("OnClick", function()
+    RequestAttunementData()
+    SendAttunementData() -- Also send our own data
+end)
+
+-- Scroll frame for friends list
+local scrollFrame = CreateFrame("ScrollFrame", "FriendsAttunementScrollFrame", friendsFrame, "UIPanelScrollFrameTemplate")
+scrollFrame:SetPoint("TOPLEFT", friendsFrame, "TOPLEFT", 10, -60)
+scrollFrame:SetPoint("BOTTOMRIGHT", friendsFrame, "BOTTOMRIGHT", -30, 10)
+
+local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+scrollChild:SetSize(210, 1) -- Width will be set properly, height will grow
+scrollFrame:SetScrollChild(scrollChild)
+
+-- Table to store friend entry frames
+local friendEntries = {}
+
+-- Class color table
+local CLASS_COLORS = { -- TODO: his will be replaced with a better method later
+    WARRIOR = "|cFFC79C6E",
+    PALADIN = "|cFFF58CBA", 
+    HUNTER = "|cFFABD473",
+    ROGUE = "|cFFFFF569",
+    PRIEST = "|cFFFFFFFF",
+    DEATHKNIGHT = "|cFFC41F3B",
+    SHAMAN = "|cFF0070DE",
+    MAGE = "|cFF69CCF0",
+    WARLOCK = "|cFF9482C9",
+    DRUID = "|cFFFF7D0A"
+}
+
+-- Function to create a friend entry frame
+local function CreateFriendEntry(index)
+    local entry = CreateFrame("Frame", nil, scrollChild)
+    entry:SetSize(210, 70)
+    entry:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -(index-1) * 75)
+    
+    -- Rank number (small, top-left)
+    entry.rankText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    entry.rankText:SetPoint("TOPLEFT", entry, "TOPLEFT", 2, -2)
+    entry.rankText:SetWidth(20)
+    entry.rankText:SetJustifyH("LEFT")
+    
+    -- Player name with class color
+    entry.nameText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    entry.nameText:SetPoint("TOPLEFT", entry, "TOPLEFT", 25, -5)
+    entry.nameText:SetWidth(120)
+    entry.nameText:SetJustifyH("LEFT")
+    
+    -- Progress percentage (large, right side)
+    entry.percentageText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    entry.percentageText:SetPoint("TOPRIGHT", entry, "TOPRIGHT", -5, -5)
+    entry.percentageText:SetWidth(60)
+    entry.percentageText:SetJustifyH("RIGHT")
+    
+    -- Progress detail text
+    entry.progressText = entry:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    entry.progressText:SetPoint("TOPLEFT", entry.nameText, "BOTTOMLEFT", 0, -2)
+    entry.progressText:SetWidth(180)
+    entry.progressText:SetJustifyH("LEFT")
+    
+    -- Top 3 dungeons needed
+    entry.dungeonsText = entry:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    entry.dungeonsText:SetPoint("TOPLEFT", entry.progressText, "BOTTOMLEFT", 0, -2)
+    entry.dungeonsText:SetWidth(200)
+    entry.dungeonsText:SetJustifyH("LEFT")
+    
+    -- Time text (small, bottom right)
+    entry.timeText = entry:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    entry.timeText:SetPoint("BOTTOMRIGHT", entry, "BOTTOMRIGHT", -5, 2)
+    entry.timeText:SetWidth(60)
+    entry.timeText:SetJustifyH("RIGHT")
+    
+    -- Enable mouse for tooltips
+    entry:EnableMouse(true)
+    entry:SetScript("OnEnter", function(self)
+        if not self.playerData then return end
+        
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetText("|cFFFFD700" .. self.playerData.playerName .. "|r")
+        
+        -- Show last seen info
+        if self.playerData.isPlayer then
+            GameTooltip:AddLine("|cFF00FF00You|r", 1, 1, 1)
+        elseif self.playerData.lastSeen then
+            GameTooltip:AddLine("|cFF888888Last seen: " .. self.playerData.lastSeen .. "|r", 1, 1, 1)
+        end
+        
+        -- Show progress details
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Progress: " .. self.playerData.attuned .. "/" .. self.playerData.total .. " (" .. self.playerData.percentage .. "%)", 1, 1, 1)
+        
+        -- Show detailed dungeon breakdown (top 20 dungeons they need)
+        if self.playerData.dungeonDetails and #self.playerData.dungeonDetails > 0 then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cFFFFB347Top 20 Dungeons Needed:|r")
+            local count = 0
+            for i, dungeonData in ipairs(self.playerData.dungeonDetails) do
+                if count >= 20 then break end
+                if dungeonData.attunablesLeft > 0 then
+                    count = count + 1
+                    local percentLeft = dungeonData.attunementPercentage * 100
+                    local color = "|cFF808080"
+                    
+                    if dungeonData.attunementPercentage == 0 then
+                        color = "|cFF00FF00" -- Complete (shouldn't show but just in case)
+                    elseif dungeonData.attunementPercentage <= 0.5 then
+                        color = "|cFFFFFF00" -- Good progress
+                    elseif dungeonData.attunementPercentage < 1 then
+                        color = "|cFFFF4500" -- Needs work
+                    else
+                        color = "|cFFCC0000" -- Not started
+                    end
+                    
+                    GameTooltip:AddDoubleLine(
+                        color .. "• " .. dungeonData.name .. "|r",
+                        color .. dungeonData.attunablesLeft .. "/" .. dungeonData.totalAttunable .. " (" .. string.format("%.0f", percentLeft) .. "%)|r"
+                    )
+                end
+            end
+            
+            -- Fallback to old format if no detailed data
+            if count == 0 and self.playerData.top3Dungeons and #self.playerData.top3Dungeons > 0 then
+                for i, dungeonName in ipairs(self.playerData.top3Dungeons) do
+                    if i <= 3 then
+                        GameTooltip:AddLine("• " .. dungeonName, 1, 1, 0.8)
+                    end
+                end
+            end
+        elseif self.playerData.top3Dungeons and #self.playerData.top3Dungeons > 0 then
+            -- Fallback to old format
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cFFFFB347Top Dungeons Needed:|r")
+            for i, dungeonName in ipairs(self.playerData.top3Dungeons) do
+                if i <= 3 then
+                    GameTooltip:AddLine("• " .. dungeonName, 1, 1, 0.8)
+                end
+            end
+        end
+        
+        -- Show missing BOE items if any
+        if self.playerData.missingBOE and #self.playerData.missingBOE > 0 then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cFF00FF00Missing BOE Items:|r")
+            
+            for i, itemID in ipairs(self.playerData.missingBOE) do
+                if i > 5 then -- Limit to 5 items to prevent huge tooltips
+                    GameTooltip:AddLine("... and " .. (#self.playerData.missingBOE - 5) .. " more items", 0.7, 0.7, 0.7)
+                    break
+                end
+                
+                local itemName, itemLink, quality = GetItemInfo(itemID)
+                if itemName then
+                    local qualityColor = ITEM_QUALITY_COLORS[quality] or ITEM_QUALITY_COLORS[1]
+                    GameTooltip:AddLine("• " .. itemName, qualityColor.r, qualityColor.g, qualityColor.b)
+                else
+                    GameTooltip:AddLine("• Item " .. itemID, 1, 1, 1)
+                end
+            end
+        end
+        
+        GameTooltip:Show()
+    end)
+    
+    entry:SetScript("OnLeave", function(self)
+        GameTooltip:Hide()
+    end)
+    
+    return entry
+end
+
+-- Function to update the friends display
+function UpdateAttunementFriendsDisplay()
+    -- Always add ourselves first to the global friends data
+    if _G.AddSelfToFriendsData then
+        _G.AddSelfToFriendsData()
+    end
+    
+    -- Ensure our data is in the global friends attunement data
+    local playerName = UnitName("player")
+    if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
+        _G.FRIENDS_ATTUNEMENT_DATA[playerName] = _G.FRIENDS_DATA[playerName]
+        -- Also add our journal points
+        if Journal_charDB.journalPoints and Journal_charDB.journalPoints > 0 then
+            _G.FRIENDS_JOURNAL_POINTS[playerName] = Journal_charDB.journalPoints
+        end
+    end
+    
+    -- Get friends data and sort by percentage (highest first for leaderboard)
+    local sortedFriends = {}
+    for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
+        local journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[playerName] or 0
+        table.insert(sortedFriends, {
+            playerName = playerName,
+            class = data.class,
+            attuned = data.attuned,
+            total = data.total,
+            percentage = data.percentage,
+            missingBOE = data.missingBOE,
+            top3Dungeons = data.top3Dungeons,
+            lastSeen = data.lastSeen,
+            lastSeenTime = data.lastSeenTime,
+            timestamp = data.timestamp,
+            isPlayer = data.isPlayer,
+            journalPoints = journalPoints
+        })
+    end
+    
+    -- Sort by percentage descending (highest percentage first) for leaderboard
+    table.sort(sortedFriends, function(a, b)
+        if a.percentage ~= b.percentage then
+            return a.percentage > b.percentage
+        end
+        return a.playerName < b.playerName
+    end)
+    
+    -- Create or update friend entry frames
+    for i = 1, math.max(#sortedFriends, #friendEntries) do
+        if i <= #sortedFriends then
+            -- Create entry if needed
+            if not friendEntries[i] then
+                friendEntries[i] = CreateFriendEntry(i)
+            end
+            
+            local entry = friendEntries[i]
+            local friendData = sortedFriends[i]
+            
+            -- Store data for tooltip
+            entry.playerData = friendData
+            
+            -- Set rank number
+            local rankColor = "|cFFFFD700" -- Gold for 1st
+            if i == 2 then rankColor = "|cFFC0C0C0" -- Silver for 2nd
+            elseif i == 3 then rankColor = "|cFFCD7F32" -- Bronze for 3rd
+            else rankColor = "|cFF888888" end -- Gray for others
+            entry.rankText:SetText(rankColor .. "#" .. i .. "|r")
+            
+            -- Set name with class color and highlight if it's the player
+            local classColor = CLASS_COLORS[friendData.class] or "|cFFFFFFFF"
+            local nameText = friendData.playerName
+            if friendData.isPlayer then
+                nameText = nameText .. " (You)"
+            end
+            entry.nameText:SetText(classColor .. nameText .. "|r")
+            
+            -- Set large percentage display with color coding
+            local percentageColor = "|cFFFF4500" -- Red for low progress
+            if friendData.percentage >= 90 then
+                percentageColor = "|cFF00FF00" -- Green for high progress
+            elseif friendData.percentage >= 75 then
+                percentageColor = "|cFF7FFF00" -- Light green
+            elseif friendData.percentage >= 50 then
+                percentageColor = "|cFFFFFF00" -- Yellow for medium progress
+            elseif friendData.percentage >= 25 then
+                percentageColor = "|cFFFF8000" -- Orange for low-medium progress
+            end
+            
+            entry.percentageText:SetText(percentageColor .. friendData.percentage .. "%|r")
+            
+            -- Set progress detail
+            entry.progressText:SetText("|cFF888888" .. friendData.attuned .. "/" .. friendData.total .. " items attuned|r")
+            
+            -- Set Journal Points display instead of top 3 dungeons
+            local journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[friendData.playerName] or 0
+            local journalPointsText = ""
+            if journalPoints > 0 then
+                journalPointsText = "|cFFFFD700Journal Points: " .. journalPoints .. "|r"
+            else
+                journalPointsText = "|cFF888888No Journal Points yet|r"
+            end
+            entry.dungeonsText:SetText(journalPointsText)
+            
+            -- Set time
+            entry.timeText:SetText("|cFF666666" .. friendData.lastSeen .. "|r")
+            
+            entry:Show()
+        else
+            -- Hide unused entries
+            if friendEntries[i] then
+                friendEntries[i]:Hide()
+            end
+        end
+    end
+    
+    -- Update scroll child height
+    local contentHeight = math.max(1, #sortedFriends * 75)
+    scrollChild:SetHeight(contentHeight)
+end
+
+-- Auto-refresh the display when data changes
+local function OnFriendsDataUpdate()
+    -- Save friends data whenever it's updated (with safety check)
+    if Journal_charDB then
+        SaveFriendsData()
+    end
+    
+    if friendsFrame:IsShown() then
+        UpdateAttunementFriendsDisplay()
+    end
+end
+
+-- Hook the global friends data to save when updated
+local originalUpdateAttunementFriendsDisplay = UpdateAttunementFriendsDisplay
+UpdateAttunementFriendsDisplay = function()
+    -- Save data before updating display (with safety check)
+    if Journal_charDB then
+        SaveFriendsData()
+    end
+    return originalUpdateAttunementFriendsDisplay()
+end
+
+-- Comprehensive tooltip for the friends frame showing detailed attunement reports
+friendsFrame:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText("|cFFFFD700Detailed Attunement Report|r")
+    GameTooltip:AddLine(" ")
+
+    -- Get our own detailed report first
+    local myReportData, myTotalLeft, myTotalAttunable = GenerateAttunementReport()
+    if type(myReportData) ~= "string" then
+        local myOverallPercent = 0
+        if myTotalAttunable > 0 then
+            myOverallPercent = ((myTotalAttunable - myTotalLeft) / myTotalAttunable) * 100
+        end
+        
+        GameTooltip:AddLine("|cFF00FF00Your Progress: " .. (myTotalAttunable - myTotalLeft) .. "/" .. myTotalAttunable .. " (" .. string.format("%.1f", myOverallPercent) .. "%)|r")
+        GameTooltip:AddLine(" ")
+    
+        -- Show your top 10 dungeons needing attention
+        local myCount = 0
+        for i, data in ipairs(myReportData) do
+            if myCount >= 10 then break end
+            if data.totalAttunable > 0 and data.attunablesLeft > 0 then
+                myCount = myCount + 1
+                local percentLeft = data.attunementPercentage * 100
+                local color = "|cFF808080"
+                
+                if data.attunementPercentage == 0 then
+                    color = "|cFF00FF00" -- Complete
+                elseif data.attunementPercentage <= 0.5 then
+                    color = "|cFFFFFF00" -- Good progress
+                elseif data.attunementPercentage < 1 then
+                    color = "|cFFFF4500" -- Needs work
+                else
+                    color = "|cFFCC0000" -- Not started
+                end
+                
+                GameTooltip:AddDoubleLine(
+                    color .. "• " .. data.name .. "|r",
+                    color .. data.attunablesLeft .. "/" .. data.totalAttunable .. " (" .. string.format("%.0f", percentLeft) .. "%)|r"
+                )
+        end
+    end
+end
+
+    -- Show friends summary
+    local friendsData = {}
+    for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
+        if not data.isPlayer then -- Don't include ourselves again
+            table.insert(friendsData, {
+                name = playerName,
+                class = data.class,
+                percentage = data.percentage,
+                attuned = data.attuned,
+                total = data.total,
+                dungeonDetails = data.dungeonDetails,
+                top3Dungeons = data.top3Dungeons
+            })
+    end
+end
+
+    -- Sort friends by percentage (highest first)
+    table.sort(friendsData, function(a, b)
+        if a.percentage ~= b.percentage then
+            return a.percentage > b.percentage
+        end
+        return a.name < b.name
+    end)
+    
+    if #friendsData > 0 then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("|cFF87CEEBFriends Progress Summary:|r")
+        GameTooltip:AddLine(" ")
+        
+        -- Show top 3 friends with their progress
+        for i = 1, math.min(3, #friendsData) do
+            local friend = friendsData[i]
+            local classColor = CLASS_COLORS[friend.class] or "|cFFFFFFFF"
+            local percentageColor = "|cFFFF4500" -- Red default
+            
+            if friend.percentage >= 90 then
+                percentageColor = "|cFF00FF00" -- Green
+            elseif friend.percentage >= 75 then
+                percentageColor = "|cFF7FFF00" -- Light green
+            elseif friend.percentage >= 50 then
+                percentageColor = "|cFFFFFF00" -- Yellow
+            elseif friend.percentage >= 25 then
+                percentageColor = "|cFFFF8000" -- Orange
+            end
+            
+            GameTooltip:AddDoubleLine(
+                classColor .. friend.name .. "|r",
+                percentageColor .. friend.percentage .. "% (" .. friend.attuned .. "/" .. friend.total .. ")|r"
+            )
+            
+            -- Show their top dungeons needed (limit to 3 per friend)
+            if friend.dungeonDetails and #friend.dungeonDetails > 0 then
+                local dungeonCount = 0
+                for j, dungeonData in ipairs(friend.dungeonDetails) do
+                    if dungeonCount >= 3 then break end
+                    if dungeonData.attunablesLeft > 0 then
+                        dungeonCount = dungeonCount + 1
+                        local dungeonPercentLeft = dungeonData.attunementPercentage * 100
+                        local dungeonColor = "|cFF808080"
+                        
+                        if dungeonData.attunementPercentage <= 0.5 then
+                            dungeonColor = "|cFFFFFF00" -- Good progress
+                        elseif dungeonData.attunementPercentage < 1 then
+                            dungeonColor = "|cFFFF4500" -- Needs work
+                        else
+                            dungeonColor = "|cFFCC0000" -- Not started
+                        end
+                        
+                        GameTooltip:AddDoubleLine(
+                            "  " .. dungeonColor .. dungeonData.name .. "|r",
+                            dungeonColor .. dungeonData.attunablesLeft .. "/" .. dungeonData.totalAttunable .. "|r"
+                        )
+                    end
+                end
+            elseif friend.top3Dungeons and #friend.top3Dungeons > 0 then
+                -- Fallback to old format
+                for j = 1, math.min(3, #friend.top3Dungeons) do
+                    GameTooltip:AddLine("  |cFFFFB347• " .. friend.top3Dungeons[j] .. "|r")
+                end
+            end
+            
+            if i < math.min(3, #friendsData) then
+                GameTooltip:AddLine(" ")
+        end
+    end
+    
+        if #friendsData > 3 then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cFF888888... and " .. (#friendsData - 3) .. " more friends|r")
+            end
+        else
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("|cFF888888No friends data available|r")
+        GameTooltip:AddLine("|cFF888888Click refresh to request data|r")
+    end
+    
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("|cFF87CEEBHover over individual entries for full details|r")
+    GameTooltip:Show()
+end)
+
+friendsFrame:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+end)
+
+-- Auto-send our data when the frame is shown
+friendsFrame:SetScript("OnShow", function()
+    -- Immediately update display from cache first
+    UpdateAttunementFriendsDisplay()
+    
+    -- Position properly based on current view
+    if previewFrame:IsShown() then
+        -- Preview mode - larger height and positioned for preview frame
+        friendsFrame:ClearAllPoints()
+        friendsFrame:SetPoint("TOPLEFT", previewFrame, "TOPRIGHT", 10, -20)
+        friendsFrame:SetHeight(380)
+    else
+        -- Dungeon detail mode - original positioning
+        friendsFrame:ClearAllPoints()
+        friendsFrame:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPRIGHT", 10, -50)
+        friendsFrame:SetHeight(400)
+    end
+    
+    -- Then request fresh data in the background
+    RequestAttunementData()
+    SendAttunementData()
+    
+    -- Update again after a delay to show any new responses
+    C_Timer.After(2, UpdateAttunementFriendsDisplay)
+end)
+
+-- Manage friends frame and quest icons when switching between views
+local originalLoadDungeonDetail = _G.LoadDungeonDetail
+_G.LoadDungeonDetail = function(dungeon)
+    -- Hide friends frame when entering dungeon detail view
+    if friendsFrame then
+        friendsFrame:Hide()
+    end
+    if questPopoutFrame then
+        questPopoutFrame:Hide()
+    end
+    -- Hide preview quest icon when in dungeon detail view
+    if previewQuestIcon then
+        previewQuestIcon:Hide()
+    end
+    -- Show dungeon quest icon when in dungeon detail view
+    if randomQuestIcon then
+        randomQuestIcon:Show()
+    end
+    return originalLoadDungeonDetail(dungeon)
+end
+
+-- Expose the update function globally
+_G.UpdateAttunementFriendsDisplay = UpdateAttunementFriendsDisplay
+_G.AttunementFriendsFrame = friendsFrame
+
+-- Initialize friends display immediately with cached data
+local function InitializeFriendsDisplay()
+    -- Add ourselves to the friends data immediately
+    if _G.AddSelfToFriendsData then
+        _G.AddSelfToFriendsData()
+end
+
+    -- Update display with current cache
+    UpdateAttunementFriendsDisplay()
+    
+    -- Also request fresh data from online friends
+    if _G.RequestAttunementData then
+        _G.RequestAttunementData()
+        end
+    if _G.SendAttunementData then
+        _G.SendAttunementData()
+    end
+    
+    print("|cFF87CEEB[DJ Friends]|r Loaded friends leaderboard from cache")
+                end
+                
+-- Schedule initialization after core addon systems are loaded
+local initFrame = CreateFrame("Frame")
+initFrame:RegisterEvent("PLAYER_LOGIN")
+initFrame:SetScript("OnEvent", function(self, event)
+    if event == "PLAYER_LOGIN" then
+        -- Delay slightly to ensure all addon components are loaded
+        C_Timer.After(1, InitializeFriendsDisplay)
+        end
+    end)
+
+
+-- Report button tooltip with detailed dungeon breakdown
+reportButton:SetScript("OnEnter", function(self)
+    local reportData, totalLeft, totalAttunable = GenerateAttunementReport()
+    if type(reportData) == "string" then
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:SetText("|cFFFFD700Attunement Report|r")
+        GameTooltip:AddLine(reportData, 1, 1, 1)
+        GameTooltip:Show()
+        return
+    end
+    
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+    GameTooltip:SetText("|cFFFFD700Attunement Report|r")
+    GameTooltip:AddLine(" ")
+    
+    -- Overall progress with progress bar effect
+    local overallPercent = 0
+    if totalAttunable > 0 then
+        overallPercent = ((totalAttunable - totalLeft) / totalAttunable) * 100
+    end
+    GameTooltip:AddLine("|cFF00FF00Overall: " .. (totalAttunable - totalLeft) .. "/" .. totalAttunable .. " (" .. string.format("%.1f", overallPercent) .. "%)|r")
+    
+    -- Show friends summary if available
+    local friendCount = 0
+    local totalFriendsProgress = 0
+    for _, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
+        if not data.isPlayer then -- Don't count ourselves in friends avg
+        friendCount = friendCount + 1
+        totalFriendsProgress = totalFriendsProgress + data.percentage
+        end
+    end
+    
+    if friendCount > 0 then
+        local avgFriendsProgress = totalFriendsProgress / friendCount
+        GameTooltip:AddLine("|cFF87CEEB" .. friendCount .. " Friends Avg: " .. string.format("%.1f", avgFriendsProgress) .. "%|r")
+    end
+    
+    GameTooltip:AddLine(" ")
+    
+    -- Show top 20 dungeons needing attention with color coding
+    local count = 0
+    for i, data in ipairs(reportData) do
+        if count >= 20 then break end
+        if data.totalAttunable > 0 then
+            count = count + 1
+            local percentLeft = data.attunementPercentage * 100
+            local color = "|cFF808080"
+            local status = "No Items"
+            
+            if data.totalAttunable == 0 then
+                color = "|cFF808080"
+                status = "No Items"
+            elseif data.attunementPercentage == 0 then
+                color = "|cFF00FF00"
+                status = "Complete"
+            elseif data.attunementPercentage <= 0.5 then
+                color = "|cFFFFFF00"
+                status = "Good Progress"
+            elseif data.attunementPercentage < 1 then
+                color = "|cFFFF4500"
+                status = "Needs Work"
+            else
+                color = "|cFFCC0000"
+                status = "Not Started"
+            end
+            
+            GameTooltip:AddDoubleLine(
+                color .. data.name .. "|r",
+                color .. data.attunablesLeft .. "/" .. data.totalAttunable .. " (" .. string.format("%.0f", percentLeft) .. "%)|r"
+            )
+        end
+    end
+
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("|cFF87CEEBClick to print full report to chat|r")
+    GameTooltip:AddLine("|cFF87CEEBOr use: /dj report|r")
+    GameTooltip:Show()
+end)
+
+reportButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+end)
+
+-- ##################################################################
+-- # ENHANCED BOE TOOLTIP INTEGRATION (More reliable for WotLK)
+-- ##################################################################
+
+-- Create a frame to handle tooltip updates for BOE items
+local tooltipFrame = CreateFrame("Frame")
+tooltipFrame:SetScript("OnUpdate", function(self, elapsed)
+    self.elapsed = (self.elapsed or 0) + elapsed
+    if self.elapsed < 0.1 then return end -- Only check every 0.1 seconds
+    self.elapsed = 0
+    
+    -- Check if GameTooltip is showing an item
+    if GameTooltip:IsVisible() then
+        local tooltipName = GameTooltip:GetName()
+        local line1 = _G[tooltipName .. "TextLeft1"]
+        
+        if line1 and line1:GetText() then
+            -- Try to get item link from various sources
+            local itemLink = nil
+            
+            -- Method 1: Check if we're mousing over a bag item
+            local mouseoverFrame = GetMouseFocus()
+            if mouseoverFrame and mouseoverFrame:GetName() then
+                local frameName = mouseoverFrame:GetName()
+                if frameName:match("ContainerFrame%d+Item%d+") then
+                    local bag = mouseoverFrame:GetParent():GetID()
+                    local slot = mouseoverFrame:GetID()
+                    itemLink = GetContainerItemLink(bag, slot)
+                end
+            end
+            
+            -- Method 2: Try GetItem (may not work in WotLK)
+            if not itemLink then
+                local name, link = GameTooltip:GetItem()
+                itemLink = link
+            end
+            
+            -- If we have an item link, process it for BOE data
+            if itemLink and itemLink:match("^item:") then
+                local itemID = tonumber(itemLink:match("item:(%d+)"))
+                if itemID and _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
+                    -- Check if we already added BOE data to this tooltip
+                    local hasBoEData = false
+                    for i = 1, GameTooltip:NumLines() do
+                        local lineText = _G[tooltipName .. "TextLeft" .. i]
+                        if lineText and lineText:GetText() and lineText:GetText():match("BOE Item") then
+                            hasBoEData = true
+                            break
+                        end
+                    end
+                    
+                    if not hasBoEData then
+                        ProcessBOETooltip(GameTooltip, itemLink)
+                        GameTooltip:Show() -- Refresh the tooltip
+                    end
+                end
+            end
+        end
+    end
+end)
+
+print("|cFFFF0000[DJ INIT]|r Enhanced BOE tooltip integration loaded!")
+
+-- ##################################################################
+-- # DEBUG HELPERS FOR BOE TOOLTIP TESTING
+-- ##################################################################
+
+-- Debug check for critical functions
+
+-- Run the debug check after a delay to ensure Core.lua has loaded
+local debugFrame = CreateFrame("Frame")
+debugFrame:RegisterEvent("PLAYER_LOGIN")
+debugFrame:SetScript("OnEvent", function(self, event)
+    if event == "PLAYER_LOGIN" then
+        -- Check after 2 seconds to ensure everything is loaded
+        local timer = CreateFrame("Frame")
+        timer:SetScript("OnUpdate", function(timerSelf, elapsed)
+            timerSelf.elapsed = (timerSelf.elapsed or 0) + elapsed
+            if timerSelf.elapsed >= 2 then
+                timerSelf:SetScript("OnUpdate", nil)
+            end
+        end)
+    end
+end)
+
+-- Global storage for original item links
+_G.ORIGINAL_ITEM_LINKS = _G.ORIGINAL_ITEM_LINKS or {}
+
+-- Hook the slash command handler to capture original text before processing
+local originalSlashCmdList = SlashCmdList["DJ"]
+SlashCmdList["DJ"] = function(msg)
+    -- Check if this is a testboe command and try to capture original item link
+    if msg and msg:find("^testboe") then
+        local originalLink = msg:match("|c%x+|h%[.-%]|h|r")
+        if originalLink then
+            local itemID = tonumber(originalLink:match("item:(%d+)"))
+            if itemID then
+                _G.ORIGINAL_ITEM_LINKS[itemID] = originalLink
+                print("|cFF00FF00[BOE Pre-Process]|r Captured original item link for ID " .. itemID)
+            end
+        end
+    end
+    
+    -- Call the original slash command handler
+    return originalSlashCmdList(msg)
+end
+
+-- Enhanced item link capture functionality integrated into original testboe command in Core.lua
+
+-- Add a slash command to manually check ITEM_QUERY_RESPONSES
+SLASH_DJBOETEST1 = "/djboetest"
+SlashCmdList["DJBOETEST"] = function(msg)
+    local itemID = tonumber(msg)
+    if not itemID then
+        print("|cFFFFD700[BOE Debug]|r Usage: /djboetest <itemID>")
+        print("|cFFFFD700[BOE Debug]|r Example: /djboetest 19019")
+        return
+    end
+    
+    print("|cFFFFD700[BOE Debug]|r Checking responses for item " .. itemID)
+    
+    if _G.ITEM_QUERY_RESPONSES then
+        print("|cFF00FF00[BOE Debug]|r ITEM_QUERY_RESPONSES table exists")
+        if _G.ITEM_QUERY_RESPONSES[itemID] then
+            print("|cFF00FF00[BOE Debug]|r Found responses for item " .. itemID .. ":")
+            for friendName, response in pairs(_G.ITEM_QUERY_RESPONSES[itemID]) do
+                local statusParts = {}
+                if response.needsItem then table.insert(statusParts, "NEEDS") end
+                if response.needsAffixesOnly then table.insert(statusParts, "AFFIXES_ONLY") end
+                if response.canUpgrade then table.insert(statusParts, "CAN_UPGRADE") end
+                local status = table.concat(statusParts, ", ")
+                local age = math.floor(GetTime() - response.timestamp)
+                print("|cFF87CEEB[BOE Debug]|r   " .. friendName .. ": " .. status .. " (age: " .. age .. "s)")
+            end
+        else
+            print("|cFFFF0000[BOE Debug]|r No responses found for item " .. itemID)
+        end
+    else
+        print("|cFFFF0000[BOE Debug]|r ITEM_QUERY_RESPONSES table does not exist!")
+    end
+end
+
+-- Add a slash command to manually inject a test response
+SLASH_DJBOEADD1 = "/djboeadd"
+SlashCmdList["DJBOEADD"] = function(msg)
+    local parts = {}
+    for part in msg:gmatch("%S+") do
+        table.insert(parts, part)
+    end
+    
+    if #parts < 2 then
+        print("|cFFFFD700[BOE Debug]|r Usage: /djboeadd <itemID> <playerName> [needs|affixes|upgrade]")
+        print("|cFFFFD700[BOE Debug]|r Example: /djboeadd 19019 TestFriend needs")
+        print("|cFFFFD700[BOE Debug]|r This adds a fake response for testing tooltips")
+        return
+    end
+    
+    local itemID = tonumber(parts[1])
+    local playerName = parts[2]
+    local responseType = parts[3] or "needs"
+    
+    if not itemID then
+        print("|cFFFF0000[BOE Debug]|r Invalid item ID: " .. tostring(parts[1]))
+        return
+    end
+    
+    -- Initialize if needed
+    if not _G.ITEM_QUERY_RESPONSES then
+        _G.ITEM_QUERY_RESPONSES = {}
+    end
+    if not _G.ITEM_QUERY_RESPONSES[itemID] then
+        _G.ITEM_QUERY_RESPONSES[itemID] = {}
+    end
+    
+    -- Add the test response
+    _G.ITEM_QUERY_RESPONSES[itemID][playerName] = {
+        needsItem = (responseType == "needs"),
+        needsAffixesOnly = (responseType == "affixes"),
+        canUpgrade = (responseType == "upgrade"),
+        currentForge = 0,
+        timestamp = GetTime()
+    }
+    
+    local itemName = GetItemInfo(itemID) or ("Item " .. itemID)
+    print("|cFF00FF00[BOE Debug]|r Added test response for " .. itemName .. " from " .. playerName .. " (" .. responseType .. ")")
+    print("|cFF00FF00[BOE Debug]|r Now hover over the item in your bags to test the tooltip!")
+end
+
+-- ##################################################################
+-- # BOE TOOLTIP ENHANCEMENT
+-- ##################################################################
+
+-- Initialize tracking tables
+if not _G.ITEM_QUERY_RESPONSES then
+    _G.ITEM_QUERY_RESPONSES = {}
+end
+
+if not _G.LAST_BOE_QUERY_TIME then
+    _G.LAST_BOE_QUERY_TIME = {}
+end
+
+if not _G.LAST_BOE_CHAT_TIME then
+    _G.LAST_BOE_CHAT_TIME = {}
+end
+
+if not _G.PROCESSED_BOE_RESPONSES then
+    _G.PROCESSED_BOE_RESPONSES = {}
+end
+
+-- Clean up old processed responses every 5 minutes to prevent memory buildup
+local function CleanupProcessedResponses()
+    local currentTime = GetTime()
+    local cutoffTime = 300 -- 5 minutes
+    local cleaned = 0
+    
+    for key, _ in pairs(_G.PROCESSED_BOE_RESPONSES) do
+        -- Extract timestamp from the end of the key
+        local timestamp = tonumber(key:match("_(%d+%.?%d*)$"))
+        if timestamp and (currentTime - timestamp) > cutoffTime then
+            _G.PROCESSED_BOE_RESPONSES[key] = nil
+            cleaned = cleaned + 1
+        end
+    end
+    
+    if cleaned > 0 and _G.debug then
+        print("|cFF00FF00[DJ DEBUG]|r Cleaned up " .. cleaned .. " old BOE response records")
+    end
+end
+
+-- Schedule cleanup every 5 minutes
+local cleanupTimer = C_Timer.NewTicker(300, CleanupProcessedResponses)
+
+-- Enhanced BOE processing function with automatic testing and chat notifications
+local function ProcessBOETooltip(tooltip, link)
+    if not link or not link:match("^item:") then return end
+    
+    local itemID = tonumber(link:match("item:(%d+)"))
+    if not itemID then return end
+    
+    if _G.debug then
+        print("|cFF00FF00[DJ DEBUG]|r Processing item ID: " .. itemID)
+    end
+    
+    -- Check if this is a BOE item that's attunable by someone
+    local itemName, itemLink, quality, _, _, _, _, _, _, texture, _, _, _, bindType = GetItemInfo(itemID)
+    if not itemName then 
+
+        return 
+    end
+    
+    if _G.debug then
+        print("|cFF00FF00[DJ DEBUG]|r Item: " .. itemName .. ", BindType: " .. (bindType or "nil"))
+    end
+    
+    if bindType ~= 2 then 
+
+        return 
+    end
+    
+    -- Check if it's generally attunable (with fallbacks)
+    local isAttunable = false
+    if _G.IsAttunableBySomeone then
+        isAttunable = _G.IsAttunableBySomeone(itemID)
+
+    elseif _G.CanAttuneItemHelper then
+        -- Fallback: if we can attune it, assume someone can
+        local canAttune = _G.CanAttuneItemHelper(itemID) or 0
+        isAttunable = canAttune > 0
+
+    end
+    
+        if not isAttunable then
+        return
+    end
+    
+    -- Auto-query friends about this item if we haven't recently
+    local lastQueryTime = _G.LAST_BOE_QUERY_TIME[itemID]
+    if not lastQueryTime or (GetTime() - lastQueryTime) > 10 then -- Only query every 10 seconds
+        if _G.QueryItemFromFriends then
+    
+            _G.QueryItemFromFriends(itemID, link)
+            
+            -- Track when we last queried this item
+            _G.LAST_BOE_QUERY_TIME[itemID] = GetTime()
+            
+            -- Show that we're automatically testing (only once per 30 seconds to avoid spam)
+            local lastChatTime = _G.LAST_BOE_CHAT_TIME[itemID]
+            if not lastChatTime or (GetTime() - lastChatTime) > 30 then
+                print("|cFFFFD700[Auto BOE]|r Checking if friends need " .. (itemName or ("Item " .. itemID)))
+                _G.LAST_BOE_CHAT_TIME[itemID] = GetTime()
+            end
+        end
+    end
+    
+    -- Always add BOE section for attunable items
+    tooltip:AddLine(" ")
+    tooltip:AddLine("|cFFFFD700BOE Item - Friend Status:|r")
+    
+    -- Check for existing responses and add to tooltip
+    local hasResponses = false
+    if _G.debug then 
+        print("|cFF00FF00[DJ DEBUG]|r Checking responses for item " .. itemID)
+        if _G.ITEM_QUERY_RESPONSES[itemID] then
+            print("|cFF00FF00[DJ DEBUG]|r Found responses table")
+            for friendName, response in pairs(_G.ITEM_QUERY_RESPONSES[itemID]) do
+                print("|cFF00FF00[DJ DEBUG]|r Response from " .. friendName .. ": needs=" .. tostring(response.needsItem) .. ", affixes=" .. tostring(response.needsAffixesOnly) .. ", upgrade=" .. tostring(response.canUpgrade))
+            end
+        else
+            print("|cFF00FF00[DJ DEBUG]|r No responses found for item " .. itemID)
+        end
+    end
+    
+    if _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
+        local responses = _G.ITEM_QUERY_RESPONSES[itemID]
+        local friendsWhoNeed = {}
+        local friendsWhoNeedAffixes = {}
+        local friendsWhoCanUpgrade = {}
+        
+        -- Get the original full item link that was queried (with all affix/forge information)
+        -- ALWAYS prioritize the stored full link from queries over the current link parameter
+        local fullItemLink = _G.QUERIED_ITEM_LINKS and _G.QUERIED_ITEM_LINKS[itemID]
+        if not fullItemLink then
+            -- Fallback to current link if no stored link available
+            fullItemLink = link
+        end
+        
+        for friendName, response in pairs(responses) do
+             -- Only show recent responses (within last 30 seconds) and only process once per friend per item
+             if GetTime() - response.timestamp < 30 then
+                                 if response.needsItem then
+                     table.insert(friendsWhoNeed, friendName)
+                     -- Auto whisper and chat notification for friends who need it (only once per response)
+                     local responseKey = itemID .. "_" .. friendName .. "_" .. response.timestamp
+                     if not _G.PROCESSED_BOE_RESPONSES[responseKey] then
+                         -- Whisper the friend directly with FULL item link (includes affixes/forge level)
+                         SendChatMessage("Hey! I have " .. fullItemLink .. " - you need this for attunement right?", "WHISPER", nil, friendName)
+                         print("|cFF00FF00[BOE Alert]|r Whispered " .. friendName .. " about " .. itemName)
+                         _G.PROCESSED_BOE_RESPONSES[responseKey] = true
+                     end
+                elseif response.needsAffixesOnly then
+                    table.insert(friendsWhoNeedAffixes, friendName)
+                                 elseif response.canUpgrade then
+                     local forgeText = ""
+                     if response.currentForge == 1 then forgeText = " (Titanforged)"
+                     elseif response.currentForge == 2 then forgeText = " (Warforged)"
+                     elseif response.currentForge == 3 then forgeText = " (Lightforged)"
+                     end
+                     table.insert(friendsWhoCanUpgrade, friendName .. forgeText)
+                     -- Auto whisper for upgrade opportunities (only once per response)
+                     local upgradeResponseKey = itemID .. "_" .. friendName .. "_upgrade_" .. response.timestamp
+                     if not _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] then
+                         -- Use FULL item link (includes affixes/forge level)
+                         SendChatMessage("I have " .. fullItemLink .. " if you want to upgrade your" .. forgeText .. " version", "WHISPER", nil, friendName)
+                         print("|cFFFFFF00[BOE Upgrade]|r Whispered " .. friendName .. " about upgrade opportunity")
+                         _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] = true
+                     end
+                end
+            end
+        end
+        
+        -- Add tooltip lines if we have responses
+        if #friendsWhoNeed > 0 or #friendsWhoNeedAffixes > 0 or #friendsWhoCanUpgrade > 0 then
+            hasResponses = true
+            if _G.debug then 
+                print("|cFF00FF00[DJ DEBUG]|r Adding tooltip lines - Needs: " .. #friendsWhoNeed .. ", Affixes: " .. #friendsWhoNeedAffixes .. ", Upgrades: " .. #friendsWhoCanUpgrade)
+            end
+            
+            if #friendsWhoNeed > 0 then
+                tooltip:AddLine("|cFF00FF00Needs:|r " .. table.concat(friendsWhoNeed, ", "), 1, 1, 1, true)
+        
+            end
+            
+            if #friendsWhoNeedAffixes > 0 then
+                tooltip:AddLine("|cFFFFFF00Affixes Only:|r " .. table.concat(friendsWhoNeedAffixes, ", "), 1, 1, 1, true)
+        
+            end
+            
+            if #friendsWhoCanUpgrade > 0 then
+                tooltip:AddLine("|cFFFFFF00Can Upgrade:|r " .. table.concat(friendsWhoCanUpgrade, ", "), 1, 1, 1, true)
+        
+            end
+            
+            tooltip:AddLine("|cFF888888(Responses from last 30s)|r")
+        end
+    end
+    
+    if not hasResponses then
+        tooltip:AddLine("|cFF888888Querying friends... (or no responses yet)|r")
+    end
+end
+
+-- Enhanced item link capture for GameTooltip (Keep this part)
+local originalTooltipSetOwner = GameTooltip.SetOwner
+GameTooltip.SetOwner = function(self, owner, ...)
+    local result = originalTooltipSetOwner(self, owner, ...)
+    
+    -- When tooltip appears, try to capture original item links
+    if self == GameTooltip then
+        local itemName, itemLink = self:GetItem()
+        if itemLink then
+            local itemID = tonumber(itemLink:match("item:(%d+)"))
+            if itemID then
+                _G.ORIGINAL_ITEM_LINKS[itemID] = itemLink
+                if _G.debug then
+                    print("|cFF00FF00[BOE Pre-Process]|r Captured original item link for ID " .. itemID .. " via tooltip")
+                end
+            end
+        end
+    end
+    
+    return result
+end
+
+-- ##################################################################
+-- # RANDOM ITEM QUEST SYSTEM
+-- ##################################################################
+
+-- Initialize Journal Points system
+Journal_charDB.journalPoints = Journal_charDB.journalPoints or 0
+Journal_charDB.randomQuestCache = Journal_charDB.randomQuestCache or {}
+Journal_charDB.currentRandomQuest = Journal_charDB.currentRandomQuest or nil
+
+-- Cache for unattuned items from dungeons for efficient random selection
+local unattunedItemsCache = {}
+local cacheLastUpdated = 0
+
+-- Function to update the unattuned items cache
+local function UpdateUnattunedItemsCache()
+    local currentTime = GetTime()
+    if currentTime - cacheLastUpdated < 30 then -- Update cache every 30 seconds max
+        return
+    end
+    
+    wipe(unattunedItemsCache)
+    
+    -- Collect unattuned items from all dungeons
+    for _, dungeon in ipairs(dungeonData or {}) do
+        if dungeon.items then
+            for _, itemID in ipairs(dungeon.items) do
+                local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
+                if canAttune == 1 then
+                    local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                    if attuneProgress < 100 then
+                        -- Check if item has a source
+                        local hasSource = false
+                        if _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
+                            local bestSource = _G.ItemLocAPI:GetBestSource(itemID, dungeon.name)
+                            hasSource = bestSource and bestSource.chance and bestSource.chance > 0
+                        elseif ItemLocGetSourceCount then
+                            local sourceCount = ItemLocGetSourceCount(itemID) or 0
+                            hasSource = sourceCount > 0
+                        end
+                        
+                        if hasSource then
+                            table.insert(unattunedItemsCache, {
+                                itemID = itemID,
+                                dungeonName = dungeon.name
+                            })
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    cacheLastUpdated = currentTime
+    if _G.debug then
+        print("|cFF00FF00[Random Quest]|r Updated cache with " .. #unattunedItemsCache .. " unattuned items")
+    end
+end
+
+-- Function to get a random unattuned item using lazy algorithm
+local function GetRandomUnattunedItem()
+    -- First try: use cached items for efficiency
+    UpdateUnattunedItemsCache()
+    
+    if #unattunedItemsCache > 0 then
+        local randomIndex = math.random(1, #unattunedItemsCache)
+        local selectedItem = unattunedItemsCache[randomIndex]
+        
+        -- Double-check that it's still unattuned
+        local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(selectedItem.itemID) or 0
+        local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(selectedItem.itemID) or 0
+        
+        if canAttune == 1 and attuneProgress < 100 then
+            return selectedItem.itemID, selectedItem.dungeonName
+        end
+    end
+    
+    -- Fallback: lazy algorithm with random item IDs
+    local maxAttempts = 50 -- Prevent infinite loops
+    local attempts = 0
+    
+    while attempts < maxAttempts do
+        attempts = attempts + 1
+        local randomItemID = math.random(1, 64000)
+        
+        -- Check if item exists and is attunable by character
+        local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(randomItemID) or 0
+        if canAttune == 1 then
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(randomItemID) or 0
+            if attuneProgress < 100 then
+                -- Check if item has exactly one source
+                local sourceCount = 0
+                local sourceName = nil
+                
+                if ItemLocGetSourceCount then
+                    sourceCount = ItemLocGetSourceCount(randomItemID) or 0
+                    if sourceCount == 1 then
+                        -- Get the source name
+                        local srcType, objType, objId, chance, dropsPerThousand, objName, zoneName = ItemLocGetSourceAt(randomItemID, 1)
+                        sourceName = objName or "Unknown Source"
+                    end
+                end
+                
+                if sourceCount == 1 then
+                    return randomItemID, sourceName
+                end
+            end
+        end
+    end
+    
+    return nil, nil
+end
+
+-- Create small Random Quest icon for dungeon detail frame
+local randomQuestIcon = CreateFrame("Button", "DJ_RandomQuestIcon", dungeonDetailFrame)
+randomQuestIcon:SetSize(24, 24)
+randomQuestIcon:SetPoint("BOTTOMRIGHT", dungeonDetailFrame, "BOTTOMRIGHT", 60, -75)
+randomQuestIcon:SetFrameStrata("FULLSCREEN")
+randomQuestIcon:SetFrameLevel(dungeonDetailFrame:GetFrameLevel() + 20)
+
+local questIconTexture = randomQuestIcon:CreateTexture(nil, "ARTWORK")
+questIconTexture:SetSize(24, 24)
+questIconTexture:SetPoint("CENTER", randomQuestIcon, "CENTER")
+questIconTexture:SetTexture("Interface\\Icons\\INV_Scroll_03") -- Using scroll icon for now
+questIconTexture:SetTexCoord(0.1, 0.9, 0.1, 0.9)
+
+local questIconHighlight = randomQuestIcon:CreateTexture(nil, "HIGHLIGHT")
+questIconHighlight:SetSize(24, 24)
+questIconHighlight:SetPoint("CENTER", randomQuestIcon, "CENTER")
+questIconHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+questIconHighlight:SetBlendMode("ADD")
+
+-- Create small Random Quest icon for preview frame (main view)
+local previewQuestIcon = CreateFrame("Button", "DJ_PreviewQuestIcon", previewFrame)
+previewQuestIcon:SetSize(24, 24)
+previewQuestIcon:SetPoint("BOTTOMRIGHT", previewFrame, "BOTTOMRIGHT", -50, -45)
+previewQuestIcon:SetFrameStrata("FULLSCREEN")
+previewQuestIcon:SetFrameLevel(previewFrame:GetFrameLevel() + 20)
+
+local previewIconTexture = previewQuestIcon:CreateTexture(nil, "ARTWORK")
+previewIconTexture:SetSize(24, 24)
+previewIconTexture:SetPoint("CENTER", previewQuestIcon, "CENTER")
+previewIconTexture:SetTexture("Interface\\Icons\\INV_Scroll_03")
+previewIconTexture:SetTexCoord(0.1, 0.9, 0.1, 0.9)
+
+local previewIconHighlight = previewQuestIcon:CreateTexture(nil, "HIGHLIGHT")
+previewIconHighlight:SetSize(24, 24)
+previewIconHighlight:SetPoint("CENTER", previewQuestIcon, "CENTER")
+previewIconHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+previewIconHighlight:SetBlendMode("ADD")
+
+-- Create Quest Popout Frame
+local questPopoutFrame = CreateFrame("Frame", "DJ_QuestPopoutFrame", DungeonJournalFrame)
+questPopoutFrame:SetSize(180, 70)
+questPopoutFrame:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPRIGHT", -180, -425)
+questPopoutFrame:SetFrameStrata("FULLSCREEN")
+questPopoutFrame:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 30)
+questPopoutFrame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 32, edgeSize = 16,
+    insets = { left = 5, right = 5, top = 5, bottom = 5 }
+})
+questPopoutFrame:SetBackdropColor(0.1, 0.1, 0.2, 0.9)
+questPopoutFrame:SetBackdropBorderColor(0.4, 0.4, 0.6, 1)
+questPopoutFrame:EnableMouse(true)
+questPopoutFrame:Hide()
+
+-- Quest item display in popout (styled like dungeon items) - make it a clickable button
+local questItemButton = CreateFrame("Button", "DJ_QuestItemButton", questPopoutFrame)
+questItemButton:SetSize(165, 32)
+questItemButton:SetPoint("TOPLEFT", questPopoutFrame, "TOPLEFT", 8, -12)
+
+local questItemIcon = questItemButton:CreateTexture(nil, "ARTWORK")
+questItemIcon:SetSize(30, 30)
+questItemIcon:SetPoint("LEFT", questItemButton, "LEFT", 2, 0)
+
+local questItemText = questItemButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+questItemText:SetPoint("LEFT", questItemIcon, "RIGHT", 5, 0)
+questItemText:SetPoint("RIGHT", questItemButton, "RIGHT", -5, 0)
+questItemText:SetJustifyH("LEFT")
+
+local questSourceText = questPopoutFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+questSourceText:SetPoint("TOPLEFT", questItemButton, "BOTTOMLEFT", 5, -2)
+questSourceText:SetPoint("RIGHT", questPopoutFrame, "RIGHT", -10, 0)
+questSourceText:SetJustifyH("LEFT")
+
+local questPointsText = questPopoutFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+questPointsText:SetPoint("TOPLEFT", questSourceText, "BOTTOMLEFT", 0, -8)
+questPointsText:SetText("|cFFFFD700Journal Points: 0|r")
+
+-- Add item link functionality and tooltip to quest item button
+questItemButton:RegisterForClicks("LeftButtonUp")
+questItemButton.itemLink = nil
+
+questItemButton:SetScript("OnClick", function(self, button)
+    if button == "LeftButton" and IsShiftKeyDown() and self.itemLink then
+        ChatEdit_InsertLink(self.itemLink)
+    end
+end)
+
+questItemButton:SetScript("OnEnter", function(self)
+    if self.itemLink then
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink(self.itemLink)
+        GameTooltip:Show()
+    end
+end)
+
+questItemButton:SetScript("OnLeave", function(self)
+    GameTooltip:Hide()
+end)
+
+-- Function to update the current quest display
+local function UpdateCurrentQuestDisplay()
+    questPointsText:SetText("|cFFFFD700Journal Points: " .. (Journal_charDB.journalPoints or 0) .. "|r")
+    
+    if Journal_charDB.currentRandomQuest then
+        local quest = Journal_charDB.currentRandomQuest
+        local itemName, itemLink, iQuality, _, _, _, _, _, _, iTexture = GetItemInfo(quest.itemID)
+        
+        if not itemName then
+            itemName = "Item " .. quest.itemID
+            itemLink = "item:" .. quest.itemID
+            iTexture = "Interface\\Icons\\INV_Misc_QuestionMark"
+            iQuality = 1
+        end
+        
+        local color = ITEM_QUALITY_COLORS[iQuality or 1] or ITEM_QUALITY_COLORS[1]
+        
+        questItemIcon:SetTexture(iTexture)
+        questItemText:SetText(color.hex .. itemName .. "|r")
+        questSourceText:SetText("|cFF888888Source: " .. quest.sourceName .. "|r")
+        
+        -- Store the item link for click/tooltip functionality
+        questItemButton.itemLink = itemLink
+        
+        -- Check completion status
+        local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(quest.itemID) or 0
+        if attuneProgress >= 100 then
+            questSourceText:SetText("|cFF00FF00Quest Complete! Click to claim reward.|r")
+        end
+    else
+        questItemIcon:SetTexture("Interface\\Icons\\INV_Scroll_03")
+        questItemText:SetText("|cFFFFFFFFNo Active Quest|r")
+        questSourceText:SetText("|cFF888888Click to get a random item quest|r")
+        
+        -- Clear the item link when no quest
+        questItemButton.itemLink = nil
+    end
+end
+
+-- Function to complete the current quest
+local function CompleteRandomQuest()
+    if not Journal_charDB.currentRandomQuest then return false end
+    
+    local quest = Journal_charDB.currentRandomQuest
+    local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(quest.itemID) or 0
+    
+    if attuneProgress >= 100 then
+        -- Quest completed! Award points
+        Journal_charDB.journalPoints = (Journal_charDB.journalPoints or 0) + 1
+        Journal_charDB.currentRandomQuest = nil
+        
+        local itemName = GetItemInfo(quest.itemID) or ("Item " .. quest.itemID)
+        print("|cFF00FF00[Random Quest Complete]|r You attuned " .. itemName .. "! Earned 1 Journal Point!")
+        print("|cFFFFD700[Journal Points]|r Total: " .. Journal_charDB.journalPoints)
+        
+        -- Share achievement with friends if system is available
+        if _G.SendAttunementData then
+            _G.SendAttunementData()
+        end
+        
+        UpdateCurrentQuestDisplay()
+        return true
+    end
+    
+    return false
+end
+
+-- Function to start a new random quest
+local function StartRandomQuest()
+    local itemID, sourceName = GetRandomUnattunedItem()
+    
+    if itemID then
+        Journal_charDB.currentRandomQuest = {
+            itemID = itemID,
+            sourceName = sourceName,
+            startTime = GetTime()
+        }
+        
+        local itemName = GetItemInfo(itemID) or ("Item " .. itemID)
+        print("|cFFFFD700[Random Quest]|r New quest: Attune " .. itemName)
+        print("|cFF87CEEB[Random Quest]|r Source: " .. sourceName)
+        
+        UpdateCurrentQuestDisplay()
+    else
+        print("|cFFFF0000[Random Quest]|r Could not find a suitable item. Try again!")
+    end
+end
+
+-- Quest Popout click handler
+questPopoutFrame:SetScript("OnMouseDown", function()
+    if Journal_charDB.currentRandomQuest then
+        if CompleteRandomQuest() then
+            UpdateCurrentQuestDisplay()
+        else
+            -- Quest not completed yet, show progress
+            local quest = Journal_charDB.currentRandomQuest
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(quest.itemID) or 0
+            local itemName = GetItemInfo(quest.itemID) or ("Item " .. quest.itemID)
+            print("|cFFFFFF00[Random Quest]|r " .. itemName .. " progress: " .. string.format("%.1f", attuneProgress) .. "%")
+        end
+    else
+        StartRandomQuest()
+        UpdateCurrentQuestDisplay()
+    end
+end)
+
+-- Icon click handlers to show/hide popout
+local function ToggleQuestPopout()
+    if questPopoutFrame:IsShown() then
+        questPopoutFrame:Hide()
+    else
+        -- Update display before showing
+        UpdateCurrentQuestDisplay()
+        questPopoutFrame:Show()
+    end
+end
+
+randomQuestIcon:SetScript("OnClick", ToggleQuestPopout)
+previewQuestIcon:SetScript("OnClick", ToggleQuestPopout)
+
+-- Icon tooltips
+local function ShowQuestIconTooltip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:SetText("|cFFFFD700Random Item Quest|r")
+    GameTooltip:AddLine("Click to view your quest progress", 1, 1, 1)
+    GameTooltip:AddLine("Journal Points: " .. (Journal_charDB.journalPoints or 0), 1, 1, 0)
+    GameTooltip:Show()
+end
+
+randomQuestIcon:SetScript("OnEnter", ShowQuestIconTooltip)
+previewQuestIcon:SetScript("OnEnter", ShowQuestIconTooltip)
+
+randomQuestIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
+previewQuestIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+-- Initialize the display when the frame is shown
+local originalLoadDungeonDetailForQuest = _G.LoadDungeonDetail
+_G.LoadDungeonDetail = function(dungeon)
+    local result = originalLoadDungeonDetailForQuest(dungeon)
+    -- Update quest display when dungeon details are loaded
+    C_Timer.After(0.1, UpdateCurrentQuestDisplay)
+    return result
+end
+
+-- Auto-check for quest completion when items are attuned
+local questCheckFrame = CreateFrame("Frame")
+questCheckFrame:RegisterEvent("CHAT_MSG_SYSTEM")
+questCheckFrame:SetScript("OnEvent", function(self, event, message)
+    if event == "CHAT_MSG_SYSTEM" and message and Journal_charDB.currentRandomQuest then
+        -- Check for attunement completion messages
+        if message:find("attuned") or message:find("Attunement") then
+            C_Timer.After(1, function()
+                CompleteRandomQuest()
+            end)
+        end
+    end
+end)
+
+-- ##################################################################
+-- # ENHANCED FRIEND ATTUNEMENT TOOLTIP
+-- ##################################################################
+
+-- Function to check if friends need an item for attunement
+local function GetFriendsWhoNeedItem(itemID)
+    local friendsWhoNeed = {}
+    
+    if not _G.FRIENDS_ATTUNEMENT_DATA or not itemID then
+        return friendsWhoNeed
+    end
+    
+    -- Check each friend's attunement status for this item
+    for playerName, friendData in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
+        if not friendData.isPlayer then -- Don't include ourselves
+            -- Check if this friend can attune this item and hasn't yet
+            local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
+            if canAttune == 1 then
+                -- For friends, we need to check their missing items or assume they need it if it exists in dungeon data
+                local needsItem = false
+                
+                -- Method 1: Check their missing BOE items list
+                if friendData.missingBOE and #friendData.missingBOE > 0 then
+                    for _, missingItemID in ipairs(friendData.missingBOE) do
+                        if missingItemID == itemID then
+                            needsItem = true
+                            break
+                        end
+                    end
+                end
+                
+                -- Method 2: If no missing BOE data, check if they have lower overall progress
+                -- This is a heuristic - if they have less than 90% progress, they likely need items
+                if not needsItem and friendData.percentage and friendData.percentage < 90 then
+                    -- Check if this item appears in dungeons they still need
+                    if friendData.dungeonDetails then
+                        for _, dungeonInfo in ipairs(friendData.dungeonDetails) do
+                            if dungeonInfo.attunablesLeft > 0 then
+                                -- Find the dungeon and check if this item is in it
+                                local dungeon = FindDungeonByName(dungeonInfo.name)
+                                if dungeon and dungeon.items then
+                                    for _, dungeonItemID in ipairs(dungeon.items) do
+                                        if dungeonItemID == itemID then
+                                            needsItem = true
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                            if needsItem then break end
+                        end
+                    end
+                end
+                
+                if needsItem then
+                    table.insert(friendsWhoNeed, playerName)
+                end
+            end
+        end
+    end
+    
+    return friendsWhoNeed
+end
+
+-- Enhanced ProcessBOETooltip function to include friend attunement status
+local originalProcessBOETooltip = ProcessBOETooltip
+ProcessBOETooltip = function(tooltip, link)
+    -- Call the original function first
+    if originalProcessBOETooltip then
+        originalProcessBOETooltip(tooltip, link)
+    end
+    
+    -- Add friend attunement check for any item (not just BOE)
+    if not link or not link:match("^item:") then return end
+    
+    local itemID = tonumber(link:match("item:(%d+)"))
+    if not itemID then return end
+    
+    -- Check if any friends need this item for attunement
+    local friendsWhoNeed = GetFriendsWhoNeedItem(itemID)
+    
+    if #friendsWhoNeed > 0 then
+        -- Add section for friends who need this item
+        tooltip:AddLine(" ")
+        tooltip:AddLine("|cFFFFD700Friend Attunement Status:|r")
+        tooltip:AddLine("|cFFFF6600Unattuned: " .. table.concat(friendsWhoNeed, ", ") .. "|r", 1, 1, 1, true)
+    end
+end
+
+-- Hook into the general tooltip system for all items, not just BOE
+local function EnhanceTooltipWithFriendStatus(tooltip)
+    local name, link = tooltip:GetItem()
+    if link then
+        ProcessBOETooltip(tooltip, link)
+    end
+end
+
+-- Hook GameTooltip to show friend status on all item tooltips
+local originalGameTooltipShow = GameTooltip.Show
+GameTooltip.Show = function(self)
+    -- Enhance tooltip before showing
+    EnhanceTooltipWithFriendStatus(self)
+    return originalGameTooltipShow(self)
+end
+
+-- Update Journal Points in friends data when shared
+local originalSendAttunementData = _G.SendAttunementData
+if originalSendAttunementData then
+    _G.SendAttunementData = function()
+        -- Include Journal Points in the data we send
+        local result = originalSendAttunementData()
+        
+        -- Save friends data after sending (in case we updated our own data)
+        if Journal_charDB then
+            SaveFriendsData()
+        end
+        
+        -- Send journal points as part of the message
+        if Journal_charDB.journalPoints and Journal_charDB.journalPoints > 0 then
+            local playerName = UnitName("player")
+            local realmName = GetRealmName()
+            local fullName = playerName .. "-" .. realmName
+            
+            SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "GUILD")
+            if IsInGroup() then
+                SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "PARTY")
+            end
+            if IsInRaid() then
+                SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "RAID")
+            end
+        end
+        
+        return result
+    end
+end
+
+-- Listen for Journal Points from friends
+local pointsFrame = CreateFrame("Frame")
+pointsFrame:RegisterEvent("CHAT_MSG_ADDON")
+pointsFrame:SetScript("OnEvent", function(self, event, prefix, message, channel, sender)
+    if event == "CHAT_MSG_ADDON" and prefix == "DJ_POINTS" then
+        local points = tonumber(message)
+        if points and points > 0 then
+            -- Store friend's journal points
+            if not _G.FRIENDS_JOURNAL_POINTS then
+                _G.FRIENDS_JOURNAL_POINTS = {}
+            end
+            _G.FRIENDS_JOURNAL_POINTS[sender] = points
+            
+            -- Save friends data immediately (with safety check)
+            if Journal_charDB and _G.SaveFriendsCache then
+                _G.SaveFriendsCache()
+            elseif Journal_charDB then
+                SaveFriendsData()
+            end
+            
+            -- Update friends display if it's showing
+            if _G.UpdateAttunementFriendsDisplay then
+                _G.UpdateAttunementFriendsDisplay()
+            end
+        end
+    end
+end)
+
+-- Initialize quest display on login
+local initQuestFrame = CreateFrame("Frame")
+initQuestFrame:RegisterEvent("PLAYER_LOGIN")
+initQuestFrame:SetScript("OnEvent", function(self, event)
+    if event == "PLAYER_LOGIN" then
+        C_Timer.After(2, function()
+            UpdateCurrentQuestDisplay()
+            -- Check if there's a completed quest on login
+            if Journal_charDB.currentRandomQuest then
+                CompleteRandomQuest()
+            end
+        end)
+    end
+end)
+
+print("|cFF00FF00[DJ Features]|r Random Item Quest system and enhanced friend tooltips loaded!")
+
+-- ##################################################################
+-- # SLASH COMMAND EXTENSIONS
+-- ##################################################################
+
+-- Add journal points commands to existing slash handler
+local originalDJSlashHandler = SlashCmdList["DJ"]
+SlashCmdList["DJ"] = function(msg)
+    msg = string.lower(string.trim(msg or ""))
+    
+    if msg == "points" then
+        print("|cFFFFD700[Journal Points]|r You have " .. (Journal_charDB.journalPoints or 0) .. " Journal Points")
+        if Journal_charDB.currentRandomQuest then
+            local quest = Journal_charDB.currentRandomQuest
+            local itemName = GetItemInfo(quest.itemID) or ("Item " .. quest.itemID)
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(quest.itemID) or 0
+            print("|cFF00FF00[Current Quest]|r " .. itemName .. " (" .. string.format("%.1f", attuneProgress) .. "% progress)")
+        else
+            print("|cFF87CEEB[Random Quest]|r No active quest. Use the Random Quest button to start one!")
+        end
+
+    elseif msg == "quest" then
+        if Journal_charDB.currentRandomQuest then
+            local quest = Journal_charDB.currentRandomQuest
+            local itemName = GetItemInfo(quest.itemID) or ("Item " .. quest.itemID)
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(quest.itemID) or 0
+            print("|cFF00FF00[Current Quest]|r " .. itemName)
+            print("|cFF87CEEB[Source]|r " .. quest.sourceName)
+            print("|cFFFFFF00[Progress]|r " .. string.format("%.1f", attuneProgress) .. "%")
+        else
+            print("|cFF87CEEB[Random Quest]|r No active quest. Use the Random Quest button to start one!")
+        end
+    else
+        -- Call original handler for all other commands
+        return originalDJSlashHandler(msg)
+    end
+end
+
+-- Save friends data on logout/reload
+local logoutFrame = CreateFrame("Frame")
+logoutFrame:RegisterEvent("PLAYER_LOGOUT")
+logoutFrame:RegisterEvent("ADDON_LOADED")
+logoutFrame:SetScript("OnEvent", function(self, event, addonName)
+    if event == "PLAYER_LOGOUT" or (event == "ADDON_LOADED" and addonName == "TheJournal") then
+        if Journal_charDB then
+            SaveFriendsData()
+        end
+    end
+end)
+
+-- Global functions for external access
+_G.GetRandomUnattunedItem = GetRandomUnattunedItem
+_G.StartRandomQuest = StartRandomQuest
+_G.CompleteRandomQuest = CompleteRandomQuest
+_G.GetFriendsWhoNeedItem = GetFriendsWhoNeedItem
+_G.UpdateCurrentQuestDisplay = UpdateCurrentQuestDisplay
+_G.SaveFriendsData = SaveFriendsData
+

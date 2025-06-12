@@ -1,11 +1,17 @@
 <Bindings>
     <Binding name="TOGGLEJOURNAL" header="THEJOURNAL">
-        if DungeonJournalFrame:IsShown() then
+        if DungeonJournalFrame and DungeonJournalFrame:IsShown() then
             DungeonJournalFrame:Hide()
-        else
+        elseif DungeonJournalFrame then
             DungeonJournalFrame:Show()
-            RefreshAllAttunableText()
-            SortDungeonsByAttunement()
+            if _G.RefreshAllAttunableText then
+                _G.RefreshAllAttunableText()
+            end
+            if _G.SortDungeonsByAttunement then
+                _G.SortDungeonsByAttunement()
+            end
+        elseif _G.ToggleJournal then
+            _G.ToggleJournal()
         end
     </Binding>
 </Bindings> 

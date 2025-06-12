@@ -9,11 +9,222 @@ table.insert(Journal.djDungeons, {
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-VioletHold.blp",
     bosses = {
         {
+            bossID = 31134,
+            name   = "Cyanigosa",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                icon        = "Interface\\Icons\\spell_arcane_portalironforge",
+                name        = "Arcane Vacuum",
+                description = "Summons all nearby enemy targets to the location of the caster.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 3,
+              },
+              {
+                icon        = "Interface\\Icons\\spell_frost_icestorm",
+                name        = "Blizzard",
+                description = "Calls down a blizzard that lasts 8 sec., inflicting 3000 Frost damage every 2 sec. and slowing the movement speed of all enemies in a selected area by 40%.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 3,
+              },
+              {
+                icon        = "Interface\\Icons\\spell_arcane_blast",
+                name        = "Uncontrollable Energy",
+                description = "A torrent of Arcane energy is released, dealing 7125 to 7875 Arcane damage to enemies in front of caster. Enemy targets also take 2000 Arcane damage every 3 sec. for 15 sec.",
+                duration    = 0,
+                casttime    = 2,
+                cooldown    = 0,
+              },
+            },
+        },
+        {
+            bossID = 29315,
+            name   = "Erekem",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_nature_bloodlust",
+                    name        = "Bloodlust",
+                    description = "Increases melee, ranged, and spell casting speed by 35% for all party members.  Lasts 20 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_strength",
+                    name        = "Break Bonds",
+                    description = "Breaks all nearby friends within 20 yards out of snares, crowd-control and stunning effects.",
+                    duration    = 0,
+                    casttime    = 2.5,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_healingwavegreater",
+                    name        = "Chain Heal",
+                    description = "Infuses a wounded ally with healing energy that spreads to another nearby ally. The spell affects up to 3 targets.",
+                    duration    = 0,
+                    casttime    = 1,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_skinofearth",
+                    name        = "Earth Shield",
+                    description = "Protects the target with an earthen shield, causing melee attacks to heal the shielded target.  This effect can only occur once every few seconds.  20 charges.  Lasts 2 min.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_earthshock",
+                    name        = "Earth Shock",
+                    description = "Shocks an enemy with concussive force, inflicting Nature damage and interrupting the spell being cast for 2 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+
+            },
+        },
+        {
+            bossID = 29313,
+            name   = "Ichoron",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_nature_crystalball",
+                    name        = "Protective Bubble",
+                    description = "Shields the caster in a bubble of water, reducing damage taken by 99%.  Each attack or spell hit against the caster will remove one charge.  Lasts until cancelled or until 35 charges are used.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  }
+            },
+        },
+        {
+            bossID = 29312,
+            name   = "Lavanthor",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_fire_volcano",
+                    name        = "Cauterizing Flames",
+                    description = "Inflicts 3238 to 3762 Fire damage to nearby enemies and increases the Fire damage it takes by 35% for 3 min.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0,
+                  }
+            },
+        },
+        {
+            bossID = 29316,
+            name   = "Moragg",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_painspike",
+                    name        = "Ray of Pain",
+                    description = "Inflicts 2000 Shadow damage to an enemy and leaves it wounded, reducing the effectiveness of any healing by 15% for 5 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_arcane_arcanetorrent",
+                    name        = "Optic Link",
+                    description = "Channels a beam of dark energy at the target, causing Shadow damage over 12 sec. This damage is dealt slowly at first, and builds up as the channel reaches its full duration.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\ability_creature_poison_02",
+                    name        = "Corrosive Saliva",
+                    description = "Lick the enemy, covering it in saliva that eats away 5% of its armor per application.  Stacks up to 20 times.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_shadow_destructivesoul",
+                    name        = "Ray of Suffering",
+                    description = "Deals Shadow damage to a single target over time.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
+        },
+        {
             bossID = 29266,
-            spells = {},
-            name = "Xevozz",
-            flat = itemdir,
-        }
+            name   = "Xevozz",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_arcane_arcanetorrent",
+                    name        = "Summon Ethereal Sphere",
+                    description = "Summons an Ethereal Sphere to aid the caster in battle.",
+                    duration    = 0,
+                    casttime    = 2.5,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_arcane_arcane04",
+                    name        = "Arcane Buffet",
+                    description = "Inflicts 1758 to 2042 Arcane damage to an enemy and increases the Arcane damage it takes by 300 for 20 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_arcane_arcane04",
+                    name        = "Arcane Barrage Volley",
+                    description = "Launches missiles at enemies, causing 3608 to 4192 Arcane damage.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
+        },
+        {
+            bossID = 29314,
+            name   = "Zuramat the Obliterator",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                icon        = "Interface\\Icons\\spell_shadow_mindtwisting",
+                name        = "Void Shift",
+                description = "Violently shifts the target into the void, dealing 1600 Shadow damage per second. At the end of this effect, the target is fully shifted into the void and is able to see hidden void creatures.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 0,
+              },
+              {
+                icon        = "Interface\\Icons\\spell_shadow_summonvoidwalker",
+                name        = "Summon Void Sentry",
+                description = "Summons a Void Sentry.",
+                duration    = 0,
+                casttime    = 1,
+                cooldown    = 0,
+              },
+              {
+                icon        = "Interface\\Icons\\spell_shadow_gathershadows",
+                name        = "Shroud of Darkness",
+                description = "Surrounds the caster in a shroud of darkness. Whenever the caster is damaged, healing received by the attacker is reduced by 30% for 10 sec.",
+                duration    = 0,
+                casttime    = 2,
+                cooldown    = 0,
+              },
+            },
+        },
     },
     versions = mp_versions,
     items = { 35642,35643,35644,35645,35646,35647,35649,35650,35651,35652,35653,35654,37861,37862,37867,37868,37869,37870,37871,37872,37873,37874,37875,37876,37883,37884,37886,37889,37890,43353,43358,43363,43375,43382,43387,43401,43402,43403,43404,43405,43406,43407,43408,43409,43410,43500,60127,62565,62566,62567,62568,62569,62570,62571,62572,62573,62574,62575,62576,62577,62578,62579,62580,62581,62582,62583,62584,62585,62586,62587,62588,62589,62590,62591,62592,62593,62594,62595,62596,62597,62598,62599,62600,62601,62602,62603,62604,63064,63065,63066,63067,63068,63069,63070,63071,63072,63073,63074,63075,63076,63077,63078,63079,63080,63081,63082,63083,63084,63085,63086,63087,63088,63089,63090,63091,63092,63093,63094,63095,63096,63097,63098,63099,63100,63101,63102,63103,63104,63105,63106,63107,63108,63109,63110,63111,63112,63113,63114,63115,63116,63117,63118,63229,63230,63231,63232,63233,63234,63235,63236,63237,63238,63239,63240,63241,63242,63243,63244,63245,63246,63247,63248,63249,63250,63251,63252,63253,63254,63255,63256,63257,63258,63259,63260,63261,63262,63263,63264,63265,63266,63267,63268,63269,63270,63271,63272,63273,63274,63275,63276,63277,63278,63279,63280,63281,63282,63283,63542,63543,63544,63546,63547,63548,63549,63550,63553,63554,63555,63556,63557,63558,63559,63560,63561,63562,63563,63564,63565,63566,63567,63568,63569,63570,63571,63572,63573,63574,63575,63576,63577,63578,63579,63580,63581,63582,63583,63584,63585,63586,63587,63588,63589,63590 },
@@ -25,11 +236,573 @@ table.insert(Journal.djDungeons, {
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Naxxramas.blp",
     bosses = {
         {
-            bossID = 11486,
-            spells = {},
-            name = "Prince Tortheldrin",
-            flat = itemdir,
-        }
+            bossID = 15956,
+            name   = "Anub'Rekhan",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_backstab",
+                    name        = "|cffF0E68CImpale|r",
+                    description = "Spikes pierce the floor and then rise up, dealing |cffB222225688 to 7312 Physical damage|r and knocking up enemy targets in a line away from the caster.\n\nTips:\n• |cff87CEEBMove Sideways:|r Always move perpendicular to Anub'Rekhan to avoid being hit by the spikes.\n• |cff87CEEBAvoid Knock-up:|r Prioritize avoiding this to prevent interruptions or delays.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 15, -- Corrected from 3, based on description
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_insectswarm",
+                    name        = "|cff90EE90Locust Swarm|r",
+                    description = "Anub'Rekhan releases a locust swarm, slowing his movement by |cff87CEEB25%|r and damaging all nearby enemies. Nearby enemies are |cffff0000unable to attack or cast spells|r.\n\nTips:\n• |cff87CEEBCreate Distance:|r Move away from Anub'Rekhan when he casts this to avoid the silence and damage.",
+                    duration    = 15, -- Assuming duration of effect, not explicit in original
+                    casttime    = 3,
+                    cooldown    = 90, -- Corrected from 20, based on description
+                },
+            },
+        },
+        {
+            bossID = 15953,
+            name   = "Grand Widow Faerlina",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_unholyfrenzy",
+                    name        = "|cffC04000Frenzy|r",
+                    description = "Grand Widow Faerlina's primal rage! Increases her |cff87CEEBattack speed by 50%|r and |cffF0E68CPhysical damage by 150|r for 30 min. If not dispelled, she will attempt to reapply it every minute.\n\nTips:\n• |cffF0E68CDPS Check:|r This is a direct test of your damage output and ability to manage mechanics.\n• |cffF0E68CRemove Enrage:|r Bring a |cffADD8E6Worshipper|r near Faerlina. Defeat the Worshipper when she casts |cffADD8E6Widow's Embrace|r to remove her Frenzy.\n• |cffF0E68CSustain Damage:|r Be ready for high incoming damage if Frenzy is active. Use defensive cooldowns and healing to sustain yourself.",
+                    duration    = 30 * 60, -- 30 minutes
+                    casttime    = 0,
+                    cooldown    = 60,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_incinerate",
+                    name        = "|cffFFA500Rain of Fire|r",
+                    description = "Grand Widow Faerlina calls down a volley of fire, dealing |cffFFA500Fire damage|r in an area on the ground. Casts every |cff87CEEB8-18 seconds|r.\n\nTips:\n• |cff87CEEBMove Out:|r Always move out of the visual effect on the ground to avoid continuous damage.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_corrosivebreath",
+                    name        = "|cff90EE90Poison Bolt Volley|r",
+                    description = "Grand Widow Faerlina hurls a volley of poisonous bolts at her current target, dealing |cff90EE90Poison damage|r. Casts every |cff87CEEB7-15 seconds|r.\n\nTips:\n• |cff87CEEBSustain Healing:|r Be prepared for consistent incoming damage from this spell.\n• |cff87CEEBMitigation:|r Use any available defensive cooldowns or damage reduction abilities to lessen the impact of these bolts.\n• |cff87CEEBCleanse (If Possible):|r If you have a dispel for Poison effects, use it immediately to remove any lingering debuffs.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 15952,
+            name   = "Maexxna",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_unholyfrenzy",
+                    name        = "|cffC04000Frenzy|r",
+                    description = "Increases the caster's attack speed by |cff87CEEB50%|r and the |cffF0E68CPhysical damage|r it deals by |cffF0E68C75%|r for |cff87CEEB10 min|r.\n\nTips:\n• |cffF0E68CBurst Damage:|r This is a soft enrage. Be ready with high burst damage to finish her off quickly.\n• |cffF0E68CDefensive Cooldowns:|r Expect significantly increased incoming damage and use powerful defensives.",
+                    duration    = 10 * 60, -- 10 minutes
+                    casttime    = 0,
+                    cooldown    = 0, -- Cast at health %
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_acid_01",
+                    name        = "|cff90EE90Poison Shock|r",
+                    description = "Inflicts |cff90EE904550 to 5850 Nature damage|r to nearby enemies in front of the caster.\n\nTips:\n• |cff87CEEBDodge the Cone:|r Move out of Maexxna's frontal cone to avoid taking damage.\n• |cff87CEEBStay Behind:|r Always try to position yourself behind the boss if possible.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_creature_poison_03",
+                    name        = "|cff9400D3Necrotic Poison|r",
+                    description = "Reduces healing by |cff87CEEB90%|r for |cff87CEEB30 sec|r.\n\nTips:\n• |cffF0E68CDispel Priority:|r This is a priority dispellable debuff if your class has access to it.\n• |cffF0E68CPre-emptive Healing:|r If you cannot dispel, use strong healing-over-time effects before the debuff is applied.",
+                    duration    = 30, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_web",
+                    name        = "|cff8B4513Web Spray|r",
+                    description = "Web sprays out everywhere, |cffff0000stunning|r all nearby enemies for |cff87CEEB6 sec|r and dealing |cff90EE905225 to 5775 Nature damage|r.\n\nTips:\n• |cff87CEEBBreak Free:|r Use abilities that remove stun effects, if available.",
+                    duration    = 6, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 40,
+                },
+            },
+        },
+    
+        -- === Plague Quarter ===
+        {
+            bossID = 15954,
+            name   = "Noth the Plaguebringer",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_cripple",
+                    name        = "|cff9ACD32Cripple|r",
+                    description = "Increases the time between an enemy's attacks by |cff87CEEB100%|r and its movement by |cff87CEEB50%|r, in addition to reducing its Strength by |cff87CEEB50%|r. Lasts |cff87CEEB15 sec|r.\n\nTips:\n• |cffF0E68CDispel Priority:|r This is a priority dispellable debuff if your class has access to it.\n• |cffF0E68CMaintain Mobility:|r If you cannot dispel, use abilities to increase movement speed or become immune to movement impairments.",
+                    duration    = 15, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+        {
+            bossID = 15936,
+            name   = "Heigan the Unclean",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_misc_discoball_01",
+                    name        = "|cffADD8E6Heigan's Dance|r",
+                    description = "This boss features the infamous dancing mechanic where players will need to move quickly around the room to avoid explosions of toxic sludge.\n\nTips:\n• |cffF0E68CLearn the Pattern:|r Master the movement pattern for each phase to safely navigate the room.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 16011,
+            name   = "Loatheb",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_creature_disease_05",
+                    name        = "|cff40E0D0Necrotic Aura|r",
+                    description = "A wave of necrotic energy fills the room, completely |cffff0000preventing all healing effects|r for |cff87CEEB17 sec|r.\n\nTips:\n• |cffF0E68CPrepare Defensives:|r Anticipate this ability and use strong damage reduction or shield abilities before it hits.\n• |cffF0E68CBurst Damage:|r This is a prime window to use offensive cooldowns as no healing can occur.",
+                    duration    = 17, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 20,
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_mushroom_09",
+                    name        = "|cff90EE90Summon Spore|r",
+                    description = "Summons a Spore that lasts for |cff87CEEB1.50 min|r.\n\nTips:\n• |cff87CEEBKill Spores:|r Prioritize killing the spawned spores.\n• |cffF0E68CBenefit from Pool:|r Stand in the pool left by a defeated spore to gain |cffF0E68CFungal Creep|r, increasing critical hit chance and removing threat generation.",
+                    duration    = 90, -- 1.50 min in seconds
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_regeneration_02",
+                    name        = "|cffF0E68CFungal Creep|r",
+                    description = "Increases the |cff87CEEBcritical hit chance|r of the target by |cff87CEEB50%|r. Spells and abilities also |cff90EE90cease causing threat|r.\n\nTips:\n• |cff87CEEBMaximize DPS:|r This is your window to unleash maximum damage without worrying about threat.\n• |cff87CEEBCoordinate:|r Ensure you are in the correct position to gain the buff from a killed spore.",
+                    duration    = 0, -- Buff duration not specified, but effect is clear
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+    
+        -- === Construct Quarter ===
+        {
+            bossID = 16028,
+            name   = "Patchwerk",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_unholyfrenzy",
+                    name        = "|cffC04000Frenzy|r",
+                    description = "Increases the caster's attack speed by |cff87CEEB40%|r and the |cffF0E68CPhysical damage|r it deals by |cffF0E68C25%|r for |cff87CEEB5 min|r.\n\nTips:\n• |cffF0E68CFinal Burn:|r This is a soft enrage. Be ready with high burst damage to finish him quickly.",
+                    duration    = 5 * 60, -- 5 minutes
+                    casttime    = 0,
+                    cooldown    = 0, -- Cast at health %
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_unholyfrenzy",
+                    name        = "|cffC04000Berserk|r",
+                    description = "Increases the caster's attack and movement speeds by |cff87CEEB150%|r and all damage it deals by |cffC04000500%|r for |cff87CEEB5 min|r. Also grants immunity to Taunt effects.\n\nTips:\n• |cffB2222CHard Enrage:|r This means a wipe unless Patchwerk is defeated very quickly.\n• |cffB2222CAbsolute Finality:|r Do not expect to survive for long if this cast completes.",
+                    duration    = 5 * 60, -- 5 minutes
+                    casttime    = 0,
+                    cooldown    = 360, -- 360 seconds
+                },
+            },
+        },
+        {
+            bossID = 15931,
+            name   = "Grobbulus",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_nature_abolishmagic",
+                    name        = "|cff90EE90Poison Cloud|r",
+                    description = "A poison cloud appears which grows in area over |cff87CEEB1.25 min|r.\n\nTips:\n• |cff87CEEBControl Movement:|r Grobbulus leaves these clouds as he moves. Position him carefully to control where they spawn.\n• |cff87CEEBAvoid Standing In:|r Do not stand in the growing poison clouds as they deal heavy Nature damage.",
+                    duration    = 75, -- 1.25 min in seconds
+                    casttime    = 0,
+                    cooldown    = 8,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_corrosivebreath",
+                    name        = "|cff90EE90Slime Spray|r",
+                    description = "Slime sprays out, dealing |cff90EE9011875 to 13125 Nature damage|r to enemies in front of Grobbulus. Enemies hit by Slime Spray |cffADD8E6summon a Fallout Slime|r.\n\nTips:\n• |cffB2222CDodge the Spray:|r Always move out of Grobbulus's frontal cone to avoid both the damage and summoning additional adds.\n• |cffB2222CManage Adds:|r If Fallout Slimes are summoned, prioritize eliminating them quickly.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+        {
+            bossID = 15932,
+            name   = "Gluth",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_corpseexplode",
+                    name        = "|cffFFA500Zombie Party!|r",
+                    description = "Gluth summons |cff87CEEB2-3 zombies|r every |cff87CEEB15 seconds|r. These zombies, upon reaching Gluth, will be consumed by him, |cff90EE90healing Gluth by 5%|r of his maximum health.\n\nTips:\n• |cff87CEEBIntercept Zombies:|r Prevent zombies from reaching Gluth by killing them before they get to him.\n• |cff87CEEBArea Damage:|r Use AoE abilities to quickly clear multiple zombies per wave.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 15, -- Based on description
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_misc_food_18",
+                    name        = "|cffDC143CDecimate|r",
+                    description = "Reduce the current health of all nearby units to |cff87CEEB5%|r of their maximum health. Cast every |cff87CEEB100 seconds|r.\n\nTips:\n• |cffF0E68CPrepare Healing:|r Be prepared for a strong healing requirement or defensive cooldowns after this ability to recover from reduced health.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 100, -- Based on description
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_criticalstrike",
+                    name        = "|cffB22222Mortal Wound|r",
+                    description = "A punishing blow strikes the target, reducing the effectiveness of healing spells by |cff87CEEB10%|r. Cast every |cff87CEEB10 seconds|r.\n\nTips:\n• |cff87CEEBIncreased Healing:|r Be prepared to use stronger healing spells or increased healing output to counter the reduction.\n• |cff87CEEBCleanse (If Possible):|r If the ability is a debuff, remove it if your class has a dispel.",
+                    duration    = 0, -- Assumed duration if it's a debuff
+                    casttime    = 0,
+                    cooldown    = 10, -- Based on description
+                },
+            },
+        },
+        {
+            bossID = 15928,
+            name   = "Thaddius",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_stealth",
+                    name        = "|cff87CEEBOne Shot Consideration|r",
+                    description = "If you are able to one-shot this target, ensure you are in combat with the final add before the Phase Two transition, or Thaddius will fail to phase.\n\nTips:\n• |cffF0E68CEngagement Timing:|r Ensure combat has started with the last add before dealing the killing blow.\n• |cffF0E68CPhase Skip Risk:|r Skipping the mechanic too quickly can lead to a soft-lock, requiring a reset.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 10,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_lightning_lightningbolt01",
+                    name        = "|cffADD8E6Ball Lightning|r",
+                    description = "Inflicts |cffADD8E617500 to 22500 Nature damage|r to the enemy target.\n\nTips:\n• |cffF0E68CHeavy Single Target:|r Be prepared for high single-target Nature damage.\n• |cffF0E68CDefensive Cooldowns:|r Use personal defensives to mitigate the incoming burst.",
+                    duration    = 0,
+                    casttime    = 1,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+    
+        -- === Military Quarter ===
+        {
+            bossID = 16061,
+            name   = "Instructor Razuvious",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_warrior_rampage",
+                    name        = "|cffB22222Disrupting Shout|r",
+                    description = "Scream fiercely, dealing |cffB222224275 to 4725 Physical damage|r to nearby enemies.\n\nTips:\n• |cff87CEEBAoE Damage:|r Be prepared for periodic AoE damage. Use minor defensives or healing as needed.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_weapon_shortblade_12",
+                    name        = "|cff8B4513Jagged Knife|r",
+                    description = "Hurls a dagger at an enemy, inflicting |cffB222225088 to 5912 Physical damage|r immediately and |cffB222222000 damage|r every 1 sec for |cff87CEEB5 sec|r.\n\nTips:\n• |cffF0E68CHeal Through DoT:|r Be ready for a burst of initial damage followed by a strong bleed effect.\n• |cffF0E68CDispel (If Possible):|r If the bleed is a debuff, try to dispel it if your class allows.",
+                    duration    = 5, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+        {
+            bossID = 16060,
+            name   = "Gothik the Harvester",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_misc_discoball_01",
+                    name        = "|cffDDA0DDPatience is Key|r",
+                    description = "You must survive all |cff87CEEB23 waves|r of Gothik's minions before he becomes attackable. Waves consist of |cffADD8E6 Trainees|r, |cffF0E68C Knights|r, and |cffB22222 Riders|r, each with unique abilities.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBPrioritize Targets:|r Focus fire on |cffADD8E6 Living Trainees|r first to quickly reduce incoming |cffADD8E6 Death Plague|r damage. Then, deal with |cffF0E68C Living Knights|r to prevent stacking |cffF0E68C Shadow Mark|r. Save |cffB22222 Living Riders|r for last unless their AoE becomes overwhelming.\n• |cff87CEEBUtilize Cooldowns Wisely:|r Save defensive cooldowns for waves with multiple Knights or Riders, or when you anticipate heavy incoming damage. Offensive cooldowns should be staggered to ensure you have burst for tougher waves or saved for Gothik.\n• |cff87CEEBMovement is Key:|r Don't stand still! Dodge incoming Shadow Bolts and other detrimental effects.\n• |cff87CEEBSelf-Sufficiency:|r Utilize all your healing, mitigation, and crowd control abilities. Dispel |cffADD8E6 Death Plague|r or |cffF0E68C Shadow Mark|r if your class allows.\n• |cff87CEEBArena Awareness:|r Keep an eye on add spawn points from the three gates on the Living side.\n• |cff87CEEBNo Rush:|r This fight is timed. Focus on consistent damage and survival.\n• |cff87CEEBGothik's Descent:|r Once the final wave is spawned, Gothik will descend and become your primary target. Be ready!",
+                    duration    = 0,
+                    casttime    = 1,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 16065,
+            name   = "Lady Blaumeux",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_mindtwisting",
+                    name        = "|cffADD8E6Mark of Blaumeux|r",
+                    description = "Inflicts |cff9400D3Shadow damage|r on all nearby enemies and leaves a mark. The damage inflicted is |cff87CEEBincreased by the number of mark stacks|r on the enemy.\n\nTips:\n• |cffF0E68CManage Stacks:|r High stacks of this mark can be lethal. Monitor your debuffs.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_icestorm",
+                    name        = "|cff4B0082Void Zone|r",
+                    description = "Summon a Void Zone that deals |cff9400D3Shadow damage|r to enemies that stand within it.\n\nTips:\n• |cff87CEEBMove Out:|r Avoid standing in these shadowy areas on the ground to prevent continuous damage.",
+                    duration    = 0, -- Duration of the zone, not explicit in original
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_shadowbolt",
+                    name        = "|cff9400D3Shadow Bolt|r",
+                    description = "Hurls a bolt of dark magic at an enemy, inflicting |cff9400D3Shadow damage|r.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_shadowbolt",
+                    name        = "|cff9400D3Unyielding Pain|r",
+                    description = "Dark magic lashes out at every enemy, inflicting |cff9400D35655 to 6345 Shadow damage|r. Cast when no targets are in melee range.\n\nTips:\n• |cffF0E68CStay Engaged:|r This spell is a punishment for not being in melee range. Ensure you are in melee to avoid it.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+        {
+            bossID = 16064,
+            name   = "Thane Korth'azz",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_metamorphosis",
+                    name        = "|cffADD8E6Mark of Korth'azz|r",
+                    description = "Inflicts |cffF5DEB3Holy damage|r on all nearby enemies and leaves a mark. The damage inflicted is |cff87CEEBincreased by the number of mark stacks|r on the enemy.\n\nTips:\n• |cffF0E68CManage Stacks:|r High stacks of this mark can be lethal. Monitor your debuffs.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_fireball02",
+                    name        = "|cffFFA500Meteor|r",
+                    description = "Deals |cffFFA500Fire damage|r divided up evenly among all affected targets.\n\nTips:\n• |cff87CEEBDamage Mitigation:|r This damage is split. Be prepared for the portion you receive.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+        {
+            bossID = 30549, -- Baron Rivendare is part of the Four Horsemen in Military Quarter
+            name   = "Baron Rivendare",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_soulleech_3",
+                    name        = "|cffADD8E6Mark of Rivendare|r",
+                    description = "Inflicts |cff9400D3Shadow damage|r on all nearby enemies and leaves a mark. The damage inflicted is |cff87CEEBincreased by the number of mark stacks|r on the enemy.\n\nTips:\n• |cffF0E68CManage Stacks:|r Be aware of your stack count, as high stacks can lead to lethal damage.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_shadowfury",
+                    name        = "|cff9400D3Unholy Shadow|r",
+                    description = "Shadowy energy lashes out, inflicting |cff9400D32160 to 2640 Shadow damage|r and a further |cff9400D3600 damage|r every 1 sec for |cff87CEEB8 sec|r.\n\nTips:\n• |cff87CEEBSustain Healing:|r Be prepared for consistent incoming Shadow damage over time.\n• |cff87CEEBDefensive Cooldowns:|r Use personal defensive abilities to mitigate the ongoing damage.",
+                    duration    = 8, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown, just cast
+                },
+            },
+        },
+        {
+            bossID = 16063,
+            name   = "Sir Zeliek",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_soulleech_2",
+                    name        = "|cffADD8E6Mark of Zeliek|r",
+                    description = "Inflicts |cffF5DEB3Holy damage|r on all nearby enemies and leaves a mark. The damage inflicted is |cff87CEEBincreased by the number of mark stacks|r on the enemy.\n\nTips:\n• |cffF0E68CManage Stacks:|r High stacks will become very painful due to increased damage.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_siphonmana",
+                    name        = "|cffF5DEB3Holy Wrath|r",
+                    description = "Sends bolts of holy power in all directions, causing |cffF5DEB3900 to 1100 Holy damage|r to the target and other nearby enemy targets, increasing by |cff87CEEB50%|r between each jump.\n\nTips:\n• |cff87CEEBMaintain Distance:|r The damage increases with each jump, so distance can help reduce total damage.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_holy_searinglight",
+                    name        = "|cffF5DEB3Holy Bolt|r",
+                    description = "Hurls a bolt of light magic at an enemy, inflicting |cffF5DEB3Holy damage|r.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_holy_searinglight",
+                    name        = "|cffF5DEB3Condemnation|r",
+                    description = "Light magic lashes out at every enemy, inflicting |cffF5DEB35655 to 6345 Holy damage|r.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+            },
+        },
+    
+        -- === Frostwyrm Lair ===
+        {
+            bossID = 15989,
+            name   = "Sapphiron",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_warrior_cleave",
+                    name        = "|cffB22222Cleave|r",
+                    description = "Inflicts normal damage plus |cffB2222250 Physical damage|r to an enemy and its nearest allies, affecting up to |cff87CEEB10 targets|r.\n\nTips:\n• |cffF0E68CFace Away:|r If possible, avoid standing in front of Sapphiron to minimize damage taken.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_frostshock",
+                    name        = "|cffADD8E6Frost Aura|r",
+                    description = "Deals |cffADD8E61600 Frost damage|r every |cff87CEEB2 sec|r to all nearby enemies.",
+                    duration    = 0, -- Constant aura
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_freezingbreath",
+                    name        = "|cffADD8E6Summon Blizzard|r",
+                    description = "Summons a Blizzard at the location of a nearby enemy.\n\nTips:\n• |cffF0E68CMove Out:|r Quickly move out of the Blizzard effect on the ground to avoid damage.",
+                    duration    = 0, -- Duration of the Blizzard itself
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_misc_monsterscales_05",
+                    name        = "|cff8B4513Tail Sweep|r",
+                    description = "Inflicts |cffB222221500 to 2500 damage|r on enemies in a cone behind the caster, |cffff0000knocking them back|r.\n\nTips:\n• |cffF0E68CAvoid Behind:|r Do not stand directly behind Sapphiron to avoid this knockback and damage.\n• |cffF0E68CPrevent Disorientation:|r Being knocked back can interrupt casts or delay movement.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_arcticwinds",
+                    name        = "|cffADD8E6Frost Breath|r",
+                    description = "Inflicts |cffADD8E6112500 to 187500 Frost damage|r to all nearby enemies. This is a significant |cff87CEEBFrost Resistance check|r.\n\nTips:\n• |cffF0E68CIncrease Frost Resistance:|r Maximize your Frost Resistance gear or buffs.\n• |cffF0E68CPersonal Defensives:|r Use strong personal defensive cooldowns to mitigate the massive damage. You cannot line of sight this ability.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0, -- Original implies no specific cooldown
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_glacier",
+                    name        = "|cff87CEEBIcebolt|r", -- Corrected space here
+                    description = "Encases the target in a solid block of ice, |cffff0000stunning|r the target and dealing |cff87CEEB7125 to 7875 Frost damage|r to the target and nearby enemies.\n\nTips:\n• |cffF0E68CBreak Ice/Defensive:|r If hit, break out of the ice or use strong personal defensives.",
+                    duration    = 0, -- Duration of stun not specified, but effect is clear
+                    casttime    = 0,
+                    cooldown    = 45,
+                },
+            },
+        },
+        {
+            bossID = 15990,
+            name   = "Kel'Thuzad",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_nightofthedead",
+                    name        = "|cff808080Phase One: Minion Onslaught|r",
+                    description = "Upon engagement, Kel'Thuzad remains |cffADD8E6immune and passive|r on his platform, channeling his dark power. This phase lasts for |cff87CEEB3 minutes and 48 seconds (228 seconds)|r before Dungeon Speedup Buff.\n\nDuring this time, you must survive relentless waves of his minions:\n• |cffADD8E6Soldiers of the Frozen Wastes|r: Regular melee attackers.\n• |cffF0E68CUnstoppable Abominations|r: Large, hard-hitting foes.\n• |cffADD8E6Soul Weavers|r: Casters with various abilities.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBPrioritize Adds:|r Focus on controlling and eliminating the incoming waves to reduce pressure.\n• |cff87CEEBManage Spawns:|r Adds will spawn from various points around the arena, including initial large groups. Be ready for them.\n• |cff87CEPBConserve Resources:|r Since Kel'Thuzad himself is immune, use your cooldowns judiciously to clear waves efficiently while saving some for Phase Two.",
+                    duration    = 228, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_frostbolt02",
+                    name        = "|cffADD8E6Frostbolt|r",
+                    description = "Kel'Thuzad hurls a bolt of ice at his current target, dealing |cffADD8E6Frost damage|r. This is one of his primary attacks. Casts every |cff87CEEB2-10 seconds|r.\n\nTips:\n• |cff87CEEBFreedom/Dispel:|r Use abilities that grant movement freedom or remove movement impairing effects if targeted.\n• |cff87CEEBStay Mobile:|r Be prepared for constant incoming damage and potential slows.",
+                    duration    = 4, -- Based on description
+                    casttime    = 0,
+                    cooldown    = 8,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_frostbolt02",
+                    name        = "|cffADD8E6Frost Bolt (Multi)|r",
+                    description = "Kel'Thuzad unleashes a volley of icy bolts, striking multiple targets for |cffADD8E6Frost damage|r. Casts every |cff87CEEB15-30 seconds|r.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_creepingplague",
+                    name        = "|cff9400D3Shadow Fissure|r",
+                    description = "Kel'Thuzad creates a volatile fissure on the ground that erupts after a short delay, dealing |cff9400D3Shadow damage|r to anyone caught in the explosion. Casts every |cff87CEEB25 seconds|r.\n\nTips:\n• |cffF0E68CMove Immediately:|r Always move out of the dark void zones on the ground as soon as they appear.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 25,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_arcane_blast",
+                    name        = "|cffF0E68CDetonate Mana|r",
+                    description = "Kel'Thuzad targets a random mana-using player. After a short delay, their mana detonates, dealing |cffF0E68CArcane damage|r based on mana consumed and potentially damaging nearby players. Casts every |cff87CEEB30 seconds|r.\n\nTips:\n• |cffF0E68CMana Management:|r Be mindful of your mana pool, as a larger mana pool can lead to higher damage on detonation.",
+                    duration    = 0, -- The detonation is instant after delay
+                    casttime    = 0,
+                    cooldown    = 30, -- Based on description
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_frostnova",
+                    name        = "|cffADD8E6Frost Blast|r",
+                    description = "Kel'Thuzad blasts a random player, freezing them solid and dealing heavy |cff87CEEBFrost damage|r over time. This effect can spread to nearby players. Casts every |cff87CEEB45 seconds|r.\n\nTips:\n• |cffF0E68CBreak Free/Immunity:|r Use abilities that grant immunity to Frost damage or break CC if targeted.\n• |cffF0E68CDon't Spread:|r If afflicted, move away from any other targets to prevent it from jumping.",
+                    duration    = 0, -- Duration of freeze effect, not explicitly in original.
+                    casttime    = 0,
+                    cooldown    = 45,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_lifedrain",
+                    name        = "|cff9400D3Chains of Kel'Thuzad|r",
+                    description = "Kel'Thuzad chains up to |cff87CEEB3 random players|r, pulling them towards him and disabling their movement. This effect deals minor |cff9400D3Shadow damage|r. Casts every |cff87CEEB90 seconds|r in 25-man difficulty.\n\nTips:\n• |cffF0E68CBreak Free/Immunity:|r Use abilities that break movement impairments or provide immunity to CC.",
+                    duration    = 0, -- Duration of chain effect not explicitly in original
+                    casttime    = 0,
+                    cooldown    = 90,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_painandsuffering",
+                    name        = "|cffC04000Berserk|r",
+                    description = "After |cff87CEEB15 minutes|r, Kel'Thuzad enters a state of |cffC04000Berserk|r, drastically increasing his damage output and attack speed. This is an enrage timer.\n\nTips:\n• |cffB2222CHard Enrage:|r This is a hard enrage. You must defeat Kel'Thuzad before this point.\n• |cffB2222CBurn Cooldowns:|r Save major offensive cooldowns for the final minutes to maximize damage.",
+                    duration    = 5 * 60, -- 5 minutes
+                    casttime    = 0,
+                    cooldown    = 15 * 60, -- 15 minutes
+                },
+            },
+        },
     },
     items = {39139,39140,39141,39146,39188,39189,39190,39191,39192,39193,39194,39195,39196,39197,39198,39199,39200,39215,39216,39217,39221,39224,39225,39226,39228,39229,39230,39231,39232,39233,39234,39235,39236,39237,39239,39240,39241,39242,39243,39244,39245,39246,39247,39248,39249,39250,39251,39252,39254,39255,39256,39257,39258,39259,39260,39261,39262,39267,39270,39271,39272,39273,39274,39275,39276,39277,39278,39279,39280,39281,39282,39283,39284,39285,39291,39292,39293,39294,39295,39296,39297,39298,39299,39306,39307,39308,39309,39310,39311,39344,39345,39369,39379,39386,39388,39389,39390,39391,39392,39393,39394,39395,39396,39397,39398,39399,39401,39403,39404,39405,39407,39408,39409,39415,39416,39417,39419,39420,39421,39422,39423,39424,39425,39426,39701,39702,39703,39704,39706,39712,39714,39716,39717,39718,39719,39720,39721,39722,39723,39724,39725,39726,39727,39729,39730,39731,39732,39733,39734,39735,39756,39758,39759,39760,39761,39762,39763,39764,39765,39766,39767,39768,40060,40061,40062,40063,40064,40065,40069,40071,40074,40075,40080,40107,40108,40184,40185,40186,40187,40188,40189,40190,40192,40193,40196,40197,40198,40200,40201,40203,40204,40205,40206,40208,40209,40210,40233,40234,40235,40236,40237,40238,40239,40240,40241,40242,40243,40244,40245,40246,40247,40249,40250,40251,40252,40253,40254,40255,40256,40257,40258,40259,40260,40261,40262,40263,40264,40265,40266,40269,40270,40271,40272,40273,40274,40275,40277,40278,40279,40280,40281,40282,40283,40284,40285,40286,40287,40288,40289,40294,40296,40297,40298,40299,40300,40301,40302,40303,40304,40305,40306,40315,40316,40317,40318,40319,40320,40323,40324,40325,40326,40327,40328,40329,40330,40331,40332,40333,40334,40335,40336,40338,40339,40340,40341,40343,40344,40345,40346,40347,40348,40349,40350,40351,40352,40362,40363,40365,40366,40367,40368,40369,40370,40371,40372,40373,40374,40375,40376,40377,40378,40379,40380,40381,40382,40383,40384,40385,40386,40387,40388,40395,40396,40398,40399,40400,40401,40402,40403,40405,40602},
 })
@@ -40,9 +813,46 @@ table.insert(Journal.djDungeons, {
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Deadmines.blp",
     bosses = {
         {
+            bossID = 639,
+            spells = {},
+            name = "Edwin VanCleef",
+            flat = itemdir,
+        },
+        {
+            bossID = 644,
+            spells = {},
+            name = "Rhahk'Zor",
+            flat = itemdir,
+        },
+        {
             bossID = 645,
             spells = {},
             name = "Cookie",
+            flat = itemdir,
+        },
+        {
+            bossID = 646,
+            spells = {},
+            name = "Mr. Smite",
+            flat = itemdir,
+        },
+        {
+            bossID = 647,
+            spells = {},
+            name = "Captain Greenskin",
+            flat = itemdir,
+        },
+        {
+            bossID = 1763,
+            spells = {},
+            name = "Gilnid",
+            flat = itemdir,
+        },
+        {
+            bossID = 3586,
+            spells = {},
+            name = "Miner Johnson",
+            rare = true,
             flat = itemdir,
         }
     },
@@ -55,10 +865,175 @@ table.insert(Journal.djDungeons, {
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ShadowfangKeep.blp",
     bosses = {
         {
-            bossID = 645,
-            spells = {},
-            name = "Cookie",
+            bossID = 3872,
+            name = "Deathsworn Captain", 
+            rare = true,
             flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Ability_Warrior_OffensiveStance",
+                    name = "Battle Stance",
+                    description = "Assumes a battle stance that increases damage dealt.",
+                    duration = 0,
+                    cooldown = 0,
+                },
+                {
+                    icon = "Interface\\Icons\\Ability_Warrior_Cleave",
+                    name = "Cleave",
+                    description = "A sweeping frontal attack that strikes multiple enemies.",
+                    duration = 0,
+                    cooldown = 12,
+                },
+                {
+                    icon = "Interface\\Icons\\Ability_Shockwave",
+                    name = "Hamstring",
+                    description = "Maims the enemy, reducing movement speed by 50%.",
+                    duration = 15,
+                    cooldown = 20,
+                }
+            },
+        },
+        {
+            bossID = 3914,
+            name = "Rethilgore",
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\spell_shadow_lifedrain02",
+                    name = "Soul Drain",
+                    description = "Immobilizes an enemy for 10 sec. and drains 35 health, transferring it to the caster.",
+                    duration = 10,
+                    casttime = 2,
+                    cooldown = 0,
+                }
+            },
+        },
+        {
+            bossID = 4274,
+            name = "Fenrus the Devourer", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Spell_Nature_CorrosiveBreath",
+                    name = "Toxic Saliva",
+                    description = "Inflicts nature damage over time to a random target.",
+                    duration = 10,
+                    cooldown = 30,
+                }
+            },
+        },
+        {
+            bossID = 3886,
+            name = "Razorclaw the Butcher", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Spell_Shadow_SiphonMana",
+                    name = "Butcher Drain",
+                    description = "Drains life from the target, healing the caster for the amount drained.",
+                    duration = 0,
+                    cooldown = 5,
+                }
+            },
+        },
+        {
+            bossID = 4279,
+            name = "Odo the Blindwatcher", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Ability_BullRush",
+                    name = "Howling Rage",
+                    description = "Increases physical damage dealt by 10 and size by 15% for 5 minutes.",
+                    duration = 300,
+                    cooldown = 0,
+                }
+            },
+        },
+        {
+            bossID = 4278,
+            name = "Commander Springvale", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Spell_Holy_SealOfMight",
+                    name = "Hammer of Justice",
+                    description = "Stuns the target for 6 seconds.",
+                    duration = 6,
+                    cooldown = 60,
+                },
+                {
+                    icon = "Interface\\Icons\\Spell_Holy_HolyBolt",
+                    name = "Holy Light",
+                    description = "Heals an ally for a large amount of health.",
+                    duration = 0,
+                    cooldown = 20,
+                }
+            },
+        },
+        {
+            bossID = 3887,
+            name = "Baron Silverlaine", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\spell_shadow_gathershadows",
+                    name = "Veil of Shadow",
+                    description = "Reduces healing effects for an enemy by 75% for 15 sec.",
+                    duration = 15,
+                    cooldown = 0,
+                },
+            },
+        },
+        {
+            bossID = 3927,
+            name = "Wolf Master Nandos", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Ability_Hunter_BeastCall",
+                    name = "Call Bleak Worg",
+                    description = "Summons 1 Bleak Worg to aid the caster in battle for 4 minutes.",
+                    duration = 240,
+                    cooldown = 0,
+                },
+                {
+                    icon = "Interface\\Icons\\Ability_Hunter_BeastCall",
+                    name = "Call Slavering Worg",
+                    description = "Summons 1 Slavering Worg to aid the caster in battle for 4 minutes.",
+                    duration = 240,
+                    cooldown = 0,
+                },
+                {
+                    icon = "Interface\\Icons\\Ability_Hunter_BeastCall",
+                    name = "Call Lupine Horror",
+                    description = "Summons 1 Lupine Horror to aid the caster in battle for 4 minutes.",
+                    duration = 240,
+                    cooldown = 0,
+                }
+            },
+        },
+        {
+            bossID = 4275,
+            name = "Archmage Arugal", 
+            flat = itemdir,
+            spells = {
+                {
+                    icon = "Interface\\Icons\\Spell_Lightning_LightningBolt01",
+                    name = "Thundershock",
+                    description = "Inflicts 64 to 86 Nature damage to nearby enemies, stunning them for 5 sec.",
+                    duration = 5,
+                    cooldown = 0,
+                },
+                {
+                    icon = "Interface\\Icons\\Spell_Shadow_ShadowBolt",
+                    name = "Void Bolt",
+                    description = "Sends a bolt of dark magic at an enemy, inflicting 925 to 1075 Shadow damage.",
+                    duration = 0,
+                    casttime = 4,
+                    cooldown = 0,
+                }
+            },
         }
     },
     items = {789, 790, 827, 886, 890, 897, 911, 920, 935, 1076, 1077, 1121, 1214, 1218, 1220, 1292, 1296, 1299, 1300, 1351, 1391, 1405, 1406, 1440, 1446, 1448, 1455, 1457, 1458, 1459, 1460, 1461, 1462, 1469, 1473, 1483, 1484, 1489, 1738, 1739, 1740, 1741, 1742, 1743, 1744, 1745, 1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1764, 1766, 1767, 1768, 1769, 1770, 1772, 1774, 1775, 1776, 1777, 1778, 1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1928, 1929, 1934, 1935, 1936, 1943, 1944, 1945, 1958, 1959, 1974, 2011, 2013, 2017, 2034, 2059, 2072, 2077, 2078, 2079, 2166, 2167, 2168, 2175, 2194, 2216, 2217, 2219, 2220, 2227, 2232, 2233, 2236, 2292, 2566, 2800, 2807, 2819, 2879, 2911, 2969, 2970, 2973, 2974, 2977, 2981, 2982, 2983, 2984, 2985, 2986, 2987, 2988, 2989, 2990, 2991, 2992, 3021, 3045, 3047, 3048, 3049, 3055, 3056, 3057, 3058, 3065, 3066, 3067, 3069, 3184, 3191, 3193, 3195, 3196, 3198, 3199, 3201, 3202, 3204, 3205, 3206, 3211, 3212, 3227, 3230, 3305, 3306, 3309, 3310, 3313, 3315, 3376, 3377, 3378, 3379, 3429, 3569, 3645, 3647, 3655, 3656, 3740, 3748, 4036, 4049, 4290, 4567, 4568, 4571, 4575, 4661, 4676, 4694, 4695, 4697, 4698, 4699, 4700, 4701, 4705, 4706, 4707, 4708, 4709, 4710, 4711, 4712, 4713, 4714, 4715, 4788, 4949, 4998, 4999, 5001, 5254, 5943, 6226, 6314, 6318, 6319, 6320, 6321, 6323, 6324, 6340, 6341, 6378, 6379, 6380, 6381, 6382, 6383, 6387, 6392, 6393, 6394, 6395, 6397, 6398, 6528, 6531, 6536, 6538, 6539, 6540, 6541, 6545, 6546, 6547, 6548, 6551, 6552, 6553, 6554, 6557, 6559, 6560, 6561, 6562, 6563, 6564, 6565, 6566, 6567, 6568, 6569, 6570, 6571, 6572, 6573, 6574, 6575, 6576, 6577, 6578, 6579, 6580, 6581, 6582, 6583, 6584, 6585, 6586, 6587, 6588, 6590, 6591, 6592, 6593, 6594, 6595, 6596, 6597, 6598, 6599, 6600, 6601, 6602, 6604, 6605, 6608, 6611, 6612, 6613, 6614, 6615, 6633, 6641, 6642, 682, 7415, 7554, 7558, 7608, 9766, 9767, 9768, 9769, 9770, 9771, 9772, 9773, 9774, 9775, 9776, 9777, 9778, 9779, 9780, 9781, 9782, 9783, 9784, 9785, 9786, 9787, 9788, 9789, 9790, 9791, 9792, 9793, 9794, 9795, 9796, 9797, 9798, 9799, 9800, 9801, 9802, 9803, 9804, 9805, 9806, 9807, 9808, 9809, 9810, 9811, 9812, 9813, 9814, 9815, 9816, 9817, 9818, 9822, 9829, 9831, 9838, 10287, 10405, 10407, 11965, 11967, 11968, 11969, 11981, 11982, 11983, 11984, 11993, 11994, 11995, 12006, 12007, 12008, 12052, 12053, 12054, 12975, 12976, 12977, 12978, 12979, 12982, 12983, 12985, 12987, 12988, 12989, 12990, 12994, 12996, 12997, 12998, 12999, 13010, 13011, 13012, 13041, 14025, 14096, 14109, 14114, 14117, 14119, 14120, 14121, 14122, 14123, 14124, 14125, 14127, 14129, 14131, 14133, 14158, 14159, 14160, 14161, 14162, 14163, 14164, 14165, 14166, 14167, 14168, 14170, 14171, 14172, 14173, 14174, 14175, 14176, 14177, 14179, 14181, 14182, 14185, 14186, 14187, 14188, 14194, 14195, 14364, 14366, 14367, 14369, 14370, 14371, 14372, 14373, 14374, 14375, 14376, 14377, 14378, 14379, 14380, 14400, 14402, 14559, 14560, 14561, 14562, 14563, 14564, 14565, 14566, 14567, 14568, 14569, 14570, 14571, 14572, 14573, 14574, 14578, 14580, 14582, 14722, 14723, 14724, 14725, 14726, 14727, 14729, 14730, 14742, 14743, 14744, 14745, 14746, 14747, 14748, 14749, 14750, 14752, 14754, 14755, 14756, 15012, 15014, 15016, 15017, 15018, 15110, 15111, 15112, 15113, 15114, 15115, 15116, 15117, 15118, 15120, 15121, 15122, 15123, 15124, 15125, 15126, 15132, 15210, 15211, 15212, 15222, 15223, 15224, 15230, 15241, 15248, 15249, 15259, 15268, 15269, 15304, 15305, 15306, 15307, 15308, 15310, 15311, 15312, 15329, 15330, 15331, 15332, 15333, 15334, 15336, 15337, 15338, 15340, 15347, 15348, 15487, 15488, 15489, 15493, 15494, 15497, 15498, 15499, 15500, 15501, 15502, 15503, 15504, 15506, 15507, 15508, 15509, 15510, 15511, 15512, 15513, 15514, 15515, 15516, 15517, 15519, 15520, 15521, 15522, 15523, 15525, 15526, 15527, 15528, 15529, 15532, 15535, 15537, 15547, 15891, 15893, 15894, 15912, 15926, 15927, 15945, 15946, 15947, 15971, 15972, 15974, 51804, 51805, 51806, 51807, 51808},
@@ -355,7 +1330,20 @@ table.insert(Journal.djDungeons, {
             spells = {},
             name = "Taragaman the Hungerer",
             flat = itemdir,
-        }
+        },
+        {
+            bossID = 11518,
+            spells = {},
+            name = "Jergosh the Invoker",
+            flat = itemdir,
+        },
+        {
+            bossID = 11519,
+            spells = {},
+            name = "Bazzalan",
+            flat = itemdir,
+        },
+        
     },
     items = {727,826,827,1211,1214,1218,1220,1287,1296,1300,1391,1394,1405,1440,1446,1448,1460,1469,1473,1495,1497,1498,1499,1501,1502,1503,1504,1505,1506,1507,1509,1730,1731,1732,1733,1734,1735,1737,1738,1739,1740,1741,1742,1743,1744,1745,1764,1766,1767,1768,1769,1770,1787,1788,1789,1790,1791,1792,1793,1794,1926,1928,1929,1934,1936,1943,1944,1945,1958,1959,2073,2075,2078,2079,2088,2140,2166,2167,2168,2214,2215,2216,2217,2632,2957,2958,2961,2962,2965,2966,2969,2970,2971,2972,2973,2974,2975,2976,2977,2978,2980,2981,2982,2983,2984,2985,2986,2987,2988,2989,2990,2991,2992,3184,3192,3193,3195,3196,3205,3207,3211,3213,3279,3282,3283,3284,3286,3287,3288,3290,3291,3292,3302,3303,3304,3305,3306,3307,3308,3309,3310,3311,3312,3313,3314,3315,3374,3375,3376,3377,3643,3644,3645,3649,3651,3652,3653,3654,3655,4290,4561,4562,4564,4566,4567,4568,4569,4570,4571,4575,4676,4677,4678,4680,4681,4683,4686,4687,4689,4690,4692,4693,4695,4697,4699,4701,4767,4768,4771,4788,4949,6266,6267,6268,6269,6336,6337,6378,6379,6380,6511,6512,6527,6528,6531,6536,6537,6538,6539,6540,6541,6542,6543,6545,6546,6547,6548,6549,6550,6551,6552,6553,6554,6556,6557,6558,6559,6560,6561,6562,6563,6564,6575,6581,6583,6585,7108,7554,7608,8178,9743,9746,9747,9748,9749,9753,9756,9757,9758,9759,9760,9762,9763,9764,9765,9768,9770,9775,9776,9777,9778,9779,9780,9783,9784,9785,9786,9787,9788,9789,9790,11965,11981,12052,12053,14025,14090,14091,14094,14096,14097,14099,14102,14109,14110,14113,14114,14115,14116,14117,14119,14120,14121,14122,14123,14124,14125,14129,14131,14147,14148,14149,14150,14151,14160,14161,14164,14166,14167,14168,14173,14174,14364,14365,14366,14367,14370,14559,14560,14561,14563,14564,14565,14571,14722,14723,14724,14725,14726,14727,14729,14745,15009,15010,15011,15012,15013,15014,15015,15016,15017,15018,15110,15111,15112,15114,15210,15222,15248,15268,15298,15300,15301,15303,15304,15305,15306,15307,15308,15309,15310,15312,15452,15453,15477,15479,15480,15481,15484,15485,15486,15487,15488,15489,15490,15491,15492,15493,15494,15495,15497,15498,15499,15501,15502,15506,15507,15508,15509,15510,15893,15925,15926,15932,15933,15944,15945,15969,15970,15971},
 })
@@ -366,21 +1354,57 @@ table.insert(Journal.djDungeons, {
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-WailingCaverns.blp",
     bosses = {
         {
+            bossID = 5912,
+            spells = {},
+            name = "Deviate Faerie Dragon",
+            flat = itemdir,
+        },
+        {
+            bossID = 3653,
+            spells = {},
+            name = "Kresh",
+            flat = itemdir,
+        },
+        {
             bossID = 3654,
             spells = {},
             name = "Mutanus the Devourer",
             flat = itemdir,
         },
         {
-            bossID = 3653,
+            bossID = 3669,
             spells = {},
-            name = "Verdan the Everliving",
+            name = "Lord Cobrahn",
             flat = itemdir,
         },
         {
-            bossID = 5755,
+            bossID = 3670,
             spells = {},
-            name = "Deviate Faerie Dragon",
+            name = "Lord Pythas",
+            flat = itemdir,
+        },
+        {
+            bossID = 3671,
+            spells = {},
+            name = "Lady Anacondra",
+            flat = itemdir,
+        },
+        {
+            bossID = 3673,
+            spells = {},
+            name = "Lord Serpentis",
+            flat = itemdir,
+        },
+        {
+            bossID = 3674,
+            spells = {},
+            name = "Skum",
+            flat = itemdir,
+        },
+        {
+            bossID = 5775,
+            spells = {},
+            name = "Verdan the Everliving",
             flat = itemdir,
         }
     },
@@ -399,15 +1423,33 @@ table.insert(Journal.djDungeons, {
             flat = itemdir,
         },
         {
-            bossID = 1717,
+            bossID = 1666,
             spells = {},
-            name = "Hamhock",
+            name = "Kam Deepfury",
             flat = itemdir,
         },
         {
             bossID = 1696,
             spells = {},
             name = "Targorr the Dread",
+            flat = itemdir,
+        },
+        {
+            bossID = 1716,
+            spells = {},
+            name = "Bazil Thredd",
+            flat = itemdir,
+        },
+        {
+            bossID = 1717,
+            spells = {},
+            name = "Hamhock",
+            flat = itemdir,
+        },
+        {
+            bossID = 1720,
+            spells = {},
+            name = "Bruegal Ironknuckle",
             flat = itemdir,
         }
     },
@@ -1015,19 +2057,111 @@ table.insert(Journal.djDungeons, {
     bosses = {
         {
             bossID = 18472,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_arcane_arcane03",
+                    name        = "Arcane Shock",
+                    description = "Shocks an enemy with concussive force, then inflicts additional Arcane damage every 3 sec. for 12 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_flameshock",
+                    name        = "Flame Shock",
+                    description = "Instantly burns an enemy, then inflicts additional Fire damage every 3 sec. for 12 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_chainlightning",
+                    name        = "Chain Lightning",
+                    description = "Strikes an enemy with a lightning bolt that arcs to another nearby enemy. The spell affects up to 3 targets, causing Nature damage to each.",
+                    duration    = 0,
+                    casttime    = 3,
+                    cooldown    = 6,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_shadow_curseofachimonde",
+                    name        = "Shadow Shock",
+                    description = "Shocks an enemy with concussive force, then inflicts additional Shadow damage every 3 sec. for 12 sec.",
+                    duration    = 12,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                
+            },
             name = "Darkweaver Syth",
             flat = itemdir,
         },
         {
-            bossID = 18473,
-            spells = {},
+            bossID = 23035,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_auraofdarkness",
+                    name        = "Paralyzing Screech",
+                    description = "Stuns all nearby enemies for 6 sec.",
+                    duration    = 0,
+                    casttime    = 5,
+                    cooldown    = 10,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_cyclone",
+                    name        = "Cyclone of Feathers",
+                    description = "Invulnerable, but unable to act.",
+                    duration    = 6,
+                    casttime    = 2.5,
+                    cooldown    = 5,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\ability_hunter_pet_bat",
+                    name        = "Dive",
+                    description = "Charges a distant enemy, inflicting normal damage plus 0, then fears all nearby targets.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
             name = "Anzu",
             flat = itemdir,
         },
         {
-            bossID = 18667,
-            spells = {},
+            bossID = 18473,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_holy_divineintervention",
+                    name        = "Arcane Bubble",
+                    description = "Immune to all attacks and spells.Cannot attack. Lasts 8 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_polymorph",
+                    name        = "Polymorph",
+                    description = "Transforms an enemy into a sheep, forcing it to wander around for up to 6 sec. While wandering, the sheep cannot attack or cast spells. Any damage will transform the target back into its normal form. Only one target can be polymorphed at a time. Only works on beasts, dragons, giants, humanoids, and critters.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_nature_wispsplode",
+                    name        = "Arcane Explosion",
+                    description = "Sends out a blast wave of magic, inflicting Arcane damage to nearby enemies.",
+                    duration    = 0,
+                    casttime    = 5,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_arcane_starfire",
+                    name        = "Arcane Volley",
+                    description = "Hurl magical bolts at nearby enemies, inflicting Arcane damage.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+              },
             name = "Talon King Ikiss",
             flat = itemdir,
         }
@@ -2078,7 +3212,16 @@ table.insert(Journal.djDungeons, {
     bosses = {
         {
             bossID = 18525,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_holy_championsbond",
+                    name        = "Badge of Justice Vendor",
+                    description = "G'eras sells a massive amount of Badge of Justice Gear. He is located in the middle of the shattath city.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
             name = "G'eras",
             flat = itemdir,
         },
@@ -2090,32 +3233,47 @@ table.insert(Journal.djDungeons, {
         },
         {
             bossID = 25967,
-            spells = {},
+            spells = {
+                {
+                icon        = "Interface\\Icons\\spell_arcane_portalorgrimmar",
+                name        = "Portal: Caverns of Time",
+                description = "Has a portal to the Caverns of Time. Talk to the NPC to get the portal.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 0,
+              },
+            },
             name = "Zephyr",
             flat = itemdir,
         },
         {
             bossID = 18756,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_misc_shadowegg",
+                    name        = "Bottomless Bag",
+                    description = "24 Slot Bag for 3,000g",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
             name = "Haris Pilton",
             flat = itemdir,
         },
         {
             bossID = 21655,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_misc_book_11",
+                    name        = "Lower City Quartermaster",
+                    description = "Reputation Vendor for the Lower City",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
             name = "Nakodu",
-            flat = itemdir,
-        },
-        {
-            bossID = 27722,
-            spells = {},
-            name = "Drolig Blastpipe",
-            flat = itemdir,
-        },
-        {
-            bossID = 21905,
-            spells = {},
-            name = "Veynna Dawnstar",
             flat = itemdir,
         },
     },
