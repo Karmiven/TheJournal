@@ -13,6 +13,207 @@ local ADDON_PREFIX = "DJ_ATTUNE"
 local FRIENDS_DATA = {} -- Store friends' attunement data
 local ITEM_QUERY_RESPONSES = {} -- Store BOE item query responses
 
+-- Message queue and throttling system
+local MESSAGE_QUEUE = {}
+local MESSAGE_THROTTLE_DELAY = 0.1  -- 100ms between messages to prevent spam
+local BATCH_SIZE = 10  -- Max messages per batch
+local lastMessageTime = 0
+local queueProcessor = nil
+
+-- Track who we've sent messages to recently to avoid duplicates
+local RECENT_RECIPIENTS = {}
+local RECIPIENT_COOLDOWN = 1
+
+-- Initialize queue processor
+local function InitializeMessageQueue()
+    if queueProcessor then return end
+    
+    queueProcessor = CreateFrame("Frame")
+    queueProcessor:SetScript("OnUpdate", function(self, elapsed)
+        local currentTime = GetTime()
+        
+        -- Clean up old recipients every 30 seconds
+        if not self.lastCleanup or (currentTime - self.lastCleanup) > 30 then
+            local cleanupTime = currentTime - RECIPIENT_COOLDOWN
+            for recipient, lastSent in pairs(RECENT_RECIPIENTS) do
+                if lastSent < cleanupTime then
+                    RECENT_RECIPIENTS[recipient] = nil
+                end
+            end
+            self.lastCleanup = currentTime
+        end
+        
+        -- Process message queue
+        if #MESSAGE_QUEUE > 0 and (currentTime - lastMessageTime) >= MESSAGE_THROTTLE_DELAY then
+            local messagesProcessed = 0
+            local queueIndex = 1
+            
+            while queueIndex <= #MESSAGE_QUEUE and messagesProcessed < BATCH_SIZE do
+                local messageData = MESSAGE_QUEUE[queueIndex]
+                local shouldRemoveFromQueue = false
+                local shouldSend = true
+                
+                -- Double-check online status for whispers before sending
+                if messageData.channel == "WHISPER" and messageData.target then
+                    shouldSend = false
+                    -- Check if target is online
+                    local numFriends = GetNumFriends()
+                    for i = 1, numFriends do
+                        local name, level, class, area, connected = GetFriendInfo(i)
+                        if name == messageData.target and connected then
+                            shouldSend = true
+                            break
+                        end
+                    end
+                    if not shouldSend then
+                        shouldRemoveFromQueue = true -- Remove offline friends from queue
+                    end
+                end
+                
+                if shouldSend then
+                    -- Check if we should skip this recipient due to recent send
+                    local recipientKey = messageData.channel .. "_" .. (messageData.target or "broadcast")
+                    local lastSentTime = RECENT_RECIPIENTS[recipientKey]
+                    
+                    if not lastSentTime or (currentTime - lastSentTime) >= RECIPIENT_COOLDOWN then
+                        -- Can send now - remove from queue and send
+                        SendAddonMessage(messageData.prefix, messageData.message, messageData.channel, messageData.target)
+                        RECENT_RECIPIENTS[recipientKey] = currentTime
+                        lastMessageTime = currentTime
+                        messagesProcessed = messagesProcessed + 1
+                        shouldRemoveFromQueue = true
+                    else
+                        -- Still in cooldown - leave in queue for later, move to next message
+                        queueIndex = queueIndex + 1 -- Move to next message without removing this one
+                    end
+                end
+                
+                -- Remove message from queue if we processed it or it's invalid
+                if shouldRemoveFromQueue then
+                    table.remove(MESSAGE_QUEUE, queueIndex)
+                    -- Don't increment queueIndex since we removed an item
+                else
+                    -- Only increment if we didn't remove anything
+                    if not shouldSend or (shouldSend and not shouldRemoveFromQueue) then
+                        -- This handles the cooldown case where we already incremented above
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- Queue a message for sending
+local function QueueMessage(prefix, message, channel, target)
+    table.insert(MESSAGE_QUEUE, {
+        prefix = prefix,
+        message = message,
+        channel = channel,
+        target = target,
+        timestamp = GetTime()
+    })
+end
+
+-- Get list of unique recipients across all channels to avoid duplicates
+local function GetUniqueRecipients()
+    local recipients = {
+        guild = {},
+        party = {},
+        raid = {},
+        friends = {}
+    }
+    
+    -- Get guild members (check online status)
+    if IsInGuild() then
+        local numGuildMembers = GetNumGuildMembers()
+        for i = 1, numGuildMembers do
+            local name, _, _, _, _, _, _, _, online = GetGuildRosterInfo(i)
+            if online and name and name ~= UnitName("player") then
+                recipients.guild[name] = true
+            end
+        end
+    end
+    
+    -- Get party members
+    if GetNumPartyMembers() > 0 then
+        for i = 1, GetNumPartyMembers() do
+            local name = UnitName("party" .. i)
+            if name and name ~= UnitName("player") then
+                recipients.party[name] = true
+            end
+        end
+    end
+    
+    -- Get raid members
+    if GetNumRaidMembers() > 0 then
+        for i = 1, GetNumRaidMembers() do
+            local name = UnitName("raid" .. i)
+            if name and name ~= UnitName("player") then
+                recipients.raid[name] = true
+            end
+        end
+    end
+    
+    -- Get friends (only online ones)
+    local numFriends = GetNumFriends()
+    for i = 1, numFriends do
+        local name, level, class, area, connected = GetFriendInfo(i)
+        if connected and name then
+            recipients.friends[name] = true
+        end
+    end
+    
+    return recipients
+end
+
+-- Smart message sending that avoids duplicates
+local function SendMessageSmart(prefix, message, skipWhispers)
+    InitializeMessageQueue()
+    
+    local recipients = GetUniqueRecipients()
+    local channelsSent = {}
+    
+    -- Send to appropriate channels, prioritizing broader channels
+    if IsInGuild() then
+        QueueMessage(prefix, message, "GUILD")
+        channelsSent.guild = true
+    end
+    
+    if GetNumRaidMembers() > 0 then
+        QueueMessage(prefix, message, "RAID")
+        channelsSent.raid = true
+    elseif GetNumPartyMembers() > 0 then
+        QueueMessage(prefix, message, "PARTY")
+        channelsSent.party = true
+    end
+    
+    -- Only whisper friends who aren't already covered by guild/party/raid
+    if not skipWhispers then
+        for friendName in pairs(recipients.friends) do
+            local shouldWhisper = true
+            
+            -- Skip if they're in guild and we sent to guild
+            if channelsSent.guild and recipients.guild[friendName] then
+                shouldWhisper = false
+            end
+            
+            -- Skip if they're in party and we sent to party
+            if channelsSent.party and recipients.party[friendName] then
+                shouldWhisper = false
+            end
+            
+            -- Skip if they're in raid and we sent to raid
+            if channelsSent.raid and recipients.raid[friendName] then
+                shouldWhisper = false
+            end
+            
+            if shouldWhisper then
+                QueueMessage(prefix, message, "WHISPER", friendName)
+            end
+        end
+    end
+end
+
 function GetTableSize(t)
     local count = 0
     for _ in pairs(t) do count = count + 1 end
@@ -125,6 +326,9 @@ end
 
 -- Function to load friends from global cache
 local function LoadFriendsFromCache()
+    -- Always clean up hidden players first
+    CleanupHiddenPlayersFromSession()
+    
     if _G.Journal_FriendCache and _G.Journal_FriendCache.friends then
         local currentTime = GetTime()
         local loadedCount = 0
@@ -248,66 +452,68 @@ end
 -- Initialize friends cache from saved variables
 FRIENDS_DATA = FRIENDS_DATA or {}
 
+-- Function to clean up hidden players from current session data
+local function CleanupHiddenPlayersFromSession()
+    if _G.Journal_FriendCache and _G.Journal_FriendCache.hiddenPlayers then
+        local cleanedCount = 0
+        for hiddenPlayer, _ in pairs(_G.Journal_FriendCache.hiddenPlayers) do
+            if FRIENDS_DATA[hiddenPlayer] then
+                FRIENDS_DATA[hiddenPlayer] = nil
+                cleanedCount = cleanedCount + 1
+            end
+            if _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[hiddenPlayer] then
+                _G.FRIENDS_JOURNAL_POINTS[hiddenPlayer] = nil
+            end
+        end
+        if cleanedCount > 0 then
+            print("|cFFFF0000[DJ Hidden]|r Cleaned " .. cleanedCount .. " hidden players from session")
+        end
+    end
+end
+
 -- Function to load persistent friends data (called after saved variables are loaded)
 local function LoadPersistentFriendsData()
-    -- Load from global cache first (this provides base data)
-    LoadFriendsFromCache()
-
-    -- Load from character-specific persistent data (highest priority - overwrites cache data)
-    if _G.Journal_charDB and _G.Journal_charDB.friendsAttunementData then
-        local loadedFromPersistent = 0
+    if not _G.Journal_charDB then
+        return
+    end
+    
+    -- Always clean up hidden players first
+    CleanupHiddenPlayersFromSession()
+    
+    -- Load friends data
+    local loadedFromPersistent = 0
+    if _G.Journal_charDB.friendsAttunementData then
         for playerName, data in pairs(_G.Journal_charDB.friendsAttunementData) do
-            if not (_G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
+            -- Skip hidden players
+            if not (_G.Journal_FriendCache and _G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
                 FRIENDS_DATA[playerName] = data
                 loadedFromPersistent = loadedFromPersistent + 1
             end
         end
-        if loadedFromPersistent > 0 then
-            print("|cFF00FF00[DJ Friends]|r Loaded " .. loadedFromPersistent .. " friends from persistent data")
-        end
     end
-
+    
     -- Load journal points from persistent data
-    if _G.Journal_charDB and _G.Journal_charDB.friendsJournalPoints then
-        _G.FRIENDS_JOURNAL_POINTS = _G.FRIENDS_JOURNAL_POINTS or {}
-        local pointsLoaded = 0
+    local pointsLoaded = 0
+    if _G.Journal_charDB.friendsJournalPoints then
+        if not _G.FRIENDS_JOURNAL_POINTS then
+            _G.FRIENDS_JOURNAL_POINTS = {}
+        end
         for playerName, points in pairs(_G.Journal_charDB.friendsJournalPoints) do
-            -- CRITICAL FIX: Only load if player is not hidden
-            if not (_G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
+            -- Skip hidden players
+            if not (_G.Journal_FriendCache and _G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
                 _G.FRIENDS_JOURNAL_POINTS[playerName] = points
                 pointsLoaded = pointsLoaded + 1
             end
         end
-        if pointsLoaded > 0 then
-            print("|cFF00FF00[DJ Friends]|r Loaded " .. pointsLoaded .. " friends with journal points")
-        end
     end
     
-    -- CRITICAL FIX: Load hidden players from persistent data
-    if _G.Journal_charDB and _G.Journal_charDB.hiddenPlayers then
-        local hiddenLoaded = 0
+    -- Load hidden players
+    local hiddenLoaded = 0
+    if _G.Journal_charDB.hiddenPlayers then
         for playerName, _ in pairs(_G.Journal_charDB.hiddenPlayers) do
             _G.Journal_FriendCache.hiddenPlayers[playerName] = true
             hiddenLoaded = hiddenLoaded + 1
         end
-        if hiddenLoaded > 0 then
-            print("|cFF00FF00[DJ Friends]|r Loaded " .. hiddenLoaded .. " hidden players from persistent data")
-        end
-    end
-    
-    -- CRITICAL FIX: Remove any hidden players from current FRIENDS_DATA
-    for playerName, _ in pairs(_G.Journal_FriendCache.hiddenPlayers) do
-        if FRIENDS_DATA[playerName] then
-            FRIENDS_DATA[playerName] = nil
-        end
-    end
-    
-    -- Update the global reference
-    _G.FRIENDS_ATTUNEMENT_DATA = FRIENDS_DATA
-    
-    -- Update friends display if it's available
-    if _G.UpdateAttunementFriendsDisplay then
-        _G.UpdateAttunementFriendsDisplay()
     end
 end
 
@@ -378,15 +584,12 @@ local function SaveFriendsCache(force)
         end
     end
     
-    -- Save confirmation for user feedback
-    if (savedFriends > 0 or savedPoints > 0 or savedHidden > 0) then
-        print("|cFF00FF00[DJ Friends]|r Saved " .. savedFriends .. " friends, " .. savedPoints .. " journal points, and " .. savedHidden .. " hidden players")
-    end
+
     
     -- Also save to global cross-character cache
     if _G.Journal_FriendCache then
         for playerName, data in pairs(FRIENDS_DATA) do
-            if not data.isPlayer then -- Don't cache our own data globally
+            if not data.isPlayer and not _G.Journal_FriendCache.hiddenPlayers[playerName] then -- Don't cache our own data globally or hidden players
                 _G.Journal_FriendCache.friends[playerName] = {
                     class = data.class,
                     attuned = data.attuned,
@@ -668,69 +871,30 @@ local function SendAttunementData()
     
     -- Get current journal points
     local journalPoints = Journal_charDB.journalPoints or 0
-    
-    -- Create minimal message for network transmission (lightweight)
-    local message = strjoin(":", "DATA", playerName, englishClass, attuned, total, percentage, table.concat(top3Dungeons, ","), questItemID, journalPoints)
-    
-    -- Debug output
-    if debug then
-        print("|cFF00FF00[DJ Debug Send]|r Sending: questItemID=" .. questItemID .. ", journalPoints=" .. journalPoints)
-    end
-    
-    -- Send to guild and party members
-    --SendAddonMessage(ADDON_PREFIX, message, "WORLD")
-    if IsInGuild() then
-        SendAddonMessage(ADDON_PREFIX, message, "GUILD")
-    end
-    if GetNumPartyMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, message, "PARTY")
-    end
-    if GetNumRaidMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, message, "RAID")
-    end
-    
-    -- Send to online friends via whisper
-    local numFriends = GetNumFriends()
-    if numFriends > 0 then
-        for i = 1, numFriends do
-            local name, level, class, area, connected = GetFriendInfo(i)
-            if connected and name then
-                SendAddonMessage(ADDON_PREFIX, message, "WHISPER", name)
-            end
+
+    local encodedDungeons = ""
+    if #top3Dungeons > 0 then
+        -- Use a simple encoding that replaces problematic characters
+        local safeDungeons = {}
+        for _, dungeonName in ipairs(top3Dungeons) do
+            -- Replace spaces and colons with safe characters
+            local safeName = dungeonName:gsub(" ", "_"):gsub(":", "|"):gsub(",", ";")
+            table.insert(safeDungeons, safeName)
         end
+        encodedDungeons = table.concat(safeDungeons, ",")
     end
+    
+    local message = strjoin(":", "DATA", playerName, englishClass, attuned, total, percentage, encodedDungeons, questItemID, journalPoints)
+    -- Use smart messaging system to avoid duplicates and throttle messages
+    SendMessageSmart(ADDON_PREFIX, message, false)
 end
 
 -- Function to request attunement data from others
 local function RequestAttunementData()
     local message = "REQUEST:" .. UnitName("player")
-    local friendsSent = 0
     
-    if IsInGuild() then
-        SendAddonMessage(ADDON_PREFIX, message, "GUILD")
-    end
-    if GetNumPartyMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, message, "PARTY")
-    end
-    if GetNumRaidMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, message, "RAID")
-    end
-    
-    -- Request from online friends via whisper
-    local numFriends = GetNumFriends()
-    if numFriends > 0 then
-        for i = 1, numFriends do
-            local name, level, class, area, connected = GetFriendInfo(i)
-            if connected and name then
-                SendAddonMessage(ADDON_PREFIX, message, "WHISPER", name)
-                friendsSent = friendsSent + 1
-            end
-        end
-    end
-    
-    if friendsSent > 0 then
-        print("|cFF00FF00[DJ Friends]|r Requested attunement data from " .. friendsSent .. " online friends")
-    end
+    -- Use smart messaging system to avoid duplicates and throttle requests
+    SendMessageSmart(ADDON_PREFIX, message, false)
 end
 
 -- Function to query friends about a specific item (with full link and detailed data)
@@ -772,28 +936,10 @@ local function QueryItemFromFriends(itemID, itemLink)
         message = strjoin(":", "ITEM_QUERY", UnitName("player"), itemID, "", forgeLevel, affixMask1, affixMask2, itemTags1, itemTags2)
     end
     
-    print("|cFFFFD700[DJ BOE]|r Querying friends about: " .. (itemLink or ("Item " .. itemID)) .. " (Forge: " .. forgeLevel .. ")")
+
     
-    if IsInGuild() then
-        SendAddonMessage(ADDON_PREFIX, message, "GUILD")
-    end
-    if GetNumPartyMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, message, "PARTY")
-    end
-    if GetNumRaidMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, message, "RAID")
-    end
-    
-    -- Query online friends via whisper
-    local numFriends = GetNumFriends()
-    if numFriends > 0 then
-        for i = 1, numFriends do
-            local name, level, class, area, connected = GetFriendInfo(i)
-            if connected and name then
-                SendAddonMessage(ADDON_PREFIX, message, "WHISPER", name)
-            end
-        end
-    end
+    -- Use smart messaging system to avoid duplicates and throttle messages
+    SendMessageSmart(ADDON_PREFIX, message, false)
 end
 
 -- Simplified ItemQualifiesForBagEquip function based on user requirements
@@ -872,7 +1018,7 @@ local function RespondToItemQuery(requester, itemID, itemLink, queriedForgeLevel
     end
     
     if _G.debug then
-        print("|cFF00FF00[DJ DEBUG]|r   baseProgress: " .. tostring(baseProgress))
+
     end
     
     -- Check if we have the SPECIFIC variant first (most important check)
@@ -910,7 +1056,7 @@ local function RespondToItemQuery(requester, itemID, itemLink, queriedForgeLevel
     if needsItem == 1 or canUpgrade == 1 or needsAffixesOnly == 1 then
         local message = strjoin(":", "ITEM_RESPONSE", UnitName("player"), itemID, needsItem, canUpgrade, ourForgeLevel, needsAffixesOnly)
         
-        SendAddonMessage(ADDON_PREFIX, message, "WHISPER", requester)
+        QueueMessage(ADDON_PREFIX, message, "WHISPER", requester)
         
         local itemName = GetItemInfo(itemID) or ("Item " .. itemID)
         local statusText = ""
@@ -927,7 +1073,7 @@ local function RespondToItemQuery(requester, itemID, itemLink, queriedForgeLevel
         elseif canUpgrade == 1 then
             statusText = "|cFFFFFF00UPGRADE|r from" .. forgeText
         end
-        print("|cFF87CEEB[BOE Response]|r Told " .. requester .. " I " .. statusText .. " " .. itemName .. " (Queried: " .. (queriedForgeLevel or 0) .. " vs Mine: " .. ourForgeLevel .. ")")
+
     end
 end
 
@@ -947,7 +1093,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
     
     if msgType == "TEST" then
         -- Test message received
-        print("|cFF00FF00[DJ DEBUG]|r Received TEST message from " .. sender .. ": " .. message)
+
         return
     elseif msgType == "REQUEST" and parts[2] ~= UnitName("player") then
         -- Someone is requesting data, send ours
@@ -955,6 +1101,12 @@ local function OnAddonMessage(prefix, message, channel, sender)
     elseif msgType == "DATA" and parts[2] ~= UnitName("player") then
         -- Received someone's attunement data
         local playerName = parts[2]
+        
+        -- Skip if player is hidden
+        if _G.Journal_FriendCache and _G.Journal_FriendCache.hiddenPlayers[playerName] then
+            return
+        end
+        
         local playerClass = parts[3] or "WARRIOR"
         local attuned = tonumber(parts[4]) or 0
         local total = tonumber(parts[5]) or 0
@@ -966,7 +1118,9 @@ local function OnAddonMessage(prefix, message, channel, sender)
         local top3Dungeons = {}
         if top3DungeonsStr ~= "" then
             for dungeonName in gmatch(top3DungeonsStr, "[^,]+") do
-                table.insert(top3Dungeons, dungeonName)
+                -- Decode the safe characters back to original dungeon names
+                local originalName = dungeonName:gsub("_", " "):gsub("|", ":"):gsub(";", ",")
+                table.insert(top3Dungeons, originalName)
             end
         end
         
@@ -1029,12 +1183,6 @@ local function OnAddonMessage(prefix, message, channel, sender)
             end
             _G.FRIENDS_JOURNAL_POINTS[playerName] = journalPoints
         end
-        
-        -- Debug output
-        if debug then
-            print("|cFF00FF00[DJ Debug Receive]|r From " .. playerName .. ": questItemID=" .. questItemID .. ", journalPoints=" .. journalPoints)
-        end
-        
         -- Save to cache
         SaveFriendsCache()
         
@@ -1045,6 +1193,11 @@ local function OnAddonMessage(prefix, message, channel, sender)
     elseif msgType == "ITEM_QUERY" and parts[2] ~= UnitName("player") then
         -- Someone is asking about a specific item with detailed data
         local requester = parts[2]
+        
+        -- Skip if requester is hidden
+        if _G.Journal_FriendCache and _G.Journal_FriendCache.hiddenPlayers[requester] then
+            return
+        end
         local itemID = tonumber(parts[3])
         local encodedLink = parts[4]
         local queriedForgeLevel = tonumber(parts[5]) or 0
@@ -1105,7 +1258,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
             end
             
             if statusText ~= "" then
-                print("|cFF87CEEB[BOE Response]|r " .. responder .. " " .. statusText .. " " .. itemName)
+
             end
             
             -- Clear old responses after 30 seconds (use simple timer for WotLK compatibility)
@@ -1211,6 +1364,10 @@ _G.QueryItemFromFriends = QueryItemFromFriends
 _G.AddSelfToFriendsData = AddSelfToFriendsData
 _G.HidePlayer = HidePlayer
 _G.SaveFriendsCache = SaveFriendsCache
+_G.SendMessageSmart = SendMessageSmart
+_G.QueueMessage = QueueMessage
+_G.InitializeMessageQueue = InitializeMessageQueue
+_G.CleanupHiddenPlayersFromSession = CleanupHiddenPlayersFromSession
 _G.FRIENDS_ATTUNEMENT_DATA = FRIENDS_DATA
 _G.ITEM_QUERY_RESPONSES = ITEM_QUERY_RESPONSES
 _G.QUERIED_ITEM_LINKS = QUERIED_ITEM_LINKS
@@ -1267,9 +1424,8 @@ initFrame:SetScript("OnEvent", function(self, event, addonName)
                 _G.SaveFriendsCache()
             end
             
-            -- Debug: Check if calculation works now
+            -- Check if calculation works now
             local attuned, total = CalculateOwnAttunementPercentage()
-            print("|cFF00FF00[DJ Init]|r Post-login attunement check: " .. attuned .. "/" .. total)
         end)
         
         self:UnregisterEvent("PLAYER_LOGIN")
@@ -1298,17 +1454,12 @@ f:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         -- Additional initialization after login
         C_Timer.After(3, function()
-            -- Debug: Check if our attunement calculation is working
+            -- Check if our attunement calculation is working
             local attuned, total = CalculateOwnAttunementPercentage()
-            print("|cFF00FF00[DJ Debug]|r Own attunement: " .. attuned .. "/" .. total)
             
             -- Ensure we're added to friends data
             if _G.AddSelfToFriendsData then
                 _G.AddSelfToFriendsData()
-                local playerName = UnitName("player")
-                if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
-                    print("|cFF00FF00[DJ Debug]|r Added self to friends data: " .. _G.FRIENDS_DATA[playerName].attuned .. "/" .. _G.FRIENDS_DATA[playerName].total)
-                end
             end
         end)
     end
@@ -1422,7 +1573,73 @@ SlashCmdList["TESTBOE"] = function(msg)
     
     if _G.QueryItemFromFriends then
         _G.QueryItemFromFriends(itemID, link)
-        print("|cFF00FF00[BOE Test]|r Query sent for " .. itemName)
+        
+        -- Clear old responses for this item
+        if ITEM_QUERY_RESPONSES[itemID] then
+            ITEM_QUERY_RESPONSES[itemID] = {}
+        end
+        
+        -- Set up a simple timer to check for responses
+        local responseFrame = CreateFrame("Frame")
+        responseFrame.startTime = GetTime()
+        responseFrame.itemID = itemID
+        responseFrame.itemName = itemName
+        responseFrame:SetScript("OnUpdate", function(self, elapsed)
+            local timeElapsed = GetTime() - self.startTime
+            
+                            if timeElapsed >= 2.5 then
+                self:SetScript("OnUpdate", nil)
+                
+                local responseCount = 0
+                local needResponses = {}
+                local upgradeResponses = {}
+                local affixResponses = {}
+                
+                if ITEM_QUERY_RESPONSES[self.itemID] then
+                    for responder, data in pairs(ITEM_QUERY_RESPONSES[self.itemID]) do
+                        responseCount = responseCount + 1
+                        
+                        if data.needsItem then
+                            table.insert(needResponses, responder)
+                        elseif data.canUpgrade then
+                            local forgeText = ""
+                            if data.currentForge == 1 then forgeText = " (has TF)"
+                            elseif data.currentForge == 2 then forgeText = " (has WF)"
+                            elseif data.currentForge == 3 then forgeText = " (has LF)"
+                            end
+                            table.insert(upgradeResponses, responder .. forgeText)
+                        elseif data.needsAffixesOnly then
+                            local forgeText = ""
+                            if data.currentForge == 1 then forgeText = " (has TF)"
+                            elseif data.currentForge == 2 then forgeText = " (has WF)"
+                            elseif data.currentForge == 3 then forgeText = " (has LF)"
+                            end
+                            table.insert(affixResponses, responder .. forgeText)
+                        end
+                    end
+                end
+                
+                if responseCount > 0 then
+                    print("|cFF00FF00[BOE Test]|r " .. responseCount .. " friends responded about " .. self.itemName .. ":")
+                    
+                    if #needResponses > 0 then
+                        print("|cFF00FF00  NEED:|r " .. table.concat(needResponses, ", "))
+                    end
+                    
+                    if #upgradeResponses > 0 then
+                        print("|cFFFFFF00  UPGRADE:|r " .. table.concat(upgradeResponses, ", "))
+                    end
+                    
+                    if #affixResponses > 0 then
+                        print("|cFFFFFF00  AFFIXES ONLY:|r " .. table.concat(affixResponses, ", "))
+                    end
+                else
+                    print("|cFFFF0000[BOE Test]|r No responses received for " .. self.itemName)
+                end
+            end
+        end)
+    else
+        print("|cFFFF0000[BOE Test]|r ERROR: QueryItemFromFriends function not available!")
     end
 end
 
@@ -1597,17 +1814,12 @@ SlashCmdList["DJRELOAD"] = function(msg)
         _G.SaveFriendsCache()
     end
     
-    -- Send our data
+    -- Send data to friends
     if _G.SendAttunementData then
         _G.SendAttunementData()
     end
     
-    -- Request data from others
-    if _G.RequestAttunementData then
-        _G.RequestAttunementData()
-    end
-    
-    print("|cFF00FF00[DJ Reload]|r Data reload complete!")
+    print("|cFF00FF00[DJ Reload]|r Reload complete")
 end
 
 -- Slash command to force recalculate attunement (ignore all cache)
@@ -1683,6 +1895,9 @@ SlashCmdList["FRIENDSCACHE"] = function(msg)
     elseif cmd == "save" then
         SaveFriendsCache()
         print("|cFF87CEEB[DJ Friends]|r Saved friends cache")
+    elseif cmd == "cleanhidden" then
+        CleanupHiddenPlayersFromSession()
+        print("|cFF87CEEB[DJ Friends]|r Cleaned hidden players from current session")
     elseif cmd == "info" then
         if _G.Journal_FriendCache then
             local friendCount = 0
@@ -1710,11 +1925,12 @@ SlashCmdList["FRIENDSCACHE"] = function(msg)
         end
     else
         print("|cFF87CEEB[DJ Friends]|r Friends Cache Commands:")
-        print("  /fcache info    - Show cache statistics")
-        print("  /fcache clear   - Clear all cached friends")
-        print("  /fcache cleanup - Remove old entries (30+ days)")
-        print("  /fcache reload  - Reload friends from cache")
-        print("  /fcache save    - Save current friends to cache")
+        print("  /fcache info      - Show cache statistics")
+        print("  /fcache clear     - Clear all cached friends")
+        print("  /fcache cleanup   - Remove old entries (30+ days)")
+        print("  /fcache reload    - Reload friends from cache")
+        print("  /fcache save      - Save current friends to cache")
+        print("  /fcache cleanhidden - Remove hidden players from session")
         print("")
         print("|cFFFFD700[DJ Friends]|r Player Management:")
         print("  /hideplayer <name>   - Hide player from BOE responses")
@@ -1722,120 +1938,180 @@ SlashCmdList["FRIENDSCACHE"] = function(msg)
         print("  /listhidden          - List all hidden players")
     end
 end
--- Debug command to enable/disable debug output
-SLASH_DJDEBUG1 = "/djdebug"
-SlashCmdList["DJDEBUG"] = function(msg)
-    debug = not debug
-    _G.debug = debug  -- Also set global debug flag
-    print("|cFF00FF00[DJ Debug]|r Debug mode " .. (debug and "ENABLED" or "DISABLED"))
+-- Addon Message Tracking System
+local ADDON_MESSAGE_STATS = {
+    allMessages = {},  -- All message records with timestamps
+    currentMinute = {},  -- Messages in current minute
+    totalSent = 0,
+    startTime = GetTime(),
+    warningThreshold = 50,  -- Warn if more than 50 messages per minute
+    maxThreshold = 100      -- Alert if more than 100 messages per minute
+}
+
+-- Hook SendAddonMessage to track all calls
+local originalSendAddonMessage = SendAddonMessage
+SendAddonMessage = function(prefix, message, chatType, target, priority)
+    local currentTime = GetTime()
     
-    if debug then
-        -- Show detailed debugging info
-        print("|cFF00FF00[DJ Debug]|r === DETAILED DEBUG INFO ===")
-        
-        -- Check if dungeon data is available
-        local dungeonData = _G.Journal and _G.Journal.djDungeons or {}
-        print("|cFF00FF00[DJ Debug]|r Journal table exists: " .. tostring(_G.Journal ~= nil))
-        print("|cFF00FF00[DJ Debug]|r djDungeons exists: " .. tostring(_G.Journal and _G.Journal.djDungeons ~= nil))
-        print("|cFF00FF00[DJ Debug]|r Dungeon count: " .. #dungeonData)
-        
-        -- Check API availability
-        print("|cFF00FF00[DJ Debug]|r CanAttuneItemHelper: " .. tostring(_G.CanAttuneItemHelper ~= nil))
-        print("|cFF00FF00[DJ Debug]|r GetItemAttuneProgress: " .. tostring(_G.GetItemAttuneProgress ~= nil))
-        
-        -- Show first few dungeons and items
-        if #dungeonData > 0 then
-            for i = 1, math.min(3, #dungeonData) do
-                local dungeon = dungeonData[i]
-                print("|cFF00FF00[DJ Debug]|r Dungeon " .. i .. ": " .. (dungeon.name or "Unknown") .. " (" .. (#(dungeon.items or {})) .. " items)")
-                if dungeon.items and #dungeon.items > 0 then
-                    for j = 1, math.min(3, #dungeon.items) do
-                        local itemID = dungeon.items[j]
-                        local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or "N/A"
-                        local progress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or "N/A"
-                        print("|cFF00FF00[DJ Debug]|r   Item " .. itemID .. ": canAttune=" .. tostring(canAttune) .. ", progress=" .. tostring(progress))
-                    end
-                end
+    -- Record this message
+    local messageRecord = {
+        timestamp = currentTime,
+        prefix = prefix,
+        chatType = chatType,
+        target = target or "broadcast",
+        messageLength = string.len(message),
+        source = "unknown"
+    }
+    
+    -- Simple source detection without expensive debugstack
+    if prefix == "DJ_ATTUNE" then
+        messageRecord.source = "DJ_ATTUNE"
+    elseif prefix == "DJ_POINTS" then
+        messageRecord.source = "DJ_POINTS"
+    end
+    
+    -- Add to tracking
+    table.insert(ADDON_MESSAGE_STATS.allMessages, messageRecord)
+    table.insert(ADDON_MESSAGE_STATS.currentMinute, messageRecord)
+    ADDON_MESSAGE_STATS.totalSent = ADDON_MESSAGE_STATS.totalSent + 1
+    
+    -- Clean up old messages (keep only last 60 seconds for current minute tracking)
+    local cutoffTime = currentTime - 60
+    local newCurrentMinute = {}
+    for _, msg in ipairs(ADDON_MESSAGE_STATS.currentMinute) do
+        if msg.timestamp > cutoffTime then
+            table.insert(newCurrentMinute, msg)
+        end
+    end
+    ADDON_MESSAGE_STATS.currentMinute = newCurrentMinute
+    
+    -- Only warn on very high rates to avoid spam
+    local messagesThisMinute = #ADDON_MESSAGE_STATS.currentMinute
+    if messagesThisMinute >= ADDON_MESSAGE_STATS.maxThreshold then
+        print("|cFFFF0000[DJ WARNING]|r High message rate: " .. messagesThisMinute .. " messages/minute!")
+    end
+    
+    -- Call original function
+    return originalSendAddonMessage(prefix, message, chatType, target, priority)
+end
+
+-- Command to show addon message statistics
+SLASH_DJSTATS1 = "/djstats"
+SlashCmdList["DJSTATS"] = function(msg)
+    local currentTime = GetTime()
+    local sessionTime = currentTime - ADDON_MESSAGE_STATS.startTime
+    
+    print("|cFF00FF00[DJ Message Stats]|r === ADDON MESSAGE STATISTICS ===")
+    print("Session duration: " .. string.format("%.1f", sessionTime) .. " seconds (" .. string.format("%.1f", sessionTime/60) .. " minutes)")
+    print("Total messages sent: " .. ADDON_MESSAGE_STATS.totalSent)
+    print("Messages in last 60s: " .. #ADDON_MESSAGE_STATS.currentMinute)
+    print("Average per minute: " .. string.format("%.1f", (ADDON_MESSAGE_STATS.totalSent / math.max(1, sessionTime/60))))
+    
+    -- Show breakdown by source
+    local sourceCounts = {}
+    local channelCounts = {}
+    local last5Minutes = currentTime - 300  -- Last 5 minutes
+    
+    for _, msg in ipairs(ADDON_MESSAGE_STATS.allMessages) do
+        if msg.timestamp > last5Minutes then
+            sourceCounts[msg.source] = (sourceCounts[msg.source] or 0) + 1
+            channelCounts[msg.chatType] = (channelCounts[msg.chatType] or 0) + 1
+        end
+    end
+    
+    print("\n|cFFFFD700[Last 5 Minutes by Source]|r")
+    for source, count in pairs(sourceCounts) do
+        print("  " .. source .. ": " .. count)
+    end
+    
+    print("\n|cFFFFD700[Last 5 Minutes by Channel]|r")
+    for channel, count in pairs(channelCounts) do
+        print("  " .. channel .. ": " .. count)
+    end
+    
+    -- Show recent activity
+    if #ADDON_MESSAGE_STATS.currentMinute > 0 then
+        print("\n|cFFFFD700[Recent Messages (last 60s)]|r")
+        local recentCount = math.min(10, #ADDON_MESSAGE_STATS.currentMinute)
+        for i = #ADDON_MESSAGE_STATS.currentMinute - recentCount + 1, #ADDON_MESSAGE_STATS.currentMinute do
+            local msg = ADDON_MESSAGE_STATS.currentMinute[i]
+            local timeAgo = currentTime - msg.timestamp
+            print(string.format("  %.1fs ago: %s to %s (%s, %db)", 
+                timeAgo, msg.prefix, msg.chatType .. (msg.target ~= "broadcast" and (":" .. msg.target) or ""), 
+                msg.source, msg.messageLength))
+        end
+    end
+    
+    -- Show rate warnings
+    local rate = #ADDON_MESSAGE_STATS.currentMinute
+    if rate >= ADDON_MESSAGE_STATS.maxThreshold then
+        print("\n|cFFFF0000[WARNING]|r 🚨 Message rate is VERY HIGH! Risk of self-muting!")
+    elseif rate >= ADDON_MESSAGE_STATS.warningThreshold then
+        print("\n|cFFFFFF00[WARNING]|r ⚠️  Message rate is elevated")
+    else
+        print("\n|cFF00FF00[STATUS]|r ✅ Message rate is healthy")
+    end
+    
+    print("|cFF00FF00[DJ Message Stats]|r === END STATISTICS ===")
+end
+
+-- Save to persistent data
+local function SavePersistentFriendsData()
+    if not _G.Journal_charDB then
+        _G.Journal_charDB = {}
+    end
+    
+    -- Save friends data
+    local savedFriends = 0
+    _G.Journal_charDB.friendsAttunementData = {}
+    for playerName, data in pairs(FRIENDS_DATA) do
+        if not (_G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
+            _G.Journal_charDB.friendsAttunementData[playerName] = data
+            savedFriends = savedFriends + 1
+        end
+    end
+    
+    -- Save journal points
+    local savedPoints = 0
+    if _G.FRIENDS_JOURNAL_POINTS then
+        _G.Journal_charDB.friendsJournalPoints = {}
+        for playerName, points in pairs(_G.FRIENDS_JOURNAL_POINTS) do
+            if not (_G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
+                _G.Journal_charDB.friendsJournalPoints[playerName] = points
+                savedPoints = savedPoints + 1
             end
         end
-        
-        -- Show current state when debug is enabled
-        local attuned, total = CalculateOwnAttunementPercentage()
-        print("|cFF00FF00[DJ Debug]|r Current attunement: " .. attuned .. "/" .. total)
-        
-        -- Show friends data count
-        local friendCount = 0
-        if _G.FRIENDS_DATA then
-            for _ in pairs(_G.FRIENDS_DATA) do
-                friendCount = friendCount + 1
-            end
-        end
-        print("|cFF00FF00[DJ Debug]|r Friends in FRIENDS_DATA: " .. friendCount)
-        
-        -- Show persistent data count
-        local persistentCount = 0
-        if _G.Journal_charDB and _G.Journal_charDB.friendsAttunementData then
-            for _ in pairs(_G.Journal_charDB.friendsAttunementData) do
-                persistentCount = persistentCount + 1
-            end
-        end
-        print("|cFF00FF00[DJ Debug]|r Friends in persistent data: " .. persistentCount)
-        
-        -- Show journal points
-        local pointsCount = 0
-        if _G.FRIENDS_JOURNAL_POINTS then
-            for _ in pairs(_G.FRIENDS_JOURNAL_POINTS) do
-                pointsCount = pointsCount + 1
-            end
-        end
-        print("|cFF00FF00[DJ Debug]|r Friends with journal points: " .. pointsCount)
-        
-        print("|cFF00FF00[DJ Debug]|r === END DEBUG INFO ===")
+    end
+    
+    -- Save hidden players
+    local savedHidden = 0
+    _G.Journal_charDB.hiddenPlayers = {}
+    for playerName, _ in pairs(_G.Journal_FriendCache.hiddenPlayers) do
+        _G.Journal_charDB.hiddenPlayers[playerName] = true
+        savedHidden = savedHidden + 1
     end
 end
 
--- Test command to verify addon communication is working
-SLASH_TESTCOMM1 = "/testcomm"
-SlashCmdList["TESTCOMM"] = function(msg)
-    local testMessage = "TEST:TestMessage:" .. GetTime()
-    local messagesSent = 0
-    
-    print("|cFF00FF00[DJ DEBUG]|r Testing addon communication...")
-    print("|cFF00FF00[DJ DEBUG]|r ADDON_PREFIX: " .. ADDON_PREFIX)
-    print("|cFF00FF00[DJ DEBUG]|r Test message: " .. testMessage)
-    
-    if IsInGuild() then
-        SendAddonMessage(ADDON_PREFIX, testMessage, "GUILD")
-        messagesSent = messagesSent + 1
-        print("|cFF00FF00[DJ DEBUG]|r Sent test message to GUILD")
+-- Command to show current Journal_charDB data state
+SLASH_DJDATA1 = "/djdata"
+SlashCmdList["DJDATA"] = function(msg)
+    print("|cFFFF0000[DJ Data Debug]|r === JOURNAL_CHARDB STATE ===")
+    print("Journal_charDB.journalPoints: " .. tostring(Journal_charDB.journalPoints or "nil"))
+    print("Journal_charDB.currentRandomQuest: " .. tostring(Journal_charDB.currentRandomQuest and "exists" or "nil"))
+    if Journal_charDB.currentRandomQuest then
+        print("  itemID: " .. tostring(Journal_charDB.currentRandomQuest.itemID or "nil"))
+        print("  sourceName: " .. tostring(Journal_charDB.currentRandomQuest.sourceName or "nil"))
     end
     
-    if GetNumPartyMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, testMessage, "PARTY")
-        messagesSent = messagesSent + 1
-        print("|cFF00FF00[DJ DEBUG]|r Sent test message to PARTY")
+    local playerName = UnitName("player")
+    if FRIENDS_DATA[playerName] then
+        print("FRIENDS_DATA[" .. playerName .. "].questItemID: " .. tostring(FRIENDS_DATA[playerName].questItemID or "nil"))
     end
     
-    if GetNumRaidMembers() > 0 then
-        SendAddonMessage(ADDON_PREFIX, testMessage, "RAID")
-        messagesSent = messagesSent + 1
-        print("|cFF00FF00[DJ DEBUG]|r Sent test message to RAID")
+    if _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[playerName] then
+        print("FRIENDS_JOURNAL_POINTS[" .. playerName .. "]: " .. tostring(_G.FRIENDS_JOURNAL_POINTS[playerName]))
     end
-    
-    local numFriends = GetNumFriends()
-    print("|cFF00FF00[DJ DEBUG]|r Checking " .. numFriends .. " friends for test message")
-    
-    if numFriends > 0 then
-        for i = 1, numFriends do
-            local name, level, class, area, connected = GetFriendInfo(i)
-            if connected and name then
-                SendAddonMessage(ADDON_PREFIX, testMessage, "WHISPER", name)
-                messagesSent = messagesSent + 1
-                print("|cFF00FF00[DJ DEBUG]|r Sent test message to friend: " .. name)
-            end
-        end
-    end
-    
-    print("|cFF00FF00[DJ DEBUG]|r Total test messages sent: " .. messagesSent)
-    print("|cFF00FF00[DJ DEBUG]|r If you don't see any responses, the addon communication may not be working")
+    print("|cFFFF0000[DJ Data Debug]|r === END DEBUG ===")
 end
+
+

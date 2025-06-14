@@ -151,9 +151,7 @@ local DEBUG = false
 
 -- Function to print debug messages
 local function DebugPrint(...)
-    if DEBUG then
-        print("|cFF00FF00[DJ Debug]|r", ...)
-    end
+    -- Debug prints disabled for performance
 end
 
 -- Load saved friends data
@@ -3319,6 +3317,20 @@ local function CreateFriendEntry(index)
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Progress: " .. self.playerData.attuned .. "/" .. self.playerData.total .. " (" .. self.playerData.percentage .. "%)", 1, 1, 1)
         
+        -- Show journal points if available
+        local journalPoints = 0
+        if self.playerData.isPlayer then
+            -- For the current player, get from Journal_charDB
+            journalPoints = Journal_charDB.journalPoints or 0
+        else
+            -- For friends, get from FRIENDS_JOURNAL_POINTS
+            journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[self.playerData.playerName] or 0
+        end
+        
+        if journalPoints > 0 then
+            GameTooltip:AddLine("Journal Points: " .. journalPoints, 1, 1, 0)
+        end
+        
         -- Show detailed dungeon breakdown (top 20 dungeons they need)
         if self.playerData.dungeonDetails and #self.playerData.dungeonDetails > 0 then
             GameTooltip:AddLine(" ")
@@ -3534,7 +3546,7 @@ function UpdateAttunementFriendsDisplay()
                 end
                 
                 if journalPoints > 0 then
-                    questText = questText .. " |cFFFFD700(" .. journalPoints .. " pts)|r"
+                    questText = questText .. " \n|cFFFFD700Journal Points: " .. journalPoints .. "|r"
                 end
             else
                 -- Hide quest item icon when no quest
@@ -3597,6 +3609,13 @@ friendsFrame:SetScript("OnEnter", function(self)
         end
         
         GameTooltip:AddLine("|cFF00FF00Your Progress: " .. (myTotalAttunable - myTotalLeft) .. "/" .. myTotalAttunable .. " (" .. string.format("%.1f", myOverallPercent) .. "%)|r")
+        
+        -- Show journal points
+        local journalPoints = Journal_charDB.journalPoints or 0
+        if journalPoints > 0 then
+            GameTooltip:AddLine("Journal Points: " .. journalPoints, 1, 1, 0)
+        end
+        
         GameTooltip:AddLine(" ")
     
         -- Show your top 10 dungeons needing attention
@@ -3838,6 +3857,12 @@ reportButton:SetScript("OnEnter", function(self)
     end
     GameTooltip:AddLine("|cFF00FF00Overall: " .. (totalAttunable - totalLeft) .. "/" .. totalAttunable .. " (" .. string.format("%.1f", overallPercent) .. "%)|r")
     
+    -- Show journal points
+    local journalPoints = Journal_charDB.journalPoints or 0
+    if journalPoints > 0 then
+        GameTooltip:AddLine("Journal Points: " .. journalPoints, 1, 1, 0)
+    end
+    
     -- Show friends summary if available
     local friendCount = 0
     local totalFriendsProgress = 0
@@ -3960,7 +3985,7 @@ tooltipFrame:SetScript("OnUpdate", function(self, elapsed)
     end
 end)
 
-print("|cFFFF0000[DJ INIT]|r Enhanced BOE tooltip integration loaded!")
+
 
 -- ##################################################################
 -- # DEBUG HELPERS FOR BOE TOOLTIP TESTING
@@ -3997,7 +4022,7 @@ SlashCmdList["DJ"] = function(msg)
             local itemID = tonumber(originalLink:match("item:(%d+)"))
             if itemID then
                 _G.ORIGINAL_ITEM_LINKS[itemID] = originalLink
-                print("|cFF00FF00[BOE Pre-Process]|r Captured original item link for ID " .. itemID)
+        
             end
         end
     end
@@ -4911,12 +4936,18 @@ if originalSendAttunementData then
             local realmName = GetRealmName()
             local fullName = playerName .. "-" .. realmName
             
-            SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "GUILD")
-            if IsInGroup() then
-                SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "PARTY")
-            end
-            if IsInRaid() then
-                SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "RAID")
+            -- Use smart messaging system for journal points
+            if _G.SendMessageSmart then
+                _G.SendMessageSmart("DJ_POINTS", tostring(Journal_charDB.journalPoints), false)
+            else
+                -- Fallback to direct sending if smart system not available yet
+                SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "GUILD")
+                if IsInGroup() then
+                    SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "PARTY")
+                end
+                if IsInRaid() then
+                    SendAddonMessage("DJ_POINTS", tostring(Journal_charDB.journalPoints), "RAID")
+                end
             end
         end
         
