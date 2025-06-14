@@ -202,21 +202,22 @@ end
 
 -- Function to hide/unhide players
 local function HidePlayer(playerName, hide)
-    if not _G.Journal_FriendCache then
-        _G.Journal_FriendCache = {friends = {}, hiddenPlayers = {}, lastCleanup = GetTime()}
-    end
-    
     if hide then
         _G.Journal_FriendCache.hiddenPlayers[playerName] = true
+        _G.Journal_charDB.hiddenPlayers[playerName] = true
         -- Remove from current session
         FRIENDS_DATA[playerName] = nil
         print("|cFFFFD700[DJ Friends]|r Hidden player: " .. playerName)
     else
         _G.Journal_FriendCache.hiddenPlayers[playerName] = nil
+        _G.Journal_charDB.hiddenPlayers[playerName] = nil
         print("|cFFFFD700[DJ Friends]|r Unhidden player: " .. playerName)
         -- Reload from cache if available
         LoadFriendsFromCache()
     end
+    
+    -- Save the changes immediately to ensure persistence
+    SaveFriendsCache()
     
     -- Update friends display if visible
     if _G.AttunementFriendsFrame and _G.AttunementFriendsFrame:IsShown() and _G.UpdateAttunementFriendsDisplay then
@@ -233,6 +234,17 @@ if not _G.Journal_FriendCache then
     }
 end
 
+-- Initialize character-specific DB if it doesn't exist
+_G.Journal_charDB = _G.Journal_charDB or {}
+_G.Journal_charDB.friendsAttunementData = _G.Journal_charDB.friendsAttunementData or {}
+_G.Journal_charDB.friendsJournalPoints = _G.Journal_charDB.friendsJournalPoints or {}
+_G.Journal_charDB.hiddenPlayers = _G.Journal_charDB.hiddenPlayers or {}
+
+-- Load hidden players from Journal_charDB on initialization
+for playerName, _ in pairs(_G.Journal_charDB.hiddenPlayers) do
+    _G.Journal_FriendCache.hiddenPlayers[playerName] = true
+end
+
 -- Initialize friends cache from saved variables
 FRIENDS_DATA = FRIENDS_DATA or {}
 
@@ -241,12 +253,14 @@ local function LoadPersistentFriendsData()
     -- Load from global cache first (this provides base data)
     LoadFriendsFromCache()
 
-    -- Load from UIFrames persistent data (highest priority - overwrites cache data)
-    if Journal_charDB and Journal_charDB.friendsAttunementData then
+    -- Load from character-specific persistent data (highest priority - overwrites cache data)
+    if _G.Journal_charDB and _G.Journal_charDB.friendsAttunementData then
         local loadedFromPersistent = 0
-        for playerName, data in pairs(Journal_charDB.friendsAttunementData) do
-            FRIENDS_DATA[playerName] = data
-            loadedFromPersistent = loadedFromPersistent + 1
+        for playerName, data in pairs(_G.Journal_charDB.friendsAttunementData) do
+            if not (_G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
+                FRIENDS_DATA[playerName] = data
+                loadedFromPersistent = loadedFromPersistent + 1
+            end
         end
         if loadedFromPersistent > 0 then
             print("|cFF00FF00[DJ Friends]|r Loaded " .. loadedFromPersistent .. " friends from persistent data")
@@ -254,15 +268,37 @@ local function LoadPersistentFriendsData()
     end
 
     -- Load journal points from persistent data
-    if Journal_charDB and Journal_charDB.friendsJournalPoints then
+    if _G.Journal_charDB and _G.Journal_charDB.friendsJournalPoints then
         _G.FRIENDS_JOURNAL_POINTS = _G.FRIENDS_JOURNAL_POINTS or {}
         local pointsLoaded = 0
-        for playerName, points in pairs(Journal_charDB.friendsJournalPoints) do
-            _G.FRIENDS_JOURNAL_POINTS[playerName] = points
-            pointsLoaded = pointsLoaded + 1
+        for playerName, points in pairs(_G.Journal_charDB.friendsJournalPoints) do
+            -- CRITICAL FIX: Only load if player is not hidden
+            if not (_G.Journal_FriendCache.hiddenPlayers and _G.Journal_FriendCache.hiddenPlayers[playerName]) then
+                _G.FRIENDS_JOURNAL_POINTS[playerName] = points
+                pointsLoaded = pointsLoaded + 1
+            end
         end
         if pointsLoaded > 0 then
             print("|cFF00FF00[DJ Friends]|r Loaded " .. pointsLoaded .. " friends with journal points")
+        end
+    end
+    
+    -- CRITICAL FIX: Load hidden players from persistent data
+    if _G.Journal_charDB and _G.Journal_charDB.hiddenPlayers then
+        local hiddenLoaded = 0
+        for playerName, _ in pairs(_G.Journal_charDB.hiddenPlayers) do
+            _G.Journal_FriendCache.hiddenPlayers[playerName] = true
+            hiddenLoaded = hiddenLoaded + 1
+        end
+        if hiddenLoaded > 0 then
+            print("|cFF00FF00[DJ Friends]|r Loaded " .. hiddenLoaded .. " hidden players from persistent data")
+        end
+    end
+    
+    -- CRITICAL FIX: Remove any hidden players from current FRIENDS_DATA
+    for playerName, _ in pairs(_G.Journal_FriendCache.hiddenPlayers) do
+        if FRIENDS_DATA[playerName] then
+            FRIENDS_DATA[playerName] = nil
         end
     end
     
@@ -280,35 +316,71 @@ if _G.Journal_FriendCache and (GetTime() - (_G.Journal_FriendCache.lastCleanup o
     CleanupFriendsCache()
 end
 
--- Function to save friends cache (both character-specific and global)
-local function SaveFriendsCache()
-    -- Save to character-specific settings
-    Journal_charDB.friendsCache = FRIENDS_DATA
-    Journal_charDB.friendsCacheTime = GetTime()
+-- Save debouncing for Core.lua
+local saveDebounceCore = {
+    timer = nil,
+    pending = false,
+    lastSave = 0,
+    minInterval = 15 -- Minimum 15 seconds between saves
+}
+
+-- Function to save friends cache (both character-specific and global) with debouncing
+local function SaveFriendsCache(force)
+    -- Check if we should debounce this save
+    if not force and saveDebounceCore.timer then
+        -- Cancel existing timer and restart
+        saveDebounceCore.timer:Cancel()
+    end
     
-    -- Save to UIFrames persistent data system (highest priority)
-    Journal_charDB.friendsAttunementData = Journal_charDB.friendsAttunementData or {}
-    Journal_charDB.friendsJournalPoints = Journal_charDB.friendsJournalPoints or {}
+    if not force and not saveDebounceCore.pending then
+        saveDebounceCore.pending = true
+        saveDebounceCore.timer = C_Timer.NewTimer(3, function()
+            if GetTime() - saveDebounceCore.lastSave >= saveDebounceCore.minInterval then
+                SaveFriendsCache(true) -- Force save after debounce
+                saveDebounceCore.lastSave = GetTime()
+            end
+            saveDebounceCore.pending = false
+        end)
+        return
+    end
+    
+    if not force and (GetTime() - saveDebounceCore.lastSave) < saveDebounceCore.minInterval then
+        return -- Skip save if too soon
+    end
+    
+    -- Actual save logic
+    _G.Journal_charDB.friendsAttunementData = _G.Journal_charDB.friendsAttunementData or {}
+    _G.Journal_charDB.friendsJournalPoints = _G.Journal_charDB.friendsJournalPoints or {}
+    _G.Journal_charDB.hiddenPlayers = _G.Journal_charDB.hiddenPlayers or {}
     
     local savedFriends = 0
     local savedPoints = 0
+    local savedHidden = 0
     
     for playerName, data in pairs(FRIENDS_DATA) do
-        Journal_charDB.friendsAttunementData[playerName] = data
+        _G.Journal_charDB.friendsAttunementData[playerName] = data
         savedFriends = savedFriends + 1
     end
     
     -- Also save journal points if they exist
     if _G.FRIENDS_JOURNAL_POINTS then
         for playerName, points in pairs(_G.FRIENDS_JOURNAL_POINTS) do
-            Journal_charDB.friendsJournalPoints[playerName] = points
+            _G.Journal_charDB.friendsJournalPoints[playerName] = points
             savedPoints = savedPoints + 1
         end
     end
     
+    -- CRITICAL FIX: Save hidden players to persistent storage
+    if _G.Journal_FriendCache and _G.Journal_FriendCache.hiddenPlayers then
+        for playerName, _ in pairs(_G.Journal_FriendCache.hiddenPlayers) do
+            _G.Journal_charDB.hiddenPlayers[playerName] = true
+            savedHidden = savedHidden + 1
+        end
+    end
+    
     -- Save confirmation for user feedback
-    if savedFriends > 0 or savedPoints > 0 then
-        print("|cFF00FF00[DJ Friends]|r Saved " .. savedFriends .. " friends and " .. savedPoints .. " journal points")
+    if (savedFriends > 0 or savedPoints > 0 or savedHidden > 0) then
+        print("|cFF00FF00[DJ Friends]|r Saved " .. savedFriends .. " friends, " .. savedPoints .. " journal points, and " .. savedHidden .. " hidden players")
     end
     
     -- Also save to global cross-character cache
@@ -322,7 +394,7 @@ local function SaveFriendsCache()
                     percentage = data.percentage,
                     missingBOE = data.missingBOE,
                     top3Dungeons = data.top3Dungeons,
-                    dungeonDetails = data.dungeonDetails, -- Cache detailed dungeon data
+                    dungeonDetails = data.dungeonDetails,
                     lastSeen = data.lastSeen,
                     lastSeenTime = data.lastSeenTime,
                     timestamp = data.timestamp
@@ -332,32 +404,64 @@ local function SaveFriendsCache()
     end
 end
 
--- Function to calculate our own attunement percentage
+-- Function to calculate our own attunement percentage (using efficient cache system)
 local function CalculateOwnAttunementPercentage()
     local totalAttunable = 0
     local totalAttuned = 0
     
-    -- Get all dungeon data
-    local dungeonData = _G.Journal and _G.Journal.djDungeons or {}
-    local processedItems = {} -- Track unique items across all dungeons
+    -- Get all dungeon data from the efficient cache
+    local dungeonData = _G.dungeonData or (_G.Journal and _G.Journal.djDungeons) or {}
+    
+    -- Early exit if no dungeon data or APIs not available
+    if #dungeonData == 0 then
+        return 0, 0
+    end
+    
+    if not _G.CanAttuneItemHelper or not _G.GetItemAttuneProgress then
+        return 0, 0
+    end
+    
+    -- Use the same calculation method as the working attunement report
+    -- This aggregates unique items across all dungeons (same as GenerateAttunementReport)
+    local globalUniqueItems = {} -- Track unique items across all dungeons
+    local globalAttunedItems = {} -- Track attuned unique items
+    
+    -- Access the smart cache if available (from UIFrames.lua)
+    local GetCachedAttunement = _G.GetCachedAttunement
+    local useCache = GetCachedAttunement ~= nil
     
     for _, dungeon in ipairs(dungeonData) do
         if dungeon.items then
             for _, itemID in ipairs(dungeon.items) do
-                -- Only count each item once (since items can appear in multiple dungeons)
-                if not processedItems[itemID] then
-                    processedItems[itemID] = true
+                local canAttune = _G.CanAttuneItemHelper(itemID) or 0
+                if canAttune == 1 then
+                    globalUniqueItems[itemID] = true
                     
-                    local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
-                    if canAttune == 1 then
-                        totalAttunable = totalAttunable + 1
-                        local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
-                        if attuneProgress >= 100 then
-                            totalAttuned = totalAttuned + 1
+                    -- Use cached progress if available, otherwise get fresh data
+                    local attuneProgress = 0
+                    if useCache then
+                        attuneProgress = GetCachedAttunement(itemID)
+                        if attuneProgress == nil then
+                            -- Not in cache, get fresh data
+                            attuneProgress = _G.GetItemAttuneProgress(itemID) or 0
                         end
+                    else
+                        attuneProgress = _G.GetItemAttuneProgress(itemID) or 0
+                    end
+                    
+                    if attuneProgress >= 100 then
+                        globalAttunedItems[itemID] = true
                     end
                 end
             end
+        end
+    end
+    
+    -- Calculate actual unique totals (same as GenerateAttunementReport)
+    for itemID, _ in pairs(globalUniqueItems) do
+        totalAttunable = totalAttunable + 1
+        if globalAttunedItems[itemID] then
+            totalAttuned = totalAttuned + 1
         end
     end
     
@@ -371,9 +475,13 @@ local function AddSelfToFriendsData()
     local playerName = UnitName("player")
     local _, englishClass = UnitClass("player")
     
-    -- Get top 3 dungeons we need most
+    -- Get top 3 dungeons we need most using efficient cache
     local dungeonNeeds = {}
-    local dungeonData = _G.Journal and _G.Journal.djDungeons or {}
+    local dungeonData = _G.dungeonData or (_G.Journal and _G.Journal.djDungeons) or {}
+    
+    -- Access the smart cache if available
+    local GetCachedAttunement = _G.GetCachedAttunement
+    local useCache = GetCachedAttunement ~= nil
     
     for _, dungeon in ipairs(dungeonData) do
         if dungeon.items then
@@ -383,7 +491,18 @@ local function AddSelfToFriendsData()
                 local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
                 if canAttune == 1 then
                     totalAttunable = totalAttunable + 1
-                    local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                    
+                    -- Use cached progress if available
+                    local attuneProgress = 0
+                    if useCache then
+                        attuneProgress = GetCachedAttunement(itemID)
+                        if attuneProgress == nil then
+                            attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                        end
+                    else
+                        attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                    end
+                    
                     if attuneProgress < 100 then
                         attunablesLeft = attunablesLeft + 1
                     end
@@ -427,6 +546,12 @@ local function AddSelfToFriendsData()
         })
     end
     
+    -- Get current quest item if available
+    local questItemID = 0
+    if Journal_charDB.currentRandomQuest and Journal_charDB.currentRandomQuest.itemID then
+        questItemID = Journal_charDB.currentRandomQuest.itemID
+    end
+    
     -- Add ourselves to the friends data
     FRIENDS_DATA[playerName] = {
         class = englishClass,
@@ -436,6 +561,7 @@ local function AddSelfToFriendsData()
         missingBOE = {},
         top3Dungeons = top3Dungeons,
         dungeonDetails = dungeonDetails, -- Add detailed dungeon breakdown
+        questItemID = questItemID,
         timestamp = GetTime(),
         lastSeen = "Now",
         isPlayer = true -- Mark as the current player
@@ -451,9 +577,13 @@ local function SendAttunementData()
     local playerName = UnitName("player")
     local _, englishClass = UnitClass("player")
     
-    -- Get top 3 dungeons we need most
+    -- Get top 3 dungeons we need most using efficient cache
     local dungeonNeeds = {}
-    local dungeonData = _G.Journal and _G.Journal.djDungeons or {}
+    local dungeonData = _G.dungeonData or (_G.Journal and _G.Journal.djDungeons) or {}
+    
+    -- Access the smart cache if available
+    local GetCachedAttunement = _G.GetCachedAttunement
+    local useCache = GetCachedAttunement ~= nil
     
     for _, dungeon in ipairs(dungeonData) do
         if dungeon.items then
@@ -463,7 +593,18 @@ local function SendAttunementData()
                 local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
                 if canAttune == 1 then
                     totalAttunable = totalAttunable + 1
-                    local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                    
+                    -- Use cached progress if available
+                    local attuneProgress = 0
+                    if useCache then
+                        attuneProgress = GetCachedAttunement(itemID)
+                        if attuneProgress == nil then
+                            attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                        end
+                    else
+                        attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                    end
+                    
                     if attuneProgress < 100 then
                         attunablesLeft = attunablesLeft + 1
                     end
@@ -519,8 +660,22 @@ local function SendAttunementData()
         timestamp = GetTime()
     }
     
+    -- Get current quest item if available
+    local questItemID = 0
+    if Journal_charDB.currentRandomQuest and Journal_charDB.currentRandomQuest.itemID then
+        questItemID = Journal_charDB.currentRandomQuest.itemID
+    end
+    
+    -- Get current journal points
+    local journalPoints = Journal_charDB.journalPoints or 0
+    
     -- Create minimal message for network transmission (lightweight)
-    local message = strjoin(":", "DATA", playerName, englishClass, attuned, total, percentage,  table.concat(top3Dungeons, ","))
+    local message = strjoin(":", "DATA", playerName, englishClass, attuned, total, percentage, table.concat(top3Dungeons, ","), questItemID, journalPoints)
+    
+    -- Debug output
+    if debug then
+        print("|cFF00FF00[DJ Debug Send]|r Sending: questItemID=" .. questItemID .. ", journalPoints=" .. journalPoints)
+    end
     
     -- Send to guild and party members
     --SendAddonMessage(ADDON_PREFIX, message, "WORLD")
@@ -804,7 +959,9 @@ local function OnAddonMessage(prefix, message, channel, sender)
         local attuned = tonumber(parts[4]) or 0
         local total = tonumber(parts[5]) or 0
         local percentage = tonumber(parts[6]) or 0
-        local top3DungeonsStr = parts[7] or ""  -- Fixed: was parts[8], now parts[7] since we removed BOE count
+        local top3DungeonsStr = parts[7] or ""
+        local questItemID = tonumber(parts[8]) or 0
+        local journalPoints = tonumber(parts[9]) or 0
         
         local top3Dungeons = {}
         if top3DungeonsStr ~= "" then
@@ -857,12 +1014,26 @@ local function OnAddonMessage(prefix, message, channel, sender)
             total = total,
             percentage = percentage,
             top3Dungeons = top3Dungeons,
-            dungeonDetails = dungeonDetails, 
+            dungeonDetails = dungeonDetails,
+            questItemID = questItemID,
             timestamp = GetTime(),
             lastSeen = lastSeenText,
             lastSeenTime = now,
             isPlayer = false
         }
+        
+        -- Store journal points in the global table if they have any
+        if journalPoints > 0 then
+            if not _G.FRIENDS_JOURNAL_POINTS then
+                _G.FRIENDS_JOURNAL_POINTS = {}
+            end
+            _G.FRIENDS_JOURNAL_POINTS[playerName] = journalPoints
+        end
+        
+        -- Debug output
+        if debug then
+            print("|cFF00FF00[DJ Debug Receive]|r From " .. playerName .. ": questItemID=" .. questItemID .. ", journalPoints=" .. journalPoints)
+        end
         
         -- Save to cache
         SaveFriendsCache()
@@ -998,12 +1169,12 @@ local function UpdateLastSeenTimes()
     end
 end
 
--- Update last seen times every 30 seconds
+-- Update last seen times every 5 minutes (300 seconds) instead of 30 seconds
 -- WotLK compatible timer instead of C_Timer
 local updateTimer = CreateFrame("Frame")
 updateTimer:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = (self.elapsed or 0) + elapsed
-    if self.elapsed >= 30 then
+    if self.elapsed >= 300 then -- Changed from 30 to 300 seconds
         self.elapsed = 0
         UpdateLastSeenTimes()
     end
@@ -1019,6 +1190,19 @@ if not _G.IsAttunableBySomeone then
         return false
     end
 end
+
+-- Create a frame to handle logout events
+local logoutFrame = CreateFrame("Frame")
+logoutFrame:RegisterEvent("PLAYER_LOGOUT")
+logoutFrame:SetScript("OnEvent", function(self, event)
+    -- Save hidden players state on logout
+    if Journal_charDB and _G.Journal_FriendCache then
+        Journal_charDB.hiddenPlayers = Journal_charDB.hiddenPlayers or {}
+        for playerName, _ in pairs(_G.Journal_FriendCache.hiddenPlayers) do
+            Journal_charDB.hiddenPlayers[playerName] = true
+        end
+    end
+end)
 
 -- Expose functions globally
 _G.SendAttunementData = SendAttunementData
@@ -1039,92 +1223,58 @@ local settings = Journal_charDB
 --------------------------------------------------------------------
 -- INITIALIZATION ON ADDON LOAD
 --------------------------------------------------------------------
+-- Initialize saved variables
+local function InitializeSavedVars()
+    -- Initialize global saved variable
+    _G.Journal_FriendCache = _G.Journal_FriendCache or {
+        friends = {},
+        hiddenPlayers = {},
+        lastCleanup = GetTime()
+    }
+    
+    -- Initialize character-specific saved variable
+    _G.Journal_charDB = _G.Journal_charDB or {}
+    _G.Journal_charDB.hiddenPlayers = _G.Journal_charDB.hiddenPlayers or {}
+end
+
+-- Create initialization frame
 local initFrame = CreateFrame("Frame")
 initFrame:RegisterEvent("ADDON_LOADED")
-initFrame:SetScript("OnEvent", function(self, event, arg1)
-    if arg1 == "TheJournal" then
-                -- Initialize character-specific settings
-        settings.showDungeonName = (settings.showDungeonName == nil) and true or settings.showDungeonName
-        settings.hasAlreadyCached = settings.hasAlreadyCached or false
-        settings.cached = settings.cached or {}
-        settings.recacheScheduled = settings.recacheScheduled or {}
-        settings.favorites = settings.favorites or {}
-        settings.filterType = settings.filterType or "All"
-        settings.leveledBoss = settings.leveledBoss or {}
-        settings.activeFilters = settings.activeFilters or {}
-        settings.levelUpClickCount = settings.levelUpClickCount or {}
+initFrame:RegisterEvent("PLAYER_LOGIN")
+initFrame:SetScript("OnEvent", function(self, event, addonName)
+    if event == "ADDON_LOADED" and addonName == "TheJournal" then
+        InitializeSavedVars()
         
-        -- Initialize cross-character friends cache
-        if not _G.Journal_FriendCache then
-            _G.Journal_FriendCache = {
-                friends = {}, -- playerName -> friend data
-                hiddenPlayers = {}, -- playerName -> true for hidden players
-                lastCleanup = GetTime()
-            }
+        -- Load hidden players from character DB to runtime cache
+        for playerName, _ in pairs(_G.Journal_charDB.hiddenPlayers) do
+            _G.Journal_FriendCache.hiddenPlayers[playerName] = true
         end
         
-        -- Initialize ItemLoc integration setting
-        if settings.useItemLocData == nil then
-            settings.useItemLocData = true -- Default to enabled
-        end
-
-        -- Default armor and weapon types, plus armor slots
-        local localizedClass, englishClass = UnitClass("player")
-        if not settings.allowedArmorType then
-            settings.allowedArmorType = {
-                WARRIOR     = { "Plate", "Mail", "Leather" },
-                DEATHKNIGHT = { "Plate", "Mail", "Leather" },
-                PALADIN     = { "Plate", "Mail", "Leather", "Cloth" },
-                HUNTER      = { "Mail", "Leather" },
-                ROGUE       = { "Leather" },
-                PRIEST      = { "Cloth" },
-                MAGE        = { "Cloth" },
-                WARLOCK     = { "Cloth" },
-                DRUID       = { "Leather", "Cloth" },
-                SHAMAN      = { "Mail", "Leather", "Cloth" },
-            }
-        end
-
-        if not settings.allowedWeaponType then
-            settings.allowedWeaponType = {
-                WARRIOR     = { "One-Handed Axes", "Two-Handed Axes", "One-Handed Maces", "Two-Handed Maces",
-                    "One-Handed Swords", "Two-Handed Swords", "Polearms", "Shield" },
-                DEATHKNIGHT = { "One-Handed Axes", "Two-Handed Axes", "One-Handed Maces", "Two-Handed Maces",
-                    "One-Handed Swords", "Two-Handed Swords", "Polearms" },
-                PALADIN     = { "One-Handed Maces", "One-Handed Swords", "Two-Handed Maces", "Two-Handed Swords",
-                    "Daggers", "Fist Weapons", "Staves", "Shield" },
-                HUNTER      = { "Bows", "Guns", "Crossbows", "Daggers", "One-Handed Swords", "One-Handed Axes", "Fist Weapons" },
-                ROGUE       = { "Daggers", "Fist Weapons", "One-Handed Swords", "One-Handed Axes" },
-                PRIEST      = { "Daggers", "Staves", "Wands", "One-Handed Maces" },
-                MAGE        = { "Daggers", "Staves", "Wands", "One-Handed Swords", "Two-Handed Swords", "Shield" },
-                WARLOCK     = { "Daggers", "Staves", "Wands", "One-Handed Swords" },
-                DRUID       = { "Daggers", "Fist Weapons", "Staves", "One-Handed Maces" },
-                SHAMAN      = { "One-Handed Axes", "One-Handed Maces", "Two-Handed Maces", "Staves", "Daggers", "Fist Weapons", "Shield" },
-            }
-        end
-
-        if not settings.allowedArmorSlots then
-            settings.allowedArmorSlots = {
-                Head     = true,
-                Neck     = true,
-                Shoulder = true,
-                Back     = true,
-                Chest    = true,
-                Wrist    = true,
-                Hands    = true,
-                Waist    = true,
-                Legs     = true,
-                Feet     = true,
-                Finger   = true,
-                Trinket  = true,
-            }
-        end
-        
-        -- Load persistent friends data now that saved variables are available
+        -- Load persistent friends data immediately after addon loads
         LoadPersistentFriendsData()
+        
+        self:UnregisterEvent("ADDON_LOADED")
+    elseif event == "PLAYER_LOGIN" then
+        -- Ensure data is loaded and add ourselves to friends data after login
+        -- Use a longer delay to ensure all APIs are available
+        C_Timer.After(5, function()
+            LoadPersistentFriendsData()
+            if _G.AddSelfToFriendsData then
+                _G.AddSelfToFriendsData()
+            end
+            -- Save the updated data
+            if _G.SaveFriendsCache then
+                _G.SaveFriendsCache()
+            end
+            
+            -- Debug: Check if calculation works now
+            local attuned, total = CalculateOwnAttunementPercentage()
+            print("|cFF00FF00[DJ Init]|r Post-login attunement check: " .. attuned .. "/" .. total)
+        end)
+        
+        self:UnregisterEvent("PLAYER_LOGIN")
     end
 end)
-
 
 -- Globals / saved variables
 -- Put these in _G if you want other files to reference them easily
@@ -1145,13 +1295,42 @@ _G.dungeonData = dungeonData
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_LOGIN")
 f:SetScript("OnEvent", function(self, event, ...)
+    if event == "PLAYER_LOGIN" then
+        -- Additional initialization after login
+        C_Timer.After(3, function()
+            -- Debug: Check if our attunement calculation is working
+            local attuned, total = CalculateOwnAttunementPercentage()
+            print("|cFF00FF00[DJ Debug]|r Own attunement: " .. attuned .. "/" .. total)
+            
+            -- Ensure we're added to friends data
+            if _G.AddSelfToFriendsData then
+                _G.AddSelfToFriendsData()
+                local playerName = UnitName("player")
+                if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
+                    print("|cFF00FF00[DJ Debug]|r Added self to friends data: " .. _G.FRIENDS_DATA[playerName].attuned .. "/" .. _G.FRIENDS_DATA[playerName].total)
+                end
+            end
+        end)
+    end
 end)
 
 -- Slash command to toggle
 SLASH_DJ1 = "/dj"
 SlashCmdList["DJ"] = function(msg)
-    if DungeonJournalFrame then
-        DungeonJournalFrame:Show()
+    local args = string.lower(msg or "")
+    
+    if args == "questmessage" then
+        Journal_charDB.shareQuestCompletion = not Journal_charDB.shareQuestCompletion
+        local status = Journal_charDB.shareQuestCompletion and "|cFF00FF00enabled|r" or "|cFFFF0000disabled|r"
+        print("|cFFFFD700[DJ Quest]|r Quest completion sharing " .. status)
+    elseif args == "" then
+        if DungeonJournalFrame then
+            DungeonJournalFrame:Show()
+        end
+    else
+        print("|cFFFFD700[DJ Commands]|r Available commands:")
+        print("|cFFFFD700[DJ Commands]|r /dj questmessage - Toggle quest completion sharing")
+        print("|cFFFFD700[DJ Commands]|r /dj - Open Dungeon Journal")
     end
 end
 
@@ -1392,6 +1571,100 @@ SlashCmdList["LISTHIDDEN"] = function(msg)
     end
 end
 
+-- Slash command to manually reload and send data
+SLASH_DJRELOAD1 = "/djreload"
+SlashCmdList["DJRELOAD"] = function(msg)
+    print("|cFF00FF00[DJ Reload]|r Reloading friends data...")
+    
+    -- Load persistent data
+    LoadPersistentFriendsData()
+    
+    -- Force recalculate our own data (ignore cache)
+    local attuned, total = CalculateOwnAttunementPercentage()
+    print("|cFF00FF00[DJ Reload]|r Calculated attunement: " .. attuned .. "/" .. total)
+    
+    -- Add ourselves to friends data
+    if _G.AddSelfToFriendsData then
+        _G.AddSelfToFriendsData()
+        local playerName = UnitName("player")
+        if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
+            print("|cFF00FF00[DJ Reload]|r Self data: " .. _G.FRIENDS_DATA[playerName].attuned .. "/" .. _G.FRIENDS_DATA[playerName].total .. " (" .. _G.FRIENDS_DATA[playerName].percentage .. "%)")
+        end
+    end
+    
+    -- Save the data
+    if _G.SaveFriendsCache then
+        _G.SaveFriendsCache()
+    end
+    
+    -- Send our data
+    if _G.SendAttunementData then
+        _G.SendAttunementData()
+    end
+    
+    -- Request data from others
+    if _G.RequestAttunementData then
+        _G.RequestAttunementData()
+    end
+    
+    print("|cFF00FF00[DJ Reload]|r Data reload complete!")
+end
+
+-- Slash command to force recalculate attunement (ignore all cache)
+SLASH_DJRECALC1 = "/djrecalc"
+SlashCmdList["DJRECALC"] = function(msg)
+    print("|cFF00FF00[DJ Recalc]|r Force recalculating attunement...")
+    
+    -- Enable debug temporarily to see what's happening
+    local oldDebug = debug
+    debug = true
+    
+    local attuned, total = CalculateOwnAttunementPercentage()
+    print("|cFF00FF00[DJ Recalc]|r Result: " .. attuned .. "/" .. total)
+    
+    -- Restore debug state
+    debug = oldDebug
+    
+    -- Force update our data
+    if _G.AddSelfToFriendsData then
+        _G.AddSelfToFriendsData()
+        local playerName = UnitName("player")
+        if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
+            print("|cFF00FF00[DJ Recalc]|r Updated self data: " .. _G.FRIENDS_DATA[playerName].attuned .. "/" .. _G.FRIENDS_DATA[playerName].total .. " (" .. _G.FRIENDS_DATA[playerName].percentage .. "%)")
+        end
+    end
+end
+
+-- Slash command to check API availability
+SLASH_DJAPI1 = "/djapi"
+SlashCmdList["DJAPI"] = function(msg)
+    print("|cFF00FF00[DJ API Check]|r Checking API availability...")
+    
+    -- Check dungeon data
+    local dungeonData = _G.Journal and _G.Journal.djDungeons or {}
+    print("|cFF00FF00[DJ API]|r Journal table: " .. tostring(_G.Journal ~= nil))
+    print("|cFF00FF00[DJ API]|r djDungeons: " .. tostring(_G.Journal and _G.Journal.djDungeons ~= nil))
+    print("|cFF00FF00[DJ API]|r Dungeon count: " .. #dungeonData)
+    
+    -- Check APIs
+    print("|cFF00FF00[DJ API]|r CanAttuneItemHelper: " .. tostring(_G.CanAttuneItemHelper ~= nil))
+    print("|cFF00FF00[DJ API]|r GetItemAttuneProgress: " .. tostring(_G.GetItemAttuneProgress ~= nil))
+    
+    -- Test with a known item if APIs are available
+    if _G.CanAttuneItemHelper and _G.GetItemAttuneProgress and #dungeonData > 0 then
+        local testDungeon = dungeonData[1]
+        if testDungeon and testDungeon.items and #testDungeon.items > 0 then
+            local testItemID = testDungeon.items[1]
+            print("|cFF00FF00[DJ API]|r Testing with item " .. testItemID .. " from " .. (testDungeon.name or "Unknown"))
+            
+            local canAttune = _G.CanAttuneItemHelper(testItemID)
+            local progress = _G.GetItemAttuneProgress(testItemID)
+            
+            print("|cFF00FF00[DJ API]|r Test result: canAttune=" .. tostring(canAttune) .. ", progress=" .. tostring(progress))
+        end
+    end
+end
+
 -- Slash command to manage friends cache
 SLASH_FRIENDSCACHE1 = "/friendscache"
 SLASH_FRIENDSCACHE2 = "/fcache"
@@ -1449,6 +1722,78 @@ SlashCmdList["FRIENDSCACHE"] = function(msg)
         print("  /listhidden          - List all hidden players")
     end
 end
+-- Debug command to enable/disable debug output
+SLASH_DJDEBUG1 = "/djdebug"
+SlashCmdList["DJDEBUG"] = function(msg)
+    debug = not debug
+    _G.debug = debug  -- Also set global debug flag
+    print("|cFF00FF00[DJ Debug]|r Debug mode " .. (debug and "ENABLED" or "DISABLED"))
+    
+    if debug then
+        -- Show detailed debugging info
+        print("|cFF00FF00[DJ Debug]|r === DETAILED DEBUG INFO ===")
+        
+        -- Check if dungeon data is available
+        local dungeonData = _G.Journal and _G.Journal.djDungeons or {}
+        print("|cFF00FF00[DJ Debug]|r Journal table exists: " .. tostring(_G.Journal ~= nil))
+        print("|cFF00FF00[DJ Debug]|r djDungeons exists: " .. tostring(_G.Journal and _G.Journal.djDungeons ~= nil))
+        print("|cFF00FF00[DJ Debug]|r Dungeon count: " .. #dungeonData)
+        
+        -- Check API availability
+        print("|cFF00FF00[DJ Debug]|r CanAttuneItemHelper: " .. tostring(_G.CanAttuneItemHelper ~= nil))
+        print("|cFF00FF00[DJ Debug]|r GetItemAttuneProgress: " .. tostring(_G.GetItemAttuneProgress ~= nil))
+        
+        -- Show first few dungeons and items
+        if #dungeonData > 0 then
+            for i = 1, math.min(3, #dungeonData) do
+                local dungeon = dungeonData[i]
+                print("|cFF00FF00[DJ Debug]|r Dungeon " .. i .. ": " .. (dungeon.name or "Unknown") .. " (" .. (#(dungeon.items or {})) .. " items)")
+                if dungeon.items and #dungeon.items > 0 then
+                    for j = 1, math.min(3, #dungeon.items) do
+                        local itemID = dungeon.items[j]
+                        local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or "N/A"
+                        local progress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or "N/A"
+                        print("|cFF00FF00[DJ Debug]|r   Item " .. itemID .. ": canAttune=" .. tostring(canAttune) .. ", progress=" .. tostring(progress))
+                    end
+                end
+            end
+        end
+        
+        -- Show current state when debug is enabled
+        local attuned, total = CalculateOwnAttunementPercentage()
+        print("|cFF00FF00[DJ Debug]|r Current attunement: " .. attuned .. "/" .. total)
+        
+        -- Show friends data count
+        local friendCount = 0
+        if _G.FRIENDS_DATA then
+            for _ in pairs(_G.FRIENDS_DATA) do
+                friendCount = friendCount + 1
+            end
+        end
+        print("|cFF00FF00[DJ Debug]|r Friends in FRIENDS_DATA: " .. friendCount)
+        
+        -- Show persistent data count
+        local persistentCount = 0
+        if _G.Journal_charDB and _G.Journal_charDB.friendsAttunementData then
+            for _ in pairs(_G.Journal_charDB.friendsAttunementData) do
+                persistentCount = persistentCount + 1
+            end
+        end
+        print("|cFF00FF00[DJ Debug]|r Friends in persistent data: " .. persistentCount)
+        
+        -- Show journal points
+        local pointsCount = 0
+        if _G.FRIENDS_JOURNAL_POINTS then
+            for _ in pairs(_G.FRIENDS_JOURNAL_POINTS) do
+                pointsCount = pointsCount + 1
+            end
+        end
+        print("|cFF00FF00[DJ Debug]|r Friends with journal points: " .. pointsCount)
+        
+        print("|cFF00FF00[DJ Debug]|r === END DEBUG INFO ===")
+    end
+end
+
 -- Test command to verify addon communication is working
 SLASH_TESTCOMM1 = "/testcomm"
 SlashCmdList["TESTCOMM"] = function(msg)

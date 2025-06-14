@@ -1,4 +1,5 @@
 -- local mp_versions = {}
+print("|cFF00FF00[DJ Dataset]|r Starting to load dungeons...")
 _G.Journal = _G.Journal or {}
 _G.Journal.djDungeons = _G.Journal.djDungeons or {}
 local itemdir = "Interface\\Addons\\TheJournal\\Assets\\Magister Kalendris.blp"
@@ -814,37 +815,139 @@ table.insert(Journal.djDungeons, {
     bosses = {
         {
             bossID = 639,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_misc_grouplooking",
+                    name        = "VanCleef's Allies",
+                    description = "At 50% health, VanCleef summons 2 allies. They will attack the player with the lowest health.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\ability_ghoulfrenzy",
+                    name        = "Thrash",
+                    description = "Gives the caster 2 extra attacks.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
             name = "Edwin VanCleef",
             flat = itemdir,
         },
         {
             bossID = 644,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_gauntlets_05",
+                    name        = "Rhahk'Zor Slam",
+                    description = "Inflicts 64 to 86 damage to an enemy, stunning it for 3 sec.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+            },
             name = "Rhahk'Zor",
             flat = itemdir,
         },
         {
             bossID = 645,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_drink_06",
+                    name        = "Acid Splash",
+                    description = "Inflicts Nature damage to nearby enemies every 5 sec. for 30 sec.",
+                    duration    = 0,
+                    casttime    = 1,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\spell_holy_heal",
+                    name        = "Cookie's Cooking",
+                    description = "Heals the caster for 111 to 129.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0,
+                  },
+            },
             name = "Cookie",
             flat = itemdir,
         },
         {
             bossID = 646,
-            spells = {},
+            spells = {
+                {
+                icon        = "Interface\\Icons\\ability_warstomp",
+                name        = "Smite Stomp",
+                description = "At 66% and 33% health, Stuns all enemies within 45 yards for 10 sec.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 0,
+              },
+              {
+                icon        = "Interface\\Icons\\ability_meleedamage",
+                name        = "Nimble Reflexes",
+                description = "Increases the caster's chance to parry by 75% for 8 sec.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 45,
+              },
+              {
+                icon        = "Interface\\Icons\\ability_meleedamage",
+                name        = "Nimble Reflexes",
+                description = "Increases the caster's chance to parry by 75% for 8 sec.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 45,
+              },
+              {
+                icon        = "Interface\\Icons\\ability_ghoulfrenzy",
+                name        = "Thrash",
+                description = "Gives the caster 2 extra attacks.",
+                duration    = 0,
+                casttime    = 0,
+                cooldown    = 0,
+              },
+            },
             name = "Mr. Smite",
             flat = itemdir,
         },
         {
             bossID = 647,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_warrior_cleave",
+                    name        = "Cleave",
+                    description = "Inflicts 110% of normal melee damage to an enemy and its nearest ally.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                  },
+                  {
+                    icon        = "Interface\\Icons\\ability_poisons",
+                    name        = "Poisoned Harpoon",
+                    description = "Inflicts normal damage plus 30 to an enemy, then an additional 45 Nature damage every 10 sec. for 1 min.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0,
+                  },
+            },
             name = "Captain Greenskin",
             flat = itemdir,
         },
         {
             bossID = 1763,
-            spells = {},
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_fire_fireball",
+                    name        = "Molten Metal",
+                    description = "Inflicts Fire damage every 3 sec. to an enemy, increasing the time between its attacks by 54% and its movement by 50% for 15 sec.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 0,
+                  },
+            },
             name = "Gilnid",
             flat = itemdir,
         },
@@ -1036,20 +1139,605 @@ table.insert(Journal.djDungeons, {
             },
         }
     },
-    items = {789, 790, 827, 886, 890, 897, 911, 920, 935, 1076, 1077, 1121, 1214, 1218, 1220, 1292, 1296, 1299, 1300, 1351, 1391, 1405, 1406, 1440, 1446, 1448, 1455, 1457, 1458, 1459, 1460, 1461, 1462, 1469, 1473, 1483, 1484, 1489, 1738, 1739, 1740, 1741, 1742, 1743, 1744, 1745, 1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1764, 1766, 1767, 1768, 1769, 1770, 1772, 1774, 1775, 1776, 1777, 1778, 1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1928, 1929, 1934, 1935, 1936, 1943, 1944, 1945, 1958, 1959, 1974, 2011, 2013, 2017, 2034, 2059, 2072, 2077, 2078, 2079, 2166, 2167, 2168, 2175, 2194, 2216, 2217, 2219, 2220, 2227, 2232, 2233, 2236, 2292, 2566, 2800, 2807, 2819, 2879, 2911, 2969, 2970, 2973, 2974, 2977, 2981, 2982, 2983, 2984, 2985, 2986, 2987, 2988, 2989, 2990, 2991, 2992, 3021, 3045, 3047, 3048, 3049, 3055, 3056, 3057, 3058, 3065, 3066, 3067, 3069, 3184, 3191, 3193, 3195, 3196, 3198, 3199, 3201, 3202, 3204, 3205, 3206, 3211, 3212, 3227, 3230, 3305, 3306, 3309, 3310, 3313, 3315, 3376, 3377, 3378, 3379, 3429, 3569, 3645, 3647, 3655, 3656, 3740, 3748, 4036, 4049, 4290, 4567, 4568, 4571, 4575, 4661, 4676, 4694, 4695, 4697, 4698, 4699, 4700, 4701, 4705, 4706, 4707, 4708, 4709, 4710, 4711, 4712, 4713, 4714, 4715, 4788, 4949, 4998, 4999, 5001, 5254, 5943, 6226, 6314, 6318, 6319, 6320, 6321, 6323, 6324, 6340, 6341, 6378, 6379, 6380, 6381, 6382, 6383, 6387, 6392, 6393, 6394, 6395, 6397, 6398, 6528, 6531, 6536, 6538, 6539, 6540, 6541, 6545, 6546, 6547, 6548, 6551, 6552, 6553, 6554, 6557, 6559, 6560, 6561, 6562, 6563, 6564, 6565, 6566, 6567, 6568, 6569, 6570, 6571, 6572, 6573, 6574, 6575, 6576, 6577, 6578, 6579, 6580, 6581, 6582, 6583, 6584, 6585, 6586, 6587, 6588, 6590, 6591, 6592, 6593, 6594, 6595, 6596, 6597, 6598, 6599, 6600, 6601, 6602, 6604, 6605, 6608, 6611, 6612, 6613, 6614, 6615, 6633, 6641, 6642, 682, 7415, 7554, 7558, 7608, 9766, 9767, 9768, 9769, 9770, 9771, 9772, 9773, 9774, 9775, 9776, 9777, 9778, 9779, 9780, 9781, 9782, 9783, 9784, 9785, 9786, 9787, 9788, 9789, 9790, 9791, 9792, 9793, 9794, 9795, 9796, 9797, 9798, 9799, 9800, 9801, 9802, 9803, 9804, 9805, 9806, 9807, 9808, 9809, 9810, 9811, 9812, 9813, 9814, 9815, 9816, 9817, 9818, 9822, 9829, 9831, 9838, 10287, 10405, 10407, 11965, 11967, 11968, 11969, 11981, 11982, 11983, 11984, 11993, 11994, 11995, 12006, 12007, 12008, 12052, 12053, 12054, 12975, 12976, 12977, 12978, 12979, 12982, 12983, 12985, 12987, 12988, 12989, 12990, 12994, 12996, 12997, 12998, 12999, 13010, 13011, 13012, 13041, 14025, 14096, 14109, 14114, 14117, 14119, 14120, 14121, 14122, 14123, 14124, 14125, 14127, 14129, 14131, 14133, 14158, 14159, 14160, 14161, 14162, 14163, 14164, 14165, 14166, 14167, 14168, 14170, 14171, 14172, 14173, 14174, 14175, 14176, 14177, 14179, 14181, 14182, 14185, 14186, 14187, 14188, 14194, 14195, 14364, 14366, 14367, 14369, 14370, 14371, 14372, 14373, 14374, 14375, 14376, 14377, 14378, 14379, 14380, 14400, 14402, 14559, 14560, 14561, 14562, 14563, 14564, 14565, 14566, 14567, 14568, 14569, 14570, 14571, 14572, 14573, 14574, 14578, 14580, 14582, 14722, 14723, 14724, 14725, 14726, 14727, 14729, 14730, 14742, 14743, 14744, 14745, 14746, 14747, 14748, 14749, 14750, 14752, 14754, 14755, 14756, 15012, 15014, 15016, 15017, 15018, 15110, 15111, 15112, 15113, 15114, 15115, 15116, 15117, 15118, 15120, 15121, 15122, 15123, 15124, 15125, 15126, 15132, 15210, 15211, 15212, 15222, 15223, 15224, 15230, 15241, 15248, 15249, 15259, 15268, 15269, 15304, 15305, 15306, 15307, 15308, 15310, 15311, 15312, 15329, 15330, 15331, 15332, 15333, 15334, 15336, 15337, 15338, 15340, 15347, 15348, 15487, 15488, 15489, 15493, 15494, 15497, 15498, 15499, 15500, 15501, 15502, 15503, 15504, 15506, 15507, 15508, 15509, 15510, 15511, 15512, 15513, 15514, 15515, 15516, 15517, 15519, 15520, 15521, 15522, 15523, 15525, 15526, 15527, 15528, 15529, 15532, 15535, 15537, 15547, 15891, 15893, 15894, 15912, 15926, 15927, 15945, 15946, 15947, 15971, 15972, 15974, 51804, 51805, 51806, 51807, 51808},
-    })
+    items = {789, 790, 827, 886, 890, 897, 911, 920, 935, 1076, 1077, 1121, 1214, 1218, 1220, 1292, 1296, 1299, 1300, 1351, 1391, 1405, 1406, 1440, 1446, 1448, 1455, 1457, 1458, 1459, 1460, 1461, 1462, 1469, 1473, 1483, 1484, 1489, 1738, 1739, 1740, 1741, 1742, 1743, 1744, 1745, 1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1764, 1766, 1767, 1768, 1769, 1770, 1772, 1774, 1775, 1776, 1777, 1778, 1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1928, 1929, 1934, 1935, 1936, 1943, 1944, 1945, 1958, 1959, 1974, 2011, 2013, 2017, 2034, 2059, 2072, 2077, 2078, 2079, 2166, 2167, 2168, 2175, 2194, 2216, 2217, 2219, 2220, 2227, 2232, 2233, 2236, 2292, 2566, 2800, 2807, 2819, 2879, 2911, 2969, 2970, 2973, 2974, 2977, 2981, 2982, 2983, 2984, 2985, 2986, 2987, 2988, 2989, 2990, 2991, 2992, 3021, 3045, 3047, 3048, 3049, 3055, 3056, 3057, 3058, 3065, 3066, 3067, 3069, 3184, 3191, 3193, 3195, 3196, 3198, 3199, 3201, 3202, 3204, 3205, 3206, 3211, 3212, 3227, 3230, 3305, 3306, 3309, 3310, 3313, 3315, 3376, 3377, 3378, 3379, 3429, 3569, 3645, 3647, 3655, 3656, 3740, 3748, 4036, 4049, 4290, 4567, 4568, 4571, 4575, 4661, 4676, 4694, 4695, 4697, 4698, 4699, 4700, 4701, 4705, 4706, 4707, 4708, 4709, 4710, 4711, 4712, 4713, 4714, 4715, 4788, 4949, 4998, 4999, 5001, 5254, 5943, 6226, 6314, 6318, 6319, 6320, 6321, 6323, 6324, 6340, 6341, 6378, 6379, 6380, 6381, 6382, 6383, 6387, 6392, 6393, 6394, 6395, 6397, 6398, 6528, 6531, 6536, 6538, 6539, 6540, 6541, 6545, 6546, 6547, 6548, 6551, 6552, 6553, 6554, 6557, 6559, 6560, 6561, 6562, 6563, 6564, 6565, 6566, 6567, 6568, 6569, 6570, 6571, 6572, 6573, 6574, 6575, 6576, 6577, 6578, 6579, 6580, 6581, 6582, 6583, 6584, 6585, 6586, 6587, 6588, 6590, 6591, 6592, 6593, 6594, 6595, 6596, 6597, 6598, 6599, 6600, 6601, 6602, 6604, 6605, 6608, 6611, 6612, 6613, 6614, 6615, 6633, 6641, 6642, 682, 7415, 7554, 7558, 7608, 9766, 9767, 9768, 9769, 9770, 9771, 9772, 9773, 9774, 9775, 9776, 9777, 9778, 9779, 9780, 9781, 9782, 9783, 9784, 9785, 9786, 9787, 9788, 9789, 9790, 9791, 9792, 9793, 9794, 9795, 9796, 9797, 9798, 9799, 9800, 9801, 9802, 9803, 9804, 9805, 9806, 9807, 9808, 9809, 9810, 9811, 9812, 9813, 9814, 9815, 9816, 9817, 9818, 9822, 9829, 9831, 9838, 10287, 10405, 10407, 11965, 11967, 11968, 11969, 11981, 11982, 11983, 11984, 11993, 11994, 11995, 12006, 12007, 12008, 12052, 12053, 12054, 12975, 12976, 12977, 12978, 12979, 12982, 12983, 12985, 12987, 12988, 12989, 12990, 12994, 12996, 12997, 12998, 12999, 13010, 13011, 13012, 13041, 14025, 14096, 14109, 14114, 14117, 14119, 14120, 14121, 14122, 14123, 14124, 14125, 14127, 14129, 14131, 14133, 14158, 14159, 14160, 14161, 14162, 14163, 14164, 14165, 14166, 14167, 14168, 14170, 14171, 14172, 14173, 14174, 14175, 14176, 14177, 14179, 14181, 14182, 14185, 14186, 14187, 14188, 14194, 14195, 14364, 14366, 14367, 14369, 14370, 14371, 14372, 14373, 14374, 14375, 14376, 14377, 14378, 14379, 14380, 14400, 14402, 14559, 14560, 14561, 14562, 14563, 14564, 14565, 14566, 14567, 14568, 14569, 14570, 14571, 14572, 14573, 14574, 14578, 14580, 14582, 14722, 14723, 14724, 14725, 14726, 14727, 14729, 14730, 14742, 14743, 14744, 14745, 14746, 14747, 14748, 14749, 14750, 14752, 14754, 14755, 14756, 15012, 15014, 15016, 15017, 15018, 15110, 15111, 15112, 15113, 15114, 15115, 15116, 15117, 15118, 15120, 15121, 15122, 15123, 15124, 15125, 15126, 15132, 15210, 15211, 15212, 15222, 15223, 15224, 15230, 15241, 15248, 15249, 15259, 15268, 15269, 15304, 15305, 15306, 15307, 15308, 15310, 15311, 15312, 15329, 15330, 15331, 15332, 15333, 15334, 15336, 15337, 15338, 15340, 15347, 15348, 15487, 15488, 15489, 15493, 15494, 15497, 15498, 15499, 15500, 15501, 15502, 15503, 15504, 15506, 15507, 15508, 15509, 15510, 15511, 15512, 15513, 15514, 15515, 15516, 15517, 15519, 15520, 15521, 15522, 15523, 15525, 15526, 15527, 15528, 15529, 15532, 15535, 15537, 15547, 15891, 15893, 15894, 15912, 15926, 15927, 15945, 15946, 15947, 15971, 15972, 15974, 51804, 51805, 51806, 51807, 51808}
+})
 
 table.insert(Journal.djDungeons, {
     name = "Ulduar",
     category = "WOTLK",
     icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Ulduar.blp",
     bosses = {
+        -- === The Siege of Ulduar ===
         {
-            bossID = 29266,
-            spells = {},
-            name = "Xevozz",
-            flat = itemdir,
-        }
+            bossID = 33113,
+            name   = "Flame Leviathan",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_vehicle_liquidpyrite-_blue",
+                    name        = "|cffFFA500Blue Pyrite|r",
+                    description = "Hop in a Demolisher and ride it to the boss. Once there, pull the boss by killing his guardians and head back to the repair platform to refill your pyrite. After that, send all 10 pyrite barrels at the boss and enjoy the loot.",
+                    duration    = 0,
+                    casttime    = 2.5,
+                    cooldown    = 20,
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_ore_arcanite_01",
+                    name        = "|cffF0E68COrbital Defenses (Hard Mode)|r",
+                    description = "Before the fight, players can leave up colossal defense towers to activate Hard Mode. Each active tower grants Flame Leviathan a new, dangerous ability and increases its health.\n\n• |cffF0E68CFreya's Ward:|r Summons laser-firing plants.\n• |cffF0E68CHodir's Fury:|r Encases vehicles in blocks of ice.\n• |cffF0E68CMimiron's Inferno:|r Creates lines of intense fire across the arena.\n• |cffF0E68CThorim's Hammer:|r Fires powerful lightning bolts at vehicles.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 33118,
+            name   = "Ignis the Furnace Master",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_fire_selfdestruct",
+                    name        = "|cffFFA500Flame Jets|r",
+                    description = "Ignis spews fire in a wide frontal cone, inflicting |cffFFA5008483 to 9517 Fire damage|r every second for |cff87CEEB5 seconds|r and interrupting spellcasting.\n\n|cffFFFFFFTips:|r\n• |cffB22222Avoid the Cone:|r Immediately move out of the frontal cone area when he begins to cast.\n• |cffF0E68CStay at Sides:|r Position at the boss's sides or rear to completely avoid this ability.",
+                    duration    = 5,
+                    casttime    = 2,
+                    cooldown    = 25,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_immolation",
+                    name        = "|cffFFA500Scorch|r",
+                    description = "Ignis scorches the ground under his current melee target, creating a fire patch that deals |cffFFA5004713 to 5287 Fire damage|r every second.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBKite the Boss:|r The tank must slowly kite Ignis around the room to avoid standing in the fire patches.",
+                    duration    = 60, -- Fire patch duration
+                    casttime    = 0,
+                    cooldown    = 20,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frostresistancetotem_01",
+                    name        = "|cffADD8E6Shatter|r",
+                    description = "Ignis shatters a |cffF0E68CBrittle|r Iron Construct, dealing |cffFFA50018850 to 21150 Fire damage|r to all players within 10 yards. The shatter also applies a debuff to Ignis, increasing his |cff87CEEBPhysical damage taken by 100%|r for 30 seconds.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CKite Constructs:|r Drag the molten constructs into the water pools to make them Brittle.\n• |cffF0E68CPosition Ignis:|r Move Ignis so his attacks shatter the Brittle constructs to apply the damage vulnerability.",
+                    duration    = 30, -- Debuff on Ignis
+                    casttime    = 0,
+                    cooldown    = 0, -- Mechanic-based
+                },
+            },
+        },
+        {
+            bossID = 33186,
+            name   = "Razorscale",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\inv_spear_06",
+                    name        = "|cffF0E68CHarpoon Turrets|r",
+                    description = "Four turrets surround the arena. Players must repair them and use them to fire harpoons at Razorscale while she is in the air. |cff87CEEBTwo successful harpoon hits|r will ground her.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBCoordinate Firing:|r Fire both harpoons simultaneously to ground her.\n• |cff87CEEBProtect Operators:|r Adds will spawn and attack turret operators. The raid must protect them.",
+                    duration    = 0,
+                    casttime    = 5, -- Harpoon cast time
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_blueflamestrike",
+                    name        = "|cffFFA500Devouring Flame|r",
+                    description = "While in the air, Razorscale breathes a massive wall of blue fire across a large portion of the platform, inflicting |cffFFA50018850 to 21150 Fire damage|r to anyone caught in it.\n\n|cffFFFFFFTips:|r\n• |cffB22222Watch Her Position:|r Pay attention to where Razorscale is flying and move to a safe zone to avoid the breath.",
+                    duration    = 0,
+                    casttime    = 2.5,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_misc_monsterscales_14",
+                    name        = "|cffB22222Wing Buffet|r",
+                    description = "While on the ground, Razorscale beats her wings, knocking back all players and interrupting spellcasting for |cff87CEEB2.5 seconds|r.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBPosition Carefully:|r Be mindful of your position to avoid being knocked into adds or fire.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 25,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_blueflamebreath",
+                    name        = "|cffFFA500Flame Breath|r",
+                    description = "Razorscale breathes fire in a frontal cone, dealing |cffFFA50017672 to 19828 Fire damage|r.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CAvoid the Front:|r Never stand in front of Razorscale during her ground phase unless you are the tank.",
+                    duration    = 0,
+                    casttime    = 2.5,
+                    cooldown    = 15,
+                },
+            },
+        },
+        {
+            bossID = 33293,
+            name   = "XT-002 Deconstructor",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_shaman_earthquake",
+                    name        = "|cffB22222Tympanic Tantrum|r",
+                    description = "XT-002 smashes the ground in a rage, inflicting |cffB2222210% of max health as Physical damage|r every second for |cff87CEEB8 seconds|r to all players.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CHealing Cooldowns:|r This is a period of intense, unavoidable raid-wide damage. Use healing cooldowns and personal defensives to survive.",
+                    duration    = 8,
+                    casttime    = 0,
+                    cooldown    = 60,
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_ingot_titansteel_dark",
+                    name        = "|cff9400D3Gravity Bomb|r",
+                    description = "Afflicts a player with a debuff that, after |cff87CEEB9 seconds|r, creates a |cff9400D3Gravity Well|r. The well pulls in nearby players and |cffF0E68CSrap Bots|r, dealing heavy Shadow damage.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBRun Away:|r If you get this debuff, run to the edge of the room to drop the well safely away from the raid.",
+                    duration    = 9,
+                    casttime    = 0,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_paladin_infusionoflight",
+                    name        = "|cffF0E68CLight Bomb|r",
+                    description = "Afflicts a player with a debuff that, after |cff87CEEB9 seconds|r, creates a |cffF0E68CLight Well|r. It deals |cffF0E68C3299 to 3701 Nature damage|r to players within 10 yards.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBRun Away:|r Similar to Gravity Bomb, run this debuff away from the raid group.",
+                    duration    = 9,
+                    casttime    = 0,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_brokenheart",
+                    name        = "|cffF0E68CHeart of the Deconstructor (Hard Mode)|r",
+                    description = "When XT-002's health is low, his heart becomes exposed. If the heart is destroyed, Hard Mode activates. XT-002 is healed to full, gains |cff87CEEB15% increased health|r and |cff87CEEB30% increased damage|r. He also gains the ability to summon |cff9400D3Void Zones|r and |cffF0E68CLife Sparks|r.\n\n|cffFFFFFFTips:|r\n• |cffB22222DPS Check:|r Hard mode is a significant DPS and healing check. Be prepared for a much tougher fight.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+    
+        -- === The Antechamber ===
+        {
+            bossID = 32867,
+            name   = "Steelbreaker", -- Member of Assembly of Iron
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_fire_felimmolation",
+                    name        = "|cffFFA500Fusion Punch|r",
+                    description = "A powerful punch that inflicts massive |cffFFA500Fire damage|r and applies a debuff that increases Fire damage taken by |cff87CEEB100%|r for |cff87CEEB20 seconds|r. Stacks.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CTank Swap:|r This ability forces a tank swap if Steelbreaker is not the first to be killed.",
+                    duration    = 20,
+                    casttime    = 0,
+                    cooldown    = 15,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shaman_staticshock",
+                    name        = "|cffF0E68CHigh Voltage|r",
+                    description = "A damaging aura that inflicts |cffADD8E6Nature damage|r to all players every |cff87CEEB3 seconds|r.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBSustain Healing:|r This creates constant raid-wide pressure that increases as other council members die.",
+                    duration    = 0, -- Aura
+                    casttime    = 0,
+                    cooldown    = 3,
+                },
+                 {
+                    icon        = "Interface\\Icons\\spell_nature_electricsurge",
+                    name        = "|cffADD8E6Overwhelming Power|r",
+                    description = "If Steelbreaker is the last one alive (Hard Mode), he gains a buff that increases his damage by |cff87CEEB25%|r and periodically stuns all players with |cffADD8E6Static Disruption|r.\n\n|cffFFFFFFTips:|r\n• |cffB22222Burn Phase:|r This is a race against time. The raid will be taking massive damage and getting stunned. Use all cooldowns to finish him.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 32927,
+            name   = "Runemaster Molgeim", -- Member of Assembly of Iron
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_holy_sealofwrath",
+                    name        = "|cffADD8E6Rune of Power|r",
+                    description = "Summons a blue rune on the ground. Players and council members standing in the rune deal |cff87CEEB50%|r additional damage.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CStand in Rune:|r Maximize your DPS by always standing in the Rune of Power.\n• |cff87CEEBMove Bosses Out:|r The tank must move any council members out of the rune immediately.",
+                    duration    = 60,
+                    casttime    = 1.5,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_runeblade",
+                    name        = "|cffF0E68CShield of Runes|r",
+                    description = "Molgeim channels a shield on an ally, absorbing |cff87CEEB50,000 damage|r and healing them for |cff87CEEB150,000|r if the channel completes.\n\n|cffFFFFFFTips:|r\n• |cffB22222Interrupt:|r This is a high-priority interrupt. It must not be allowed to complete.",
+                    duration    = 10,
+                    casttime    = 0,
+                    cooldown    = 45,
+                },
+            },
+        },
+        {
+            bossID = 32857,
+            name   = "Stormcaller Brundir", -- Member of Assembly of Iron
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_lightning_lightningbolt01",
+                    name        = "|cffADD8E6Overload|r",
+                    description = "After a |cff87CEEB6 second|r channel, Brundir unleashes a massive burst of lightning, dealing |cffADD8E625000 Nature damage|r to anyone within 20 yards.\n\n|cffFFFFFFTips:|r\n• |cffB22222Run Away:|r When he begins channeling, run more than 20 yards away from him to avoid instant death.",
+                    duration    = 6, -- Channel time
+                    casttime    = 6,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shaman_lightningshield",
+                    name        = "|cffADD8E6Lightning Tendrils|r",
+                    description = "Brundir creates multiple patches of lightning on the floor that chase random players, dealing |cffADD8E63000 Nature damage|r per second to those who stand in them.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBAwareness:|r Be aware of your surroundings and constantly move to avoid the lightning patches.",
+                    duration    = 20,
+                    casttime    = 0,
+                    cooldown    = 45,
+                },
+            },
+        },
+        {
+            bossID = 32930,
+            name   = "Kologarn",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_warrior_titansgrip",
+                    name        = "|cffB22222Stone Grip|r",
+                    description = "Kologarn's Right Arm grabs up to three players, squeezing them for |cffB222226000 Physical damage|r per second until the arm is destroyed. Players inside the grip have their armor reduced by |cff87CEEB100%|r.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CSwitch DPS:|r All damage dealers must immediately switch to the |cffF0E68CRight Arm|r to free the captured players.",
+                    duration    = 0, -- Until arm is killed
+                    casttime    = 0,
+                    cooldown    = 40,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_mindflay",
+                    name        = "|cff90EE90Focused Eyebeam|r",
+                    description = "Kologarn fires beams from his eyes at a random player, dealing |cff90EE904000 Nature damage|r every second. This damage increases the longer the beam is on a single target.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBShare the Damage:|r Players need to quickly run into the beam's path to split the damage and reset the stacking damage buff.",
+                    duration    = 10,
+                    casttime    = 0,
+                    cooldown    = 25,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_rogue_sprint",
+                    name        = "|cffB22222Sweeping Arm Smash|r",
+                    description = "Kologarn sweeps one of his arms across the platform, dealing |cffB2222212000 Physical damage|r to everyone hit and reducing their armor.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBMelee Safety:|r Melee DPS can avoid this by standing on the small ledge near Kologarn's torso.",
+                    duration    = 0,
+                    casttime    = 2,
+                    cooldown    = 20,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_mindsear",
+                    name        = "|cffB22222Stone Shout|r",
+                    description = "When an arm is destroyed, Kologarn cries out in pain, dealing raid-wide |cffB22222Physical damage|r.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CPrepare for Damage:|r Healers should be ready for this unavoidable burst of raid damage after an arm dies.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 33515,
+            name   = "Auriaya",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_summonvoidwalker",
+                    name        = "|cff9400D3Sentinel Blast|r",
+                    description = "A powerful blast that inflicts |cff9400D330000 Shadow damage|r to a target and anyone within 5 yards.\n\n|cffFFFFFFTips:|r\n• |cffB22222Interrupt:|r This cast MUST be interrupted. Failure to do so will almost certainly kill the tank.",
+                    duration    = 0,
+                    casttime    = 3,
+                    cooldown    = 15,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_gouge",
+                    name        = "|cffF0E68CSonic Screech|r",
+                    description = "Auriaya lets out a screech, inflicting |cffB2222210000 Physical damage|r to all players and interrupting spellcasting for |cff87CEEB5 seconds|r.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBStop Casting:|r Watch for the cast bar and stop casting just before it finishes to avoid being locked out.",
+                    duration    = 0,
+                    casttime    = 1.5,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_druid_feralcharge",
+                    name        = "|cffF0E68CFeral Defender|r",
+                    description = "Auriaya's most powerful guardian. When active, it will periodically use |cffF0E68CFeral Pounce|r on a random player, stunning them and dealing bleed damage.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBOff-Tank:|r An off-tank must pick up the Feral Defender immediately.\n• |cff87CEEBFocus DPS:|r The raid must prioritize killing the Feral Defender as quickly as possible.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_hunter_beastsoother",
+                    name        = "|cffF0E68CNine Lives (Hard Mode)|r",
+                    description = "To activate Hard Mode, do NOT kill the Black Tabbies that Auriaya pulls with. Auriaya will periodically revive one Sanctum Sentry, up to nine times, making the fight progressively harder.\n\n|cffFFFFFFTips:|r\n• |cffB22222Add Control:|r Hard mode is all about controlling an increasing number of adds throughout the fight.",
+                    duration    = 0,
+                    casttime    = 3,
+                    cooldown    = 45,
+                },
+            },
+        },
+    
+        -- === The Keepers of Ulduar ===
+        {
+            bossID = 32906,
+            name   = "Freya",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_holy_sunbeam",
+                    name        = "|cffF0E68CSunbeam|r",
+                    description = "Summons a beam of sunlight that follows a player, inflicting |cffF0E68C4163 to 4837 Nature damage|r per second to anyone in its path.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBKite the Beam:|r If targeted, move away from the raid and kite the beam so it doesn't hit others.\n• |cff87CEEBUse for Adds:|r The Sunbeam also instantly kills any |cff90EE90Detonating Lashers|r that touch it.",
+                    duration    = 10,
+                    casttime    = 2,
+                    cooldown    = 25,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_hunter_wildquiver",
+                    name        = "|cff90EE90Summon Eonar's Gift|r",
+                    description = "Freya summons waves of adds that must be dealt with. The three wave types are:\n• |cffF0E68CStorm Lasher Wave:|r Three lashers that cast Chain Lightning.\n• |cffF0E68CElemental Wave:|r Three elementals that must be killed at the same time or they respawn.\n• |cffF0E68CAncient Conservator Wave:|r One large tree that silences, roots, and heals itself.\n\n|cffFFFFFFTips:|r\n• |cffB22222Add Priority:|r Adds are always the top priority. The entire raid must switch to them immediately.",
+                    duration    = 0,
+                    casttime    = 3,
+                    cooldown    = 60,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_healingtouch",
+                    name        = "|cff90EE90Attuned to Nature|r",
+                    description = "Freya and her allies heal for |cff90EE904000 health|r every second while standing in the effect of a helpful mushroom. The mushroom also grants |cffF0E68C+50% damage|r.\n\n|cffFFFFFFTips:|r\n• |cffB22222Kill Mushrooms:|r A player must run over and destroy the helpful mushrooms as soon as they spawn.\n• |cff87CEEBInterrupt Heals:|r The |cffF0E68CAncient Conservator|r add also has a powerful heal that must be interrupted.",
+                    duration    = 0, -- Aura
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_nature_sentinal",
+                    name        = "|cffF0E68CLight of Eonar (Hard Mode)|r",
+                    description = "To activate Hard Mode, the three Elders surrounding the area must be left alive. Each Elder empowers Freya with a unique, powerful buff, making the fight significantly harder.\n\n• |cffF0E68CElder Brightleaf:|r +60% magic damage for Freya and adds.\n• |cffF0E68CElder Ironbranch:|r +50% physical damage for Freya and adds.\n• |cffF0E68CElder Stonebark:|r +75% armor for Freya and adds.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 32845,
+            name   = "Hodir",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_frost_frost",
+                    name        = "|cffADD8E6Biting Cold|r",
+                    description = "A constant pulsing aura that deals |cffADD8E63500 Frost damage|r every |cff87CEEB3 seconds|r and applies a stacking debuff that increases damage taken from this effect and reduces movement speed.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CFind a Fire:|r Freeing friendly NPCs will create |cffF0E68CToasty Fires|r. Standing near one removes the stacking debuff.",
+                    duration    = 0, -- Aura
+                    casttime    = 0,
+                    cooldown    = 3,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_frozencore",
+                    name        = "|cffADD8E6Flash Freeze|r",
+                    description = "Hodir attempts to encase everyone in a block of ice. After a |cff87CEEB9 second cast|r, anyone not moving or under a protective buff will be frozen solid.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBKeep Moving:|r Simply moving will prevent you from being frozen.\n• |cff87CEEBUse Buffs:|r The |cffF0E68CStarlight|r buff from a freed NPC also grants immunity to this effect.",
+                    duration    = 0,
+                    casttime    = 9,
+                    cooldown    = 45,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_frost_iceshard",
+                    name        = "|cffADD8E6Icicles|r",
+                    description = "Icicles fall from the ceiling at marked locations, dealing |cffADD8E6Frost damage|r. One of these icicles will contain a friendly NPC.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBAvoid Circles:|r Blue circles on the ground indicate where the icicles will land. Move out of them.\n• |cffF0E68CBreak out NPCs:|r The raid must quickly destroy the correct icicle to free the trapped NPC, who will then provide a powerful buff.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 30, -- Approx
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_box_03",
+                    name        = "|cffF0E68CRare Cache of Hodir (Hard Mode)|r",
+                    description = "To complete Hard Mode, Hodir must be defeated in under |cff87CEEB3 minutes|r. Doing so awards an extra chest with superior loot.\n\n|cffFFFFFFTips:|r\n• |cffB22222Maximize Buffs:|r The key to hard mode is freeing all NPCs as quickly as possible to gain all three raid buffs (|cffF0E68CToasty Fire|r, |cffF0E68CStarlight|r, |cffF0E68CStorm Power|r) and maximize DPS.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 180,
+                },
+            },
+        },
+        {
+            bossID = 33350,
+            name   = "Mimiron",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_golemstormbolt",
+                    name        = "|cffADD8E6P1: Plasma Blast|r",
+                    description = "Phase 1 (Leviathan MK II): Mimiron charges a powerful blast, dealing |cffADD8E6100,000 Arcane damage|r to his primary target. Has a long, obvious cast time.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CDefensive Cooldown:|r The tank must use a major defensive cooldown to survive.",
+                    duration    = 0,
+                    casttime    = 4,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\inv_gizmo_rocketlauncher",
+                    name        = "|cffFFA500P2: Rocket Strike|r",
+                    description = "Phase 2 (VX-001): A rocket flies into the air and targets a location on the ground, marked by a large red circle. Inflicts massive |cffFFA500Fire damage|r on impact.\n\n|cffFFFFFFTips:|r\n• |cffB22222Move Out:|r Immediately run out of the red targeting circle when it appears. It will one-shot anyone caught inside.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 10,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_mage_netherwindpresence",
+                    name        = "|cffF0E68CP3: Magnetic Field|r",
+                    description = "Phase 3 (Aerial Command Unit): The tank must pick up a magnetic core, which causes the ACU to follow them. This allows the melee DPS to attack the boss.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBKite Carefully:|r The tank must kite the ACU so that ranged DPS can avoid the mines dropped by Assault Bots.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_selfdestruct",
+                    name        = "|cffFFA500P4: Emergency Mode (Hard Mode)|r",
+                    description = "Hard Mode is activated by pressing the big red button at the start. This initiates |cffF0E68CEmergency Mode|r. All parts gain |cff87CEEB30%|r extra health and damage, and a constant firestorm engulfs the room, leaving very little safe space by the end of the |cff87CEEB8-minute|r enrage timer.\n\n|cffFFFFFFTips:|r\n• |cffB22222Extreme DPS Check:|r This is one of the hardest DPS checks in the game. All four phases must be executed perfectly and quickly.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 480,
+                },
+            },
+        },
+        {
+            bossID = 32865,
+            name   = "Thorim",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_warrior_secondwind",
+                    name        = "|cffF0E68CThe Gauntlet Run|r",
+                    description = "The fight begins with one group fighting mobs in the arena while another group runs a gauntlet to reach Thorim's perch. The gauntlet group must defeat several mini-bosses to open the final gate.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBSpeed is Key:|r The gauntlet must be completed quickly to activate Hard Mode.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_thorim_unbalancingstrike",
+                    name        = "|cffB22222Unbalancing Strike|r",
+                    description = "A mighty blow that deals |cffB22222200% weapon damage|r and applies a stacking debuff that reduces the target's armor by |cff87CEEB20%|r for |cff87CEEB20 seconds|r.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CTank Swap:|r This ability forces a tank swap.",
+                    duration    = 20,
+                    casttime    = 0,
+                    cooldown    = 20,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shaman_lightningshield",
+                    name        = "|cffADD8E6Lightning Charge|r",
+                    description = "Thorim charges himself with lightning, causing his next attack to deal an additional |cffADD8E620000 Nature damage|r. This effect can be dispelled.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CDispel Immediately:|r This is a high-priority magic effect to dispel from Thorim before his next attack lands.",
+                    duration    = 30,
+                    casttime    = 1,
+                    cooldown    = 25,
+                },
+                 {
+                    icon        = "Interface\\Icons\\spell_frost_wisp",
+                    name        = "|cffF0E68CSif's Presence (Hard Mode)|r",
+                    description = "If the gauntlet is completed quickly, Sif will remain to fight alongside Thorim, activating Hard Mode. She attacks with |cffADD8E6Frostbolts|r and casts |cffADD8E6Frost Nova|r. Thorim also gains |cff87CEEB15%|r increased health and damage.\n\n|cffFFFFFFTips:|r\n• |cffB22222Do Not Attack Sif:|r Sif cannot be targeted. The raid must simply deal with her additional mechanics while killing Thorim.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+    
+        -- === Descent into Madness ===
+        {
+            bossID = 33271,
+            name   = "General Vezax",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_antimagicshell",
+                    name        = "|cff9400D3Aura of Despair|r",
+                    description = "A constant aura that prevents all forms of mana regeneration from normal abilities and consumables. Also reduces melee attack speed by |cff87CEEB20%|r.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CManage Mana:|r The only way to restore mana is by destroying |cff90EE90Saronite Vapors|r and standing in the green gas. However, this buffs Vezax's damage.",
+                    duration    = 0, -- Aura
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_shadowcrash",
+                    name        = "|cff9400D3Shadow Crash|r",
+                    description = "Vezax launches a shadow missile at a ranged player's location. On impact, it deals |cff9400D311310 to 12690 Shadow damage|r and leaves a void zone that increases spell damage but also spell cost.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBMove Away:|r Move away from the targeted location. Do not stand in the resulting black pool.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 15,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_warlock_curseofshadow",
+                    name        = "|cff9400D3Mark of the Faceless|r",
+                    description = "Places a curse on a player, causing them to leech |cff87CEEB5000 health|r every second from nearby allies for |cff87CEEB10 seconds|r. Also heals Vezax.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBRun Out:|r The targeted player must quickly run away from the raid to avoid draining their health.",
+                    duration    = 10,
+                    casttime    = 0,
+                    cooldown    = 20,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_mindflay",
+                    name        = "|cffF0E68CSaronite Animus (Hard Mode)|r",
+                    description = "To activate Hard Mode, do NOT kill any Saronite Vapors. After eight vapors have spawned, they will merge into the |cffF0E68CSaronite Animus|r, a powerful add with a raid-wide shadow DoT. Vezax becomes immune until the Animus is killed.\n\n|cffFFFFFFTips:|r\n• |cffB22222Extreme Healing Check:|r The |cff9400D3Profound Darkness|r aura from the Animus deals massive ticking damage and is a major healing test.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 33288,
+            name   = "Yogg-Saron",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_mindsteal",
+                    name        = "|cff9400D3Sanity|r",
+                    description = "The central mechanic of the fight. Players start with |cff87CEEB100 Sanity|r. Various abilities from Yogg-Saron and his minions will drain Sanity. Reaching |cff87CEEB0 Sanity|r causes you to be mind-controlled permanently.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CMechanics are Key:|r Avoiding mechanics is the primary way to preserve Sanity. Sanity can be restored by standing near a friendly Keeper.",
+                    duration    = 0, -- Resource
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_demonicempathy",
+                    name        = "|cff9400D3P2: Lunatic Gaze|r",
+                    description = "During Phase 2 & 3, Yogg-Saron channels a gaze that drains |cff87CEEB4% Sanity|r per second for |cff87CEEB4 seconds|r from any player facing him.\n\n|cffFFFFFFTips:|r\n• |cffB22222Turn Away:|r As soon as he begins to cast, turn your character to face away from Yogg-Saron to avoid all sanity loss.",
+                    duration    = 4,
+                    casttime    = 2,
+                    cooldown    = 30,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_shadetruesight",
+                    name        = "|cffF0E68CP2: Enter the Mind|r",
+                    description = "During Phase 2, portals open into Yogg-Saron's mind. Players must enter, witness one of three visions, and attack the |cffF0E68CBrain of Yogg-Saron|r. While inside, players must not face the laughing skulls.\n\n|cffFFFFFFTips:|r\n• |cff87CEEBPortal Team:|r A designated group must enter the portals to progress the fight.\n• |cff87CEEBAvoid Illusions:|r Face away from the skulls on the walls to avoid taking heavy damage and losing sanity.",
+                    duration    = 60, -- Time inside mind
+                    casttime    = 0,
+                    cooldown    = 90,
+                },
+                {
+                    icon        = "Interface\\Icons\\ability_rogue_deafening",
+                    name        = "|cffB22222P3: Deafening Roar|r",
+                    description = "Yogg-Saron roars, dealing |cffB222228000 Physical damage|r and silencing all players for |cff87CEEB4 seconds|r. Reduces Yogg-Saron's damage taken by |cff87CEEB20%|r for each Immortal Guardian still alive.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CKill Guardians:|r All Immortal Guardians must be killed before this cast finishes, otherwise Yogg-Saron will be nearly immune to damage.",
+                    duration    = 0,
+                    casttime    = 3,
+                    cooldown    = 60,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_charm",
+                    name        = "|cffF0E68CAlone in the Darkness (Hard Mode)|r",
+                    description = "Hard Mode is determined by how many Keepers you ask for help. The hardest version, |cffF0E68CAlone in the Darkness|r, involves fighting him with no Keepers assisting. This makes players unable to replenish Sanity and gives Yogg-Saron powerful abilities, most notably |cff9400D3Empowered Shadows|r which heal him.\n\n|cffFFFFFFTips:|r\n• |cffB22222Absolute Perfection:|r This is considered one of the most difficult encounters ever designed in WoW. It requires flawless execution from every player.",
+                    duration    = 0,
+                    casttime    = 0,
+                    cooldown    = 0,
+                },
+            },
+        },
+        {
+            bossID = 32871,
+            name   = "Algalon the Observer",
+            rare   = false,
+            flat   = itemdir,
+            spells = {
+                {
+                    icon        = "Interface\\Icons\\ability_warrior_decisivestrike",
+                    name        = "|cffADD8E6Phase Punch|r",
+                    description = "A powerful punch that deals |cffADD8E69000 Physical damage|r and applies a stacking debuff. At |cff87CEEB5 stacks|r, the target is phased out into the |cff9400D3Celestial Realm|r for |cff87CEEB10 seconds|r, where they will be attacked by adds.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CTank Swap:|r Tanks must taunt off each other at 4 stacks to manage the debuff.",
+                    duration    = 45,
+                    casttime    = 0,
+                    cooldown    = 15,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_fire_burnout",
+                    name        = "|cffFFA500Cosmic Smash|r",
+                    description = "Algalon summons a meteor to strike a player's location, dealing massive |cffFFA50045000 Fire damage|r to anyone within 6 yards and leaving a |cff9400D3void zone|r on the ground.\n\n|cffFFFFFFTips:|r\n• |cffB22222Move Out:|r Move out of the targeted red circle. The damage is lethal.",
+                    duration    = 0,
+                    casttime    = 4,
+                    cooldown    = 25,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_arcane_starfire",
+                    name        = "|cffFFA500Big Bang|r",
+                    description = "After a long |cff87CEEB8 second|r cast, Algalon unleashes a massive explosion, dealing |cffFFA50076000 to 84000 Fire damage|r to all players.\n\n|cffFFFFFFTips:|r\n• |cffF0E68CEnter Black Holes:|r To survive, pop a defensive, entering a black hole will reset the boss if solo.",
+                    duration    = 0,
+                    casttime    = 8,
+                    cooldown    = 90,
+                },
+                {
+                    icon        = "Interface\\Icons\\spell_shadow_unholyfrenzy",
+                    name        = "|cffB22222Berserk|r",
+                    description = "After |cff87CEEB6 minutes|r, Algalon will deem the planet unworthy and initiate planetary re-origination, instantly killing the entire raid.\n\n|cffFFFFFFTips:|r\n• |cffB22222Hard Enrage:|r This is an absolute hard enrage timer. The fight must be completed within 6 minutes, making it an intense DPS race from start to finish.",
+                    duration    = 0,
+                    casttime    = 1,
+                    cooldown    = 360,
+                },
+            },
+        },
     },
     items = {33365,33370,33379,33403,36035,36043,36051,36052,36059,36267,36268,36270,36271,36272,36273,36274,36296,36394,37760,37761,37771,37781,37794,45086,45106,45107,45108,45109,45110,45111,45112,45113,45115,45116,45117,45118,45119,45132,45133,45134,45135,45136,45137,45138,45139,45140,45141,45142,45143,45146,45147,45148,45149,45150,45151,45157,45158,45161,45162,45164,45165,45166,45167,45168,45170,45171,45185,45186,45187,45193,45224,45225,45226,45227,45228,45232,45233,45234,45235,45236,45237,45238,45239,45240,45241,45242,45243,45244,45245,45246,45247,45248,45249,45250,45251,45252,45253,45256,45257,45258,45259,45260,45261,45262,45263,45264,45265,45266,45267,45268,45269,45271,45272,45273,45274,45275,45282,45283,45284,45285,45286,45287,45288,45289,45291,45292,45293,45294,45295,45296,45297,45298,45299,45300,45301,45302,45303,45304,45305,45306,45307,45308,45309,45310,45311,45312,45313,45314,45315,45316,45317,45318,45319,45320,45321,45322,45324,45325,45326,45327,45329,45330,45331,45332,45333,45334,45378,45418,45423,45434,45435,45437,45438,45439,45440,45441,45442,45443,45444,45445,45446,45447,45448,45449,45450,45451,45452,45453,45454,45456,45457,45458,45459,45460,45461,45462,45463,45466,45467,45468,45469,45470,45471,45472,45473,45474,45479,45480,45481,45482,45483,45484,45485,45486,45487,45488,45489,45490,45491,45492,45493,45494,45495,45496,45497,45498,45501,45502,45503,45504,45505,45507,45508,45511,45512,45513,45514,45515,45516,45517,45518,45519,45520,45521,45522,45523,45524,45525,45527,45529,45530,45531,45532,45533,45534,45535,45536,45537,45538,45539,45540,45541,45542,45543,45544,45547,45548,45549,45570,45587,45594,45599,45605,45607,45609,45610,45611,45612,45613,45615,45616,45617,45619,45620,45663,45665,45675,45676,45677,45679,45680,45682,45685,45686,45687,45694,45695,45696,45697,45698,45699,45700,45701,45702,45703,45704,45707,45708,45709,45711,45712,45713,45832,45864,45865,45866,45867,45868,45869,45870,45871,45872,45873,45874,45876,45877,45886,45887,45888,45892,45893,45894,45895,45927,45928,45929,45930,45931,45933,45934,45935,45936,45940,45941,45943,45945,45946,45947,45972,45973,45974,45975,45976,45982,45988,45989,45990,45993,45996,45997,46008,46009,46010,46011,46012,46013,46014,46015,46016,46017,46018,46019,46021,46022,46024,46025,46028,46030,46031,46032,46033,46034,46035,46036,46037,46038,46039,46040,46041,46042,46043,46044,46045,46046,46047,46048,46049,46050,46051,46067,46068,46095,46096,46097,46312,46340,46341,46342,46343,46344,46345,46346,46347,46350,46351},
 })
@@ -3295,3 +3983,5 @@ table.insert(Journal.djDungeons, {
     items = {},
 })
 --]]
+
+print("|cFF00FF00[DJ Dataset]|r Loaded " .. #_G.Journal.djDungeons .. " dungeons")

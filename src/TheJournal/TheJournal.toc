@@ -3,11 +3,12 @@
 ## Notes: This journal will bring many attunes along its path, hold it safe.
 ## Author: Qt
 ## Version: 1.0
-## SavedVariables : Journal_FriendCache
+## SavedVariables: Journal_FriendCache
 ## SavedVariablesPerCharacter: Journal_charDB
 
 Constants.lua
 DJ_Dataset.lua
+DungeonCache.lua
 ItemLocAPI.lua
 Core.lua
 DJ_Settings.lua
