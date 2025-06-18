@@ -3,39 +3,6 @@ Journal_charDB = Journal_charDB or {}
 
 local settings = Journal_charDB or {}
 --------------------------------------------------------------------
--- HELPERS
---------------------------------------------------------------------
-function Journal_charDB_ToggleRuneCollection()
-    local anythingOpen = false
-    local framesToCheck = {
-        RuneCollection, -- your frame
-    }
-    for _, f in ipairs(framesToCheck) do
-        if f and f:IsShown() then
-            f:Hide()
-            anythingOpen = true
-        end
-    end
-    if not anythingOpen and RuneCollection then
-        RuneCollection:Show()
-    end
-end
-
-local function CopyTable(t)
-    local copy = {}
-    for i, v in ipairs(t) do
-        table.insert(copy, v)
-    end
-    return copy
-end
-
---------------------------------------------------------------------
--- HEADERS & KEYBINDINGS
---------------------------------------------------------------------
-_G["BINDING_HEADER_Journal_charDB"] = "Dungeon Journal (Valanior)"
-_G["BINDING_NAME_Journal_charDB_TOGGLERUNE"] = "Toggle RuneCollection"
-
---------------------------------------------------------------------
 -- CONFIG PANEL SETUP (Stand-alone, not in Interface Options)
 --------------------------------------------------------------------
 local configPanel = CreateFrame("Frame", "Journal_charDB_ConfigPanel", UIParent)
@@ -60,7 +27,7 @@ configPanel:Hide() -- Hidden by default
 -- Title text
 local titleText = configPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 titleText:SetPoint("TOP", configPanel, "TOP", 0, -20)
-titleText:SetText("Dungeon Journal (Valanior) Options")
+titleText:SetText("Dungeon Journal Options")
 
 -- Close Button (upper-right corner)
 local closeButton = CreateFrame("Button", nil, configPanel, "UIPanelCloseButton")

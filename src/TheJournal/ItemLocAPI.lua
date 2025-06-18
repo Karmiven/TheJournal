@@ -11,7 +11,6 @@ local isLoaded = nil
 local lastLoadCheck = 0
 local LOAD_CHECK_INTERVAL = 5 -- Check every 5 seconds
 
--- Source type constants for better readability
 ItemLocAPI.SOURCE_TYPES = {
     CREATURE = 1,
     OBJECT = 2,

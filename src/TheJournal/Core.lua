@@ -360,7 +360,7 @@ local function LoadFriendsFromCache()
                 end
                 
                 FRIENDS_DATA[playerName] = {
-                    class = data.class,
+                    classId = data.classId,
                     attuned = data.attuned,
                     total = data.total,
                     percentage = data.percentage,
@@ -591,7 +591,7 @@ local function SaveFriendsCache(force)
         for playerName, data in pairs(FRIENDS_DATA) do
             if not data.isPlayer and not _G.Journal_FriendCache.hiddenPlayers[playerName] then -- Don't cache our own data globally or hidden players
                 _G.Journal_FriendCache.friends[playerName] = {
-                    class = data.class,
+                    classId = data.classId,
                     attuned = data.attuned,
                     total = data.total,
                     percentage = data.percentage,
@@ -677,6 +677,7 @@ local function AddSelfToFriendsData()
     local percentage = total > 0 and math.floor((attuned / total) * 100) or 0
     local playerName = UnitName("player")
     local _, englishClass = UnitClass("player")
+    local classId = _G.CustomGetClassId and _G.CustomGetClassId() or 1 -- Default to Warrior if function not available
     
     -- Get top 3 dungeons we need most using efficient cache
     local dungeonNeeds = {}
@@ -757,7 +758,7 @@ local function AddSelfToFriendsData()
     
     -- Add ourselves to the friends data
     FRIENDS_DATA[playerName] = {
-        class = englishClass,
+        classId = classId,
         attuned = attuned,
         total = total,
         percentage = percentage,
@@ -779,6 +780,7 @@ local function SendAttunementData()
     local percentage = total > 0 and math.floor((attuned / total) * 100) or 0
     local playerName = UnitName("player")
     local _, englishClass = UnitClass("player")
+    local classId = _G.CustomGetClassId and _G.CustomGetClassId() or 1 -- Default to Warrior if function not available
     
     -- Get top 3 dungeons we need most using efficient cache
     local dungeonNeeds = {}
@@ -854,7 +856,7 @@ local function SendAttunementData()
     -- Create data package
     local data = {
         player = playerName,
-        class = englishClass,
+        classId = classId,
         attuned = attuned,
         total = total,
         percentage = percentage,
@@ -884,7 +886,7 @@ local function SendAttunementData()
         encodedDungeons = table.concat(safeDungeons, ",")
     end
     
-    local message = strjoin(":", "DATA", playerName, englishClass, attuned, total, percentage, encodedDungeons, questItemID, journalPoints)
+    local message = strjoin(":", "DATA", playerName, classId, attuned, total, percentage, encodedDungeons, questItemID, journalPoints)
     -- Use smart messaging system to avoid duplicates and throttle messages
     SendMessageSmart(ADDON_PREFIX, message, false)
 end
@@ -1107,7 +1109,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
             return
         end
         
-        local playerClass = parts[3] or "WARRIOR"
+        local classId = tonumber(parts[3]) or 1 -- Default to Warrior (1) if invalid
         local attuned = tonumber(parts[4]) or 0
         local total = tonumber(parts[5]) or 0
         local percentage = tonumber(parts[6]) or 0
@@ -1163,7 +1165,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
         end
         
         FRIENDS_DATA[playerName] = {
-            class = playerClass,
+            classId = classId,
             attuned = attuned,
             total = total,
             percentage = percentage,

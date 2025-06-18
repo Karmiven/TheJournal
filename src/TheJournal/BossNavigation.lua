@@ -86,30 +86,6 @@ local function SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
     modelFrame:EnableMouse(true)
     modelFrame:Show()
 
-    -- Create the Story Button if it doesn't exist
-    if not modelFrame.storyButton then
-        local btn = CreateFrame("Button", nil, modelFrame, "UIPanelButtonTemplate")
-        btn:SetSize(25, 25)
-        btn:SetNormalTexture("Interface\\Icons\\INV_Misc_Book_09")
-        btn:SetPushedTexture("Interface\\Icons\\INV_Misc_Book_09")
-        local nt = btn:GetNormalTexture()
-        nt:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        nt:SetAllPoints(btn)
-        local pt = btn:GetPushedTexture()
-        pt:SetTexCoord(0.06, 0.94, 0.06, 0.94)
-        pt:SetAllPoints(btn)
-        btn:SetPoint("BOTTOMRIGHT", modelFrame, "BOTTOMRIGHT", -13, 30)
-        btn:Hide()
-        btn:SetScript("OnClick", function()
-            if modelFrame.storyPopup:IsShown() then
-                modelFrame.storyPopup:Hide()
-            else
-                modelFrame.storyPopup:Show()
-            end
-        end)
-        modelFrame.storyButton = btn
-    end
-
     modelFrame:ClearModel()
 
     -- Set neutral defaults before loading
@@ -136,45 +112,6 @@ local function SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
 
     return modelFrame
 end
-
--------------------------------------------------------------------
--- Helper: Setup the Story Popup
--------------------------------------------------------------------
-local function SetupStoryPopup()
-    if not modelFrame.storyPopup then
-        local popup = CreateFrame("Frame", "ValaniorDJ_StoryPopup", UIParent)
-        popup:SetSize(400, 200)
-        popup:SetPoint("CENTER", UIParent, "CENTER")
-        popup:SetFrameStrata("DIALOG")
-        popup:Hide()
-        tinsert(UISpecialFrames, popup:GetName())
-        if popup.SetBackdrop then
-            popup:SetBackdrop({
-                bgFile = "Interface\\ACHIEVEMENTFRAME\\UI-Achievement-Parchment-Horizontal",
-                edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-                tile = true,
-                tileSize = 256,
-                edgeSize = 16,
-                insets = { left = 4, right = 4, top = 4, bottom = 4 }
-            })
-        end
-        local closeBtn = CreateFrame("Button", nil, popup, "UIPanelCloseButton")
-        closeBtn:SetPoint("TOPRIGHT", popup, "TOPRIGHT", -2, -2)
-        closeBtn:SetScript("OnClick", function() popup:Hide() end)
-        local fs = popup:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        fs:SetPoint("TOPLEFT", 10, -10)
-        fs:SetPoint("RIGHT", -10, 0)
-        fs:SetJustifyH("LEFT")
-        fs:SetJustifyV("TOP")
-        fs:SetSpacing(3)
-        fs:SetText("")
-        popup.closeBtn = closeBtn
-        popup.text = fs
-        modelFrame.storyPopup = popup
-    end
-    return modelFrame.storyPopup
-end
-
 -------------------------------------------------------------------
 -- Helper: Setup Boss Name Label
 -------------------------------------------------------------------
@@ -475,7 +412,6 @@ local function ShowBoss(dungeon)
         end
 
         SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
-        SetupStoryPopup()
         SetupBossNameLabel(bossData)
         SetupSpellIcons(bossData)  -- This will handle the new layout
         SetupMouseHandlers(bossKey, dungeon)
@@ -483,19 +419,6 @@ local function ShowBoss(dungeon)
         -- Just update spell icons and boss name if no full refresh needed
         SetupBossNameLabel(bossData)
         SetupSpellIcons(bossData)
-    end
-
-    -- Only update story popup if we did a full refresh
-    if needsRefresh and modelFrame.storyPopup then
-        local popup = modelFrame.storyPopup
-        popup:Hide()
-
-        local story = bossData.story or ""
-        popup.text:SetText(story)
-        popup.text:SetWidth(popup:GetWidth() - 20)
-        local textHeight = popup.text:GetStringHeight()
-        local newHeight = textHeight + 30
-        popup:SetHeight(newHeight < 200 and 200 or newHeight)
     end
 
     -- Always update story button visibility based on boss level status

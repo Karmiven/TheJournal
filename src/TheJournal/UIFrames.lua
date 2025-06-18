@@ -13,11 +13,129 @@ local uiCache = {
     bossFrames = {},
     lastDungeonUpdate = 0
 }
+-- Make boss frames cache weak to allow garbage collection
+setmetatable(uiCache.bossFrames, {__mode = "v"})
+
+-- Cache frequently used global functions for better performance
+local GetTime = GetTime
+local GetItemInfo = GetItemInfo
+local tonumber = tonumber
+local pairs = pairs
+local ipairs = ipairs
+local table_insert = table.insert
+local table_remove = table.remove
+local string_match = string.match
+local string_find = string.find
+
+-- Frame pooling for item buttons to improve performance
+local itemButtonPool = {}
+local activeItemButtons = {}
+
+local function GetItemButton()
+    local button = table_remove(itemButtonPool)
+    if not button then
+        button = CreateFrame("Button", nil, UIParent)
+        -- Set up basic button properties that don't change to match original item buttons
+        button:SetNormalTexture("") -- No normal texture
+        button:SetPushedTexture("") -- No pushed texture  
+        button:SetHighlightTexture("") -- No highlight texture
+        
+        -- Create icon texture
+        button.icon = button:CreateTexture(nil, "ARTWORK")
+        
+        -- Create text elements that buttons typically need
+        button.text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        
+        button.count = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+        
+        -- These will be created on-demand in AcquireItemButton if needed
+        -- button.dropLocationText and button.favoriteIcon
+    end
+    
+    -- Track active buttons
+    activeItemButtons[button] = true
+    return button
+end
+
+local function ReleaseItemButton(button)
+    if not button or not activeItemButtons[button] then return end
+    
+    -- Clean up the button
+    button:Hide()
+    button:ClearAllPoints()
+    button:SetParent(UIParent)
+    button:SetScript("OnEnter", nil)
+    button:SetScript("OnLeave", nil)
+    button:SetScript("OnClick", nil)
+    
+    -- Clear textures and text
+    if button.icon then button.icon:SetTexture(nil) end
+    if button.text then button.text:SetText("") end
+    if button.count then button.count:SetText("") end
+    
+    -- Remove from active tracking
+    activeItemButtons[button] = nil
+    
+    -- Return to pool
+    table_insert(itemButtonPool, button)
+end
+
+-- Function to release all active item buttons (useful for cleanup)
+local function ReleaseAllItemButtons()
+    for button in pairs(activeItemButtons) do
+        ReleaseItemButton(button)
+    end
+end
+
+--[[
+Usage Example for Frame Pooling:
+Instead of: local btn = CreateFrame("Button", btnName, itemsListContainer)
+Use:        local btn = GetItemButton()
+            btn:SetParent(itemsListContainer)
+            btn:SetName(btnName)
+
+When done with button:
+            ReleaseItemButton(btn)
+
+Call ReleaseAllItemButtons() when clearing all items from display
+
+Debug commands:
+/script print("Pool size:", #itemButtonPool, "Active buttons:", GetActiveButtonCount())
+--]]
+
+-- Debug function to check pool status
+local function GetActiveButtonCount()
+    local count = 0
+    for _ in pairs(activeItemButtons) do
+        count = count + 1
+    end
+    return count
+end
+
+-- Add slash command for debugging pool status
+SLASH_DJPOOL1 = "/djpool"
+SlashCmdList["DJPOOL"] = function()
+    print("|cFFFFD700[Frame Pool Debug]|r")
+    print("  Pool size: " .. #itemButtonPool)
+    print("  Active buttons: " .. GetActiveButtonCount())
+    print("  Cache entries: " .. (next(_G.itemButtonCache) and "Has entries" or "Empty"))
+end
+
+-- Add debug command for friends updates
+SLASH_DJFRIENDS1 = "/djfriends"
+SlashCmdList["DJFRIENDS"] = function()
+    print("|cFFFFD700[Friends Debug]|r")
+    print("  Frame shown: " .. (friendsFrame and friendsFrame:IsShown() and "Yes" or "No"))
+    print("  Last request: " .. (friendsFrame and friendsFrame.lastRequest and string.format("%.1f", GetTime() - friendsFrame.lastRequest) .. "s ago" or "Never"))
+    print("  Pagination flag: " .. (friendsFrame and friendsFrame.isPaginationUpdate and "Set" or "Clear"))
+end
 
 local AffixTooltip = CreateFrame("GameTooltip", "DJ_AffixTooltip", UIParent, "GameTooltipTemplate")
 
 -- Persistent drop rate cache to avoid recalculating on every page change
 local dropRateCache = {}
+-- Make drop rate cache a weak table to allow garbage collection of unused entries
+setmetatable(dropRateCache, {__mode = "v"})
 
 -- Smart global cache for attunement and forge data
 local smartCache = {
@@ -33,7 +151,7 @@ local saveDebounce = {
     timer = nil,
     pending = false,
     lastSave = 0,
-    minInterval = 10, -- Minimum seconds between saves
+    minInterval = 15, -- Increased from 10 to 15 seconds for better performance
 }
 
 -- Optimized dungeon navigation functions
@@ -90,8 +208,8 @@ local function GetCachedDropRate(itemId, dungeonName)
     
     -- Calculate and cache the drop rate
     local dropRate = 0
-    if _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
-        local bestSource = _G.ItemLocAPI:GetBestSource(itemId, dungeonName)
+    if ItemLocAPI:IsLoaded() then
+        local bestSource = ItemLocAPI:GetBestSource(itemId, dungeonName)
         dropRate = bestSource and bestSource.chance or 0
         
         -- If we have dungeon data, verify the source is valid
@@ -120,12 +238,12 @@ Journal_charDB.friendsAttunementData = Journal_charDB.friendsAttunementData or {
 Journal_charDB.friendsJournalPoints = Journal_charDB.friendsJournalPoints or {}
 
 -- Initialize global friends data from saved variables
-if not _G.FRIENDS_ATTUNEMENT_DATA then
-    _G.FRIENDS_ATTUNEMENT_DATA = {}
+if not FRIENDS_ATTUNEMENT_DATA then
+    FRIENDS_ATTUNEMENT_DATA = {}
 end
 
-if not _G.FRIENDS_JOURNAL_POINTS then
-    _G.FRIENDS_JOURNAL_POINTS = {}
+if not FRIENDS_JOURNAL_POINTS then
+    FRIENDS_JOURNAL_POINTS = {}
 end
 
 -- Function to debounce saves
@@ -149,10 +267,8 @@ end
 -- Add debug flag
 local DEBUG = false
 
--- Function to print debug messages
-local function DebugPrint(...)
-    -- Debug prints disabled for performance
-end
+-- Function to print debug messages (optimized empty function for performance)
+local function DebugPrint() end
 
 -- Load saved friends data
 local friendsLoaded = 0
@@ -166,11 +282,7 @@ for playerName, points in pairs(Journal_charDB.friendsJournalPoints) do
     _G.FRIENDS_JOURNAL_POINTS[playerName] = points
     pointsLoaded = pointsLoaded + 1
 end
-
-if friendsLoaded > 0 or pointsLoaded > 0 then
-    DebugPrint("Loaded " .. friendsLoaded .. " friends with attunement data and " .. pointsLoaded .. " friends with journal points")
-end
-
+--[[
 -- Add ourselves to the leaderboard on initial load
 C_Timer.After(1, function()
     if _G.AddSelfToFriendsData then
@@ -188,6 +300,7 @@ C_Timer.After(1, function()
         end
     end
 end)
+--]]
 
 -- Function to queue drop rate updates
 local function QueueDropRateUpdate(itemID, dungeonName)
@@ -203,10 +316,20 @@ end
 local function ClearDungeonDropRateCache(dungeonName)
     if not dungeonName then return end
     
+    -- Cache the search pattern to avoid repeated string concatenation
+    local searchPattern = dungeonName .. "_"
+    local keysToRemove = {}
+    
+    -- Collect keys to remove first, then remove them
     for cacheKey, _ in pairs(dropRateCache) do
-        if cacheKey:find(dungeonName .. "_", 1, true) == 1 then
-            dropRateCache[cacheKey] = nil
+        if cacheKey:find(searchPattern, 1, true) == 1 then
+            keysToRemove[#keysToRemove + 1] = cacheKey
         end
+    end
+    
+    -- Remove collected keys
+    for i = 1, #keysToRemove do
+        dropRateCache[keysToRemove[i]] = nil
     end
 end
 
@@ -234,26 +357,33 @@ local function ProcessCacheUpdates()
     end
     
     smartCache.processing = true
-    local batchSize = 5 -- Process 5 items per frame to avoid lag
+    local batchSize = 3 -- Reduced from 5 to 3 for better frame rate
     local processed = 0
+    local queueLength = #smartCache.updateQueue
     
-    while processed < batchSize and #smartCache.updateQueue > 0 do
-        local itemID = table.remove(smartCache.updateQueue, 1)
+    -- Cache global function references locally
+    local GetItemAttuneProgress = _G.GetItemAttuneProgress
+    local GetItemLinkAttuneProgress = _G.GetItemLinkAttuneProgress
+    local GetItemAttuneForge = _G.GetItemAttuneForge
+    
+    while processed < batchSize and queueLength > 0 do
+        local itemID = table_remove(smartCache.updateQueue, 1)
+        queueLength = queueLength - 1
         
         -- Only update if not already cached
         if smartCache.attunement[itemID] == nil then
             local progress = 0
-            if _G.GetItemAttuneProgress then
-                progress = _G.GetItemAttuneProgress(itemID) or 0
-            elseif _G.GetItemLinkAttuneProgress then
+            if GetItemAttuneProgress then
+                progress = GetItemAttuneProgress(itemID) or 0
+            elseif GetItemLinkAttuneProgress then
                 local itemLink = "item:" .. itemID
-                progress = _G.GetItemLinkAttuneProgress(itemLink) or 0
+                progress = GetItemLinkAttuneProgress(itemLink) or 0
             end
             SetCachedAttunement(itemID, progress)
             
             -- Only get forge level if attuned
             if progress >= 100 and smartCache.forge[itemID] == nil then
-                local forgeLevel = _G.GetItemAttuneForge and _G.GetItemAttuneForge(itemID) or 0
+                local forgeLevel = GetItemAttuneForge and GetItemAttuneForge(itemID) or 0
                 SetCachedForge(itemID, forgeLevel)
             end
         end
@@ -264,8 +394,8 @@ local function ProcessCacheUpdates()
     smartCache.processing = false
     
     -- Continue processing if there are more items
-    if #smartCache.updateQueue > 0 then
-        C_Timer.After(0.1, ProcessCacheUpdates)
+    if queueLength > 0 then
+        C_Timer.After(0.15, ProcessCacheUpdates) -- Slightly increased delay
     else
         -- Save cache when processing is complete
         SaveSmartCache()
@@ -369,8 +499,6 @@ local function SaveFriendsData()
     for playerName, points in pairs(_G.FRIENDS_JOURNAL_POINTS) do
         Journal_charDB.friendsJournalPoints[playerName] = points
     end
-    
-    DebugPrint("Saved friends data")
 end
 
 -- Function to invalidate cache for a specific item (call when item is attuned)
@@ -535,6 +663,10 @@ mainCloseButton:SetPoint("TOPRIGHT", DungeonJournalFrame, "TOPRIGHT", 4, -4)
 mainCloseButton:SetSize(25, 25)
 
 _G.itemButtonCache              = _G.itemButtonCache or {}
+-- Make global item button cache weak to allow garbage collection
+if not getmetatable(_G.itemButtonCache) then
+    setmetatable(_G.itemButtonCache, {__mode = "v"})
+end
 _G.lastBossNavDungeon           = _G.lastBossNavDungeon or nil
 _G.currentDungeon               = _G.currentDungeon or nil
 
@@ -562,6 +694,8 @@ local totalPages         = 1
 
 -- Add cache for prepared items to avoid re-sorting on every page navigation
 local preparedItemsCache = {}
+-- Make prepared items cache weak to allow garbage collection of old entries
+setmetatable(preparedItemsCache, {__mode = "v"})
 local lastCacheKey = nil
 
 -- Forward declaration for functions used before they're defined
@@ -729,7 +863,7 @@ dungeonDetailFrame:SetFrameStrata("FULLSCREEN") -- Ensure detail frame appears a
 dungeonDetailFrame:Hide()
 
 local dungeonTitleText = dungeonDetailFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-dungeonTitleText:SetPoint("TOP", dungeonDetailFrame, "TOP", 0, 0)
+dungeonTitleText:SetPoint("TOP", dungeonDetailFrame, "TOP", 0, 1)
 
 local dungeonDescScrollFrame = CreateFrame("ScrollFrame", "DungeonDescScrollFrame", dungeonDetailFrame,
     "UIPanelScrollFrameTemplate")
@@ -830,6 +964,9 @@ end
 UpdateSourceCountButton()
 
 sourceCountButton:SetScript("OnClick", function(self)
+    -- Store tooltip state before making changes
+    local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == self
+    
     currentSourceIndex = currentSourceIndex + 1
     if currentSourceIndex > #sourceCountOptions then
         currentSourceIndex = 1
@@ -843,9 +980,10 @@ sourceCountButton:SetScript("OnClick", function(self)
         LoadDungeonDetail(_G.currentDungeon)
     end
     
-    -- Update tooltip if it's currently shown
-    if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+    -- Restore tooltip if it was shown before the click
+    if tooltipWasShown then
         local opt = sourceCountOptions[currentSourceIndex]
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:ClearLines()
         GameTooltip:SetText("|cFF87CEEB" .. "Source Count Filter: " .. opt.text .. "|r")
         GameTooltip:AddLine("All Items: Show all items", 1, 1, 1)
@@ -907,6 +1045,9 @@ end
 UpdateMythicFilterButton()
 
 mythicFilterButton:SetScript("OnClick", function(self)
+    -- Store tooltip state before making changes
+    local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == self
+    
     currentMythicIndex = currentMythicIndex + 1
     if currentMythicIndex > #mythicFilterOptions then
         currentMythicIndex = 1
@@ -922,9 +1063,10 @@ mythicFilterButton:SetScript("OnClick", function(self)
         LoadDungeonDetail(_G.currentDungeon)
     end
     
-    -- Update tooltip if it's currently shown
-    if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+    -- Restore tooltip if it was shown before the click
+    if tooltipWasShown then
         local opt = mythicFilterOptions[currentMythicIndex]
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:ClearLines()
         GameTooltip:SetText("|cFFFF6600" .. "Mythic Filter: " .. opt.text .. "|r")
         GameTooltip:AddLine("All Difficulties: Show all items", 1, 1, 1)
@@ -1006,8 +1148,8 @@ local function UpdatePage(offset)
             -- Update display with cached items (much faster)
             DisplayItemsList(_G.currentDungeon, nil, cachedItems)
         else
-            -- Fall back to full reload if cache is empty
-            LoadDungeonDetail(_G.currentDungeon)
+            -- Fall back to full reload if cache is empty - mark as pagination to prevent friends update
+            LoadDungeonDetail(_G.currentDungeon, true)
         end
     end
 end
@@ -1050,60 +1192,65 @@ backButton:SetScript("OnClick", function()
         previewFrame:Show()
         HideDungeonInteriorUI()
     
-        
-        -- Hide quest-related UI elements when returning to preview
         if randomQuestIcon then randomQuestIcon:Hide() end
         if previewQuestIcon then previewQuestIcon:Hide() end -- Hide on preview
         if questPopoutFrame then questPopoutFrame:Hide() end
         
-        -- Use a timer to ensure UI state is updated before refreshing
         C_Timer.After(0.1, function()
-            -- Refresh attuneable text when returning to main screen
             RefreshAllAttunableText()
-            -- Sort dungeons by attunement progress
             SortDungeonsByAttunement()
-            -- Apply any active filters
             FilterDungeonsByCategory()
         end)
     elseif previewFrame:IsShown() then
-        if RuneCollection then RuneCollection:Show() end
         HideJournal()
     end
 end)
 
 local function AcquireItemButton(dIndex, iIndex)
-    _G.itemButtonCache[dIndex] = _G.itemButtonCache[dIndex] or {}
-    if _G.itemButtonCache[dIndex][iIndex] then
-        return _G.itemButtonCache[dIndex][iIndex]
-    end
-
-    local btnName = "DJ_ItemButton_" .. dIndex .. "_" .. iIndex
-    local btn = CreateFrame("Button", btnName, itemsListContainer)
+    -- Use the frame pooling system instead of creating infinite buttons
+    local btn = GetItemButton()
+    btn:SetParent(itemsListContainer)
     btn:SetSize(180, 40)
-
-    local iconTex = btn:CreateTexture(nil, "ARTWORK")
-    iconTex:SetSize(30, 30)
-    iconTex:SetPoint("LEFT", btn, "LEFT", 2, 5)
-    btn.iconTex = iconTex
-
-    local itemText = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    itemText:SetPoint("TOPLEFT", iconTex, "TOPRIGHT", 4, 0)
-    itemText:SetPoint("RIGHT", btn, "RIGHT", -2, 0)
-    itemText:SetJustifyH("LEFT")
-    btn.itemText = itemText
-
-    local dropLocationText = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    dropLocationText:SetPoint("TOPLEFT", itemText, "BOTTOMLEFT", 0, -2)
-    dropLocationText:SetPoint("RIGHT", btn, "RIGHT", -2, 0)
-    dropLocationText:SetJustifyH("LEFT")
-    btn.dropLocationText = dropLocationText
-
-    local favIcon = btn:CreateTexture(nil, "OVERLAY")
-    favIcon:SetSize(24, 24)
-    favIcon:SetPoint("TOPLEFT", iconTex, "TOPLEFT", -8, 8)
-    favIcon:SetTexture("Interface\\Addons\\TheJournal\\Assets\\ui_jailerstower_defense.blp")
-    favIcon:Hide()
-    btn.favoriteIcon = favIcon
+    
+    -- Store the button in our index-based cache for easy retrieval
+    _G.itemButtonCache[dIndex] = _G.itemButtonCache[dIndex] or {}
+    _G.itemButtonCache[dIndex][iIndex] = btn
+    
+    -- Reuse existing elements from the pooled button, just adjust their properties
+    -- The pooled button already has: icon, text, count
+    -- We need to adapt them to this button's specific layout
+    
+    -- Use the existing icon as iconTex
+    btn.iconTex = btn.icon
+    btn.iconTex:SetSize(30, 30)
+    btn.iconTex:ClearAllPoints()
+    btn.iconTex:SetPoint("LEFT", btn, "LEFT", 2, 5)
+    
+    -- Use the existing text as itemText
+    btn.itemText = btn.text
+    btn.itemText:ClearAllPoints()
+    btn.itemText:SetPoint("TOPLEFT", btn.iconTex, "TOPRIGHT", 4, 0)
+    btn.itemText:SetPoint("RIGHT", btn, "RIGHT", -2, 0)
+    btn.itemText:SetJustifyH("LEFT")
+    
+    -- Create dropLocationText if it doesn't exist (this is specific to this button type)
+    if not btn.dropLocationText then
+        btn.dropLocationText = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    end
+    btn.dropLocationText:ClearAllPoints()
+    btn.dropLocationText:SetPoint("TOPLEFT", btn.itemText, "BOTTOMLEFT", 0, -2)
+    btn.dropLocationText:SetPoint("RIGHT", btn, "RIGHT", -2, 0)
+    btn.dropLocationText:SetJustifyH("LEFT")
+    
+    -- Create favoriteIcon if it doesn't exist (this is specific to this button type)
+    if not btn.favoriteIcon then
+        btn.favoriteIcon = btn:CreateTexture(nil, "OVERLAY")
+        btn.favoriteIcon:SetSize(24, 24)
+        btn.favoriteIcon:SetTexture("Interface\\Addons\\TheJournal\\Assets\\ui_jailerstower_defense.blp")
+    end
+    btn.favoriteIcon:ClearAllPoints()
+    btn.favoriteIcon:SetPoint("TOPLEFT", btn.iconTex, "TOPLEFT", -8, 8)
+    btn.favoriteIcon:Hide()
 
     btn:RegisterForClicks("LeftButtonUp")
     btn:SetScript("OnEnter", function(self)
@@ -1120,6 +1267,8 @@ local function AcquireItemButton(dIndex, iIndex)
     btn:SetScript("OnClick", function(self, button)
         if button == "LeftButton" and IsShiftKeyDown() and self.itemLink then
             ChatEdit_InsertLink(self.itemLink)
+        elseif button == "LeftButton" and IsAltKeyDown() and self.baseItemID then
+            OpenLootDb(self.baseItemID)
         elseif button == "LeftButton" and IsControlKeyDown() then
             local base = self.baseItemID
             if Journal_charDB.favorites[base] then
@@ -1136,16 +1285,18 @@ local function AcquireItemButton(dIndex, iIndex)
         end
     end)
 
-    _G.itemButtonCache[dIndex][iIndex] = btn
     return btn
 end
 
 local function HideAllItemButtons()
     for dIdx, itemTbl in pairs(_G.itemButtonCache) do
-        for _, btn in pairs(itemTbl) do
-            btn:Hide()
+        for iIdx, btn in pairs(itemTbl) do
+            ReleaseItemButton(btn)
+            itemTbl[iIdx] = nil  -- Remove from cache
         end
     end
+    -- Clear the cache completely
+    _G.itemButtonCache = {}
 end
 
 -- Simplified caching function - only cache current dungeon, no batch processing
@@ -1198,6 +1349,9 @@ end
 UpdateFilterTypeButton()
 
 filterTypeButton:SetScript("OnClick", function(self)
+    -- Store tooltip state before making changes
+    local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == self
+    
     currentFilterIndex = currentFilterIndex + 1
     if currentFilterIndex > #filterTypeOptions then
         currentFilterIndex = 1
@@ -1212,21 +1366,19 @@ filterTypeButton:SetScript("OnClick", function(self)
         LoadDungeonDetail(_G.currentDungeon)
     end
 
-    if C_Timer and C_Timer.After then
-        C_Timer.After(0.1, function()
-            if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+    -- Restore tooltip if it was shown before the click
+    if tooltipWasShown then
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0.1, function()
+                GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
                 GameTooltip:ClearLines()
-                GameTooltip:SetPoint("BOTTOM", self, "TOP", 0, 0)
                 GameTooltip:AddLine("|cFFFFD700" .. "Filter Mode: " .. (DJ_Settings.filterType or "All") .. "|r")
                 GameTooltip:Show()
-            end
-        end)
-    else
-        -- Fallback: Update immediately if no timer available.
-        -- Only update if the tooltip is still owned by this button
-        if GameTooltip:GetOwner() == self then
+            end)
+        else
+            -- Fallback: Update immediately if no timer available
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
             GameTooltip:ClearLines()
-            GameTooltip:SetPoint("BOTTOM", self, "TOP", 0, 0)
             GameTooltip:AddLine("|cFFFFD700" .. "Filter Mode: " .. (DJ_Settings.filterType or "All") .. "|r")
             GameTooltip:Show()
         end
@@ -1316,18 +1468,9 @@ local function PrepareItemsToShow(dungeon)
         local itemLink = "item:" .. itemID
         local iName, _, iQuality, _, _, iType, iSubType, _, eLoc
         
-        -- Use GetItemInfoCustom if available, fallback to GetItemInfo
-        if _G.GetItemInfoCustom then
-            iName, _, iQuality, _, _, iType, iSubType, _, eLoc = _G.GetItemInfoCustom(itemID)
-        else
-            iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfo(itemID)
-        end
-        
-        -- Skip if item info isn't loaded yet
-        if not iName then
-            HandleUncachedItem(itemID, dungeon)
-            iName = tostring(itemID)
-        end
+        local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfo(itemID)
+        if not iName then iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID) end
+        local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID)
 
         local info = {
             baseID = itemID,
@@ -1338,7 +1481,6 @@ local function PrepareItemsToShow(dungeon)
 
         local shouldAdd = true
         
-        -- Check attunement status filtering first
         if filterIcon == "Attunable" then
             -- Show items that can be attuned and have progress < 100%
             local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
@@ -1357,56 +1499,7 @@ local function PrepareItemsToShow(dungeon)
 
         end
         
-        -- Apply equipment-specific filtering if enabled
-        if shouldAdd and DJ_Settings.onlyEquipable and iName then
-            local currentClass = GetCurrentClass()
-            
-            -- Check armor slot filtering
-            if iType == "Armor" then
-                local allowedSlots = Journal_charDB.allowedArmorSlots or {}
-                local equipSlot = _G.ConvertInvTypeToSlot and _G.ConvertInvTypeToSlot(eLoc)
-                if equipSlot and not allowedSlots[equipSlot] then
-                    shouldAdd = false
-                end
-                
-                -- Check armor type filtering
-                if shouldAdd then
-                    local allowedArmorTypes = Journal_charDB.allowedArmorType and Journal_charDB.allowedArmorType[currentClass] or {}
-                    if #allowedArmorTypes > 0 and not _G.IsInList(allowedArmorTypes, iSubType) then
-                        shouldAdd = false
-                    end
-                end
-            elseif iType == "Weapon" then
-                -- Check weapon type filtering
-                local allowedWeaponTypes = Journal_charDB.allowedWeaponType and Journal_charDB.allowedWeaponType[currentClass] or {}
-                if #allowedWeaponTypes > 0 then
-                    local normalizedSubType = iSubType
-                    if iSubType == "Staves" then
-                        normalizedSubType = "Staff"
-                    end
-                    if not _G.IsInList(allowedWeaponTypes, normalizedSubType) then
-                        shouldAdd = false
-                    end
-                end
-            end
-        end
-        
         if shouldAdd then
-            table.insert(itemsToShow, info)
-        end
-    end
-
-    -- Add special items if they exist
-    if dungeon.specialItems and not DJ_Settings.onlyEquipable then
-        for i, spID in ipairs(dungeon.specialItems) do
-            local itemLink = "item:" .. spID
-            local info = {
-                baseID = spID,
-                itemLink = itemLink,
-                isSpecial = true,
-                index = #itemsToShow + 1,
-                drop = dungeon.specialDrop and dungeon.specialDrop[i]
-            }
             table.insert(itemsToShow, info)
         end
     end
@@ -1537,6 +1630,51 @@ local function PrepareItemsToShow(dungeon)
     return itemsToShow
 end
 
+-- Function to get current filter information as a string
+local function GetCurrentFilterInfo()
+    local filterInfo = {}
+    
+    -- Get attunement filter
+    local filterIcon = DJ_Settings.filterType or "All"
+    if filterIcon == "Attunable" then
+        table.insert(filterInfo, "|cFFFFFF00Attunable|r")
+    elseif filterIcon == "Attuned" then
+        table.insert(filterInfo, "|cFF00FF00Attuned|r")
+    end
+    
+    -- Get mythic filter
+    local mythicFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.mythicFilter or "all"
+    if mythicFilter == "mythic" then
+        table.insert(filterInfo, "|cFFFF6600Mythic|r")
+    elseif mythicFilter == "nonmythic" then
+        table.insert(filterInfo, "|cFFFF6600Non-Mythic|r")
+    end
+    
+    -- Get source count filter
+    local maxSources = Journal_charDB.itemFilters and Journal_charDB.itemFilters.maxSources or 0
+    if maxSources == 1 then
+        table.insert(filterInfo, "|cFF87CEEB1 Source|r")
+    elseif maxSources == 999 then
+        table.insert(filterInfo, "|cFF87CEEB>1 Source|r")
+    end
+    
+    return table.concat(filterInfo, " • ")
+end
+
+-- Function to update dungeon title with filter information
+local function UpdateDungeonTitleWithFilters(dungeon)
+    if not dungeon or not dungeonTitleText then return end
+    
+    local baseName = dungeon.name or "Unknown Dungeon"
+    local filterInfo = GetCurrentFilterInfo()
+    
+    if filterInfo and filterInfo ~= "" then
+        dungeonTitleText:SetText(baseName .. " |cFF888888(" .. filterInfo .. ")|r")
+    else
+        dungeonTitleText:SetText(baseName)
+    end
+end
+
 DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
     wipe(displayedItems)
     local query = (Journal_charDB.itemSearchQuery or ""):lower()
@@ -1548,8 +1686,8 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
         Journal_charDB.itemFilters = {
             searchType = "items", -- "items", "bosses"
             maxSources = 0, -- maximum number of sources (0 = show all)
-            showRareDrops = true, -- show items with < 5% droprate
-            showCommonDrops = true, -- show items with >= 5% droprate
+            showRareDrops = true,
+            showCommonDrops = true,
             mythicFilter = "all" -- "all", "mythic", "nonmythic"
         }
     end
@@ -1675,11 +1813,10 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
                 -- Apply text search for items
                 if shouldInclude and query ~= "" and filters.searchType == "items" then
                     local iName
-                    if _G.GetItemInfoCustom then
-                        iName = _G.GetItemInfoCustom(adjID) or ""
-                    else
-                        iName = GetItemInfo(adjID) or ""
-                    end
+                    local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfo(itemID)
+                    if not iName then iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID) end
+                    local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID)
+                    
                     local nameLower = iName:lower()
                     searchTooltip:ClearLines()
                     searchTooltip:SetHyperlink("item:" .. adjID)
@@ -1753,17 +1890,13 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
         local iName, iLink, iQuality, _, _, iType, iSubType, _, eLoc, iTexture
         
         -- Use GetItemInfoCustom if available, fallback to GetItemInfo
-        if _G.GetItemInfoCustom then
-            iName, iLink, iQuality, _, _, iType, iSubType, _, eLoc, iTexture = _G.GetItemInfoCustom(adjID)
-        else
-            iName, iLink, iQuality, _, _, iType, iSubType, _, eLoc, iTexture = GetItemInfo(adjID)
-        end
-        
-        if not iName then
-            HandleUncachedItem(adjID, dungeon)
-            iName = tostring(adjID)
-            iLink = "item:" .. adjID
-        end
+        -- local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfo(itemID)
+        -- if not iName then iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID) end
+        -- local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID)
+
+        local iName, iLink, iQuality, _, _, iType, iSubType, _, eLoc, iTexture = GetItemInfo(adjID)
+        if not iName then iName, iLink, iQuality, _, _, iType, iSubType, _, eLoc, iTexture = GetItemInfoCustom(adjID) end
+
         local color = ITEM_QUALITY_COLORS[iQuality or 1] or ITEM_QUALITY_COLORS[1]
 
         -- Create button first
@@ -2016,8 +2149,7 @@ function LoadDungeonDetail(dungeon)
     dungeonDetailFrame:Show()
     ShowDungeonInteriorUI()
 
-    local titleTextStr = dungeon.name or "Unknown Dungeon"
-    dungeonTitleText:SetText(titleTextStr)
+    UpdateDungeonTitleWithFilters(dungeon)
 
     -- Add book icon if dungeon has affix data
     if not dungeonDetailFrame.bookIcon and DUNGEON_AFFIXES[dungeon.name] then
@@ -2370,11 +2502,11 @@ do
         end)
 
         btn:SetScript("OnEnter", function(self)
-            -- Pre-cache items on hover for better performance
+            -- Load items on hover
             if d.items and not tempschedule[d.name] then
                 tempschedule[d.name] = true
                 C_Timer.After(0.1, function()
-                    for i = 1, math.min(20, #d.items) do -- Pre-cache first 20 items
+                    for i = 1, math.min(80, #d.items) do -- load first 80 items
                         CacheItem(d.items[i])
                     end
                 end)
@@ -2563,7 +2695,7 @@ SlashCmdList["DJREPORT"] = function(msg)
                 else
                     age = math.floor(timeDiff / 86400) .. "d ago"
                 end
-                print("|cFF87CEEB  " .. playerName .. "|r (" .. (data.class or "Unknown") .. ") - " .. (data.percentage or 0) .. "% - " .. age)
+                print("|cFF87CEEB  " .. playerName .. "|r (ClassID:" .. (data.classId or "Unknown") .. ") - " .. (data.percentage or 0) .. "% - " .. age)
             end
         end
     elseif msg:find("^hide ") then
@@ -3069,25 +3201,25 @@ friendsFrame:EnableMouse(true)
 
 -- Frame title
 local friendsTitle = friendsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-friendsTitle:SetPoint("TOP", friendsFrame, "TOP", 0, -10)
+friendsTitle:SetPoint("TOP", friendsFrame, "TOP", 0, -8)
 friendsTitle:SetText("|cFFFFD700Attunement Leaderboard|r")
 
 -- Create toggle button for friends frame in top left of main journal
 local friendsToggleButton = CreateFrame("Button", "DJ_FriendsToggleButton", DungeonJournalFrame)
-friendsToggleButton:SetSize(24, 24)
-friendsToggleButton:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPLEFT", 10, -10)
+friendsToggleButton:SetSize(44, 44)
+friendsToggleButton:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPLEFT", 0, 0)
 friendsToggleButton:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 10)
 
 local toggleIcon = friendsToggleButton:CreateTexture(nil, "ARTWORK")
 toggleIcon:SetSize(20, 20)
 toggleIcon:SetPoint("CENTER", friendsToggleButton, "CENTER")
-toggleIcon:SetTexture("Interface\\Icons\\INV_Misc_GroupLooking")
+toggleIcon:SetTexture("")
 toggleIcon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
 
 local toggleHighlight = friendsToggleButton:CreateTexture(nil, "HIGHLIGHT")
 toggleHighlight:SetSize(24, 24)
 toggleHighlight:SetPoint("CENTER", friendsToggleButton, "CENTER")
-toggleHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+toggleHighlight:SetTexture("")
 toggleHighlight:SetBlendMode("ADD")
 
 friendsToggleButton:SetScript("OnClick", function()
@@ -3113,22 +3245,16 @@ friendsToggleButton:SetScript("OnLeave", function(self)
     GameTooltip:Hide()
 end)
 
--- Create toggle button for friends frame in top left of main journal
-local friendsToggleButton = CreateFrame("Button", "DJ_FriendsToggleButton", DungeonJournalFrame)
-friendsToggleButton:SetSize(24, 24)
-friendsToggleButton:SetPoint("TOPLEFT", DungeonJournalFrame, "TOPLEFT", 10, -10)
-friendsToggleButton:SetFrameLevel(DungeonJournalFrame:GetFrameLevel() + 10)
-
 local toggleIcon = friendsToggleButton:CreateTexture(nil, "ARTWORK")
 toggleIcon:SetSize(20, 20)
 toggleIcon:SetPoint("CENTER", friendsToggleButton, "CENTER")
-toggleIcon:SetTexture("Interface\\Icons\\INV_Misc_GroupLooking")
+toggleIcon:SetTexture("")
 toggleIcon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
 
 local toggleHighlight = friendsToggleButton:CreateTexture(nil, "HIGHLIGHT")
 toggleHighlight:SetSize(24, 24)
 toggleHighlight:SetPoint("CENTER", friendsToggleButton, "CENTER")
-toggleHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+toggleHighlight:SetTexture("")
 toggleHighlight:SetBlendMode("ADD")
 
 friendsToggleButton:SetScript("OnClick", function()
@@ -3156,17 +3282,17 @@ end)
 
 -- Refresh button with custom icon design
 local refreshButton = CreateFrame("Button", nil, friendsFrame)
-refreshButton:SetSize(24, 24)
-refreshButton:SetPoint("TOPRIGHT", friendsFrame, "TOPRIGHT", -10, -35)
+refreshButton:SetSize(20, 20)
+refreshButton:SetPoint("TOPRIGHT", friendsFrame, "TOPRIGHT", -8, -8)
 
 local refreshIcon = refreshButton:CreateTexture(nil, "ARTWORK")
-refreshIcon:SetSize(20, 20)
+refreshIcon:SetSize(16, 16)
 refreshIcon:SetPoint("CENTER", refreshButton, "CENTER")
 refreshIcon:SetTexture("Interface\\Icons\\Ability_Druid_Cyclone")
 refreshIcon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
 
 local refreshHighlight = refreshButton:CreateTexture(nil, "HIGHLIGHT")
-refreshHighlight:SetSize(24, 24)
+refreshHighlight:SetSize(20, 20)
 refreshHighlight:SetPoint("CENTER", refreshButton, "CENTER")
 refreshHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
 refreshHighlight:SetBlendMode("ADD")
@@ -3174,11 +3300,6 @@ refreshHighlight:SetBlendMode("ADD")
 refreshButton:SetScript("OnClick", function()
     RequestAttunementData()
     SendAttunementData() -- Also send our own data
-    -- Add visual feedback
-    refreshIcon:SetRotation(math.pi)
-    C_Timer.After(0.5, function()
-        refreshIcon:SetRotation(0)
-    end)
 end)
 
 refreshButton:SetScript("OnEnter", function(self)
@@ -3194,7 +3315,7 @@ end)
 
 -- Scroll frame for friends list
 local scrollFrame = CreateFrame("ScrollFrame", "FriendsAttunementScrollFrame", friendsFrame, "UIPanelScrollFrameTemplate")
-scrollFrame:SetPoint("TOPLEFT", friendsFrame, "TOPLEFT", 10, -60)
+scrollFrame:SetPoint("TOPLEFT", friendsFrame, "TOPLEFT", 10, -35)
 scrollFrame:SetPoint("BOTTOMRIGHT", friendsFrame, "BOTTOMRIGHT", -30, 10)
 
 local scrollChild = CreateFrame("Frame", nil, scrollFrame)
@@ -3204,25 +3325,49 @@ scrollFrame:SetScrollChild(scrollChild)
 -- Table to store friend entry frames
 local friendEntries = {}
 
--- Class color table
-local CLASS_COLORS = { -- TODO: his will be replaced with a better method later
-    WARRIOR = "|cFFC79C6E",
-    PALADIN = "|cFFF58CBA", 
-    HUNTER = "|cFFABD473",
-    ROGUE = "|cFFFFF569",
-    PRIEST = "|cFFFFFFFF",
-    DEATHKNIGHT = "|cFFC41F3B",
-    SHAMAN = "|cFF0070DE",
-    MAGE = "|cFF69CCF0",
-    WARLOCK = "|cFF9482C9",
-    DRUID = "|cFFFF7D0A"
-}
+-- Function to convert vector color (r,g,b) to WoW color string format
+-- Accepts color values in 0-1 range and converts to |cFFRRGGBB format
+local function VectorToColorString(r, g, b)
+    -- Ensure values are within valid range and provide defaults
+    r = math.max(0, math.min(1, r or 1))
+    g = math.max(0, math.min(1, g or 1))
+    b = math.max(0, math.min(1, b or 1))
+    
+    -- Convert 0-1 range to 0-255 and format as hex
+    local rHex = string.format("%02x", math.floor(r * 255))
+    local gHex = string.format("%02x", math.floor(g * 255))
+    local bHex = string.format("%02x", math.floor(b * 255))
+    return "|cFF" .. rHex .. gHex .. bHex
+end
+
+
+
+-- Dynamic class color function - now works directly with class IDs
+local function GetClassColor(classId)
+    if not classId or type(classId) ~= "number" then 
+        return "|cFFFFFFFF" 
+    end
+    
+    -- Try to get the color using the class ID directly
+    if _G.CustomGetClassColor then
+        local r, g, b = _G.CustomGetClassColor(classId)
+        if r and g and b then
+            return VectorToColorString(r, g, b)
+        end
+    end
+    
+    -- Final fallback to white
+    return "|cFFFFFFFF"
+end
+    
 
 -- Function to create a friend entry frame
 local function CreateFriendEntry(index)
     local entry = CreateFrame("Frame", nil, scrollChild)
-    entry:SetSize(210, 85)
-    entry:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -(index-1) * 90)
+    entry:SetSize(210, 50) -- Base height, will be adjusted dynamically
+    -- Position will be set dynamically based on content
+    
+    -- Clean entry with no background for minimal appearance
     
     -- Rank number (small, top-left)
     entry.rankText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -3254,11 +3399,12 @@ local function CreateFriendEntry(index)
     entry.dungeonsText:SetWidth(200)
     entry.dungeonsText:SetJustifyH("LEFT")
     
-    -- Time text (small, bottom right)
+    -- Time text (hidden from display, only used in tooltip)
     entry.timeText = entry:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     entry.timeText:SetPoint("BOTTOMRIGHT", entry, "BOTTOMRIGHT", -5, 2)
     entry.timeText:SetWidth(60)
     entry.timeText:SetJustifyH("RIGHT")
+    entry.timeText:Hide() -- Hide from main display
     
     -- Crown icon for leader (16x16, next to name)
     entry.crownIcon = entry:CreateTexture(nil, "OVERLAY")
@@ -3407,6 +3553,20 @@ local function CreateFriendEntry(index)
         GameTooltip:Hide()
     end)
     
+    -- Function to calculate and set entry height based on content
+    entry.UpdateHeight = function(self, hasQuestItem, hasJournalPoints)
+        local baseHeight = 45 -- Base height for name + percentage + progress
+        local extraHeight = 0
+        
+        -- Add height for quest item/journal points line
+        if hasQuestItem or hasJournalPoints then
+            extraHeight = extraHeight + 18
+        end
+        
+        -- Set the new height
+        self:SetHeight(baseHeight + extraHeight)
+    end
+    
     return entry
 end
 
@@ -3433,7 +3593,7 @@ function UpdateAttunementFriendsDisplay()
         local journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[playerName] or 0
         table.insert(sortedFriends, {
             playerName = playerName,
-            class = data.class,
+            classId = data.classId,
             attuned = data.attuned,
             total = data.total,
             percentage = data.percentage,
@@ -3456,7 +3616,8 @@ function UpdateAttunementFriendsDisplay()
         return a.playerName < b.playerName
     end)
     
-    -- Create or update friend entry frames
+    -- Create or update friend entry frames with dynamic positioning
+    local currentYOffset = 0
     for i = 1, math.max(#sortedFriends, #friendEntries) do
         if i <= #sortedFriends then
             -- Create entry if needed
@@ -3466,6 +3627,10 @@ function UpdateAttunementFriendsDisplay()
             
             local entry = friendEntries[i]
             local friendData = sortedFriends[i]
+            
+            -- Position entry based on cumulative height
+            entry:ClearAllPoints()
+            entry:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -currentYOffset)
             
             -- Store data for tooltip
             entry.playerData = friendData
@@ -3479,7 +3644,7 @@ function UpdateAttunementFriendsDisplay()
             entry.rankText:SetText(rankColor .. "#" .. i .. "|r")
             
             -- Set name with class color and highlight if it's the player
-            local classColor = CLASS_COLORS[friendData.class] or "|cFFFFFFFF"
+            local classColor = GetClassColor(friendData.classId)
             local nameText = friendData.playerName
             if friendData.isPlayer then
                 nameText = nameText .. " (You)"
@@ -3562,8 +3727,16 @@ function UpdateAttunementFriendsDisplay()
             
             entry.dungeonsText:SetText(questText)
             
-            -- Set time
-            entry.timeText:SetText("|cFF666666" .. friendData.lastSeen .. "|r")
+            -- Set time (hidden from display, only shown in tooltip)
+            -- entry.timeText:SetText("|cFF666666" .. friendData.lastSeen .. "|r")
+            
+            -- Update entry height based on content
+            local hasQuestItem = (friendData.questItemID and friendData.questItemID > 0)
+            local hasJournalPoints = (journalPoints > 0)
+            entry:UpdateHeight(hasQuestItem, hasJournalPoints)
+            
+            -- Update offset for next entry (add small gap between entries)
+            currentYOffset = currentYOffset + entry:GetHeight() + 3
             
             entry:Show()
         else
@@ -3574,8 +3747,8 @@ function UpdateAttunementFriendsDisplay()
         end
     end
     
-    -- Update scroll child height
-    local contentHeight = math.max(1, #sortedFriends * 90)
+    -- Update scroll child height based on actual content
+    local contentHeight = math.max(1, currentYOffset)
     scrollChild:SetHeight(contentHeight)
 end
 
@@ -3651,7 +3824,7 @@ end
         if not data.isPlayer then -- Don't include ourselves again
             table.insert(friendsData, {
                 name = playerName,
-                class = data.class,
+                classId = data.classId,
                 percentage = data.percentage,
                 attuned = data.attuned,
                 total = data.total,
@@ -3677,7 +3850,7 @@ end
         -- Show top 3 friends with their progress
         for i = 1, math.min(3, #friendsData) do
             local friend = friendsData[i]
-            local classColor = CLASS_COLORS[friend.class] or "|cFFFFFFFF"
+            local classColor = GetClassColor(friend.classId)
             local percentageColor = "|cFFFF4500" -- Red default
             
             if friend.percentage >= 90 then
@@ -3757,29 +3930,41 @@ friendsFrame:SetScript("OnShow", function()
     friendsFrame:SetPoint("TOPRIGHT", DungeonJournalFrame, "TOPLEFT", -10, -20)
     friendsFrame:SetHeight(400)
     
-    -- Update display from cache first
-    UpdateAttunementFriendsDisplay()
-    
-    -- Only request fresh data if we haven't done so recently
-    if not friendsFrame.lastRequest or (GetTime() - friendsFrame.lastRequest) > 30 then
-        friendsFrame.lastRequest = GetTime()
-        RequestAttunementData()
-        SendAttunementData()
+    -- Prevent unnecessary updates during pagination by checking if this is a real show event
+    -- vs just repositioning during page navigation
+    if not friendsFrame.isPaginationUpdate then
+        -- Update display from cache first
+        UpdateAttunementFriendsDisplay()
         
-        -- Update once after a reasonable delay
-        C_Timer.After(5, function()
-            if friendsFrame:IsShown() then
-                UpdateAttunementFriendsDisplay()
-            end
-        end)
+        -- Only request fresh data if we haven't done so recently
+        if not friendsFrame.lastRequest or (GetTime() - friendsFrame.lastRequest) > 30 then
+            friendsFrame.lastRequest = GetTime()
+            RequestAttunementData()
+            SendAttunementData()
+            
+            -- Update once after a reasonable delay
+            C_Timer.After(5, function()
+                if friendsFrame:IsShown() then
+                    UpdateAttunementFriendsDisplay()
+                end
+            end)
+        end
     end
+    
+    -- Reset the pagination flag
+    friendsFrame.isPaginationUpdate = false
 end)
 
 -- Manage friends frame and quest icons when switching between views
 local originalLoadDungeonDetail = _G.LoadDungeonDetail
-_G.LoadDungeonDetail = function(dungeon)
+_G.LoadDungeonDetail = function(dungeon, isPagination)
     -- Keep friends frame visible and consistently positioned
     if friendsFrame then
+        -- Set flag to prevent friends update during pagination
+        if isPagination then
+            friendsFrame.isPaginationUpdate = true
+        end
+        
         friendsFrame:ClearAllPoints()
         friendsFrame:SetPoint("TOPRIGHT", DungeonJournalFrame, "TOPLEFT", -10, -20)
         friendsFrame:SetHeight(400)
@@ -3930,58 +4115,92 @@ end)
 
 -- Create a frame to handle tooltip updates for BOE items
 local tooltipFrame = CreateFrame("Frame")
+-- Cache the last processed tooltip to avoid redundant work
+local lastTooltipCache = {
+    itemLink = nil,
+    timestamp = 0,
+    processed = false
+}
+
 tooltipFrame:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = (self.elapsed or 0) + elapsed
-    if self.elapsed < 0.1 then return end -- Only check every 0.1 seconds
+    if self.elapsed < 0.25 then return end -- Reduced frequency from 0.1 to 0.25 seconds
     self.elapsed = 0
     
-    -- Check if GameTooltip is showing an item
-    if GameTooltip:IsVisible() then
-        local tooltipName = GameTooltip:GetName()
-        local line1 = _G[tooltipName .. "TextLeft1"]
-        
-        if line1 and line1:GetText() then
-            -- Try to get item link from various sources
-            local itemLink = nil
-            
-            -- Method 1: Check if we're mousing over a bag item
-            local mouseoverFrame = GetMouseFocus()
-            if mouseoverFrame and mouseoverFrame:GetName() then
-                local frameName = mouseoverFrame:GetName()
-                if frameName:match("ContainerFrame%d+Item%d+") then
-                    local bag = mouseoverFrame:GetParent():GetID()
-                    local slot = mouseoverFrame:GetID()
-                    itemLink = GetContainerItemLink(bag, slot)
-                end
-            end
-            
-            -- Method 2: Try GetItem (may not work in WotLK)
-            if not itemLink then
-                local name, link = GameTooltip:GetItem()
-                itemLink = link
-            end
-            
-            -- If we have an item link, process it for BOE data
-            if itemLink and itemLink:match("^item:") then
-                local itemID = tonumber(itemLink:match("item:(%d+)"))
-                if itemID and _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
-                    -- Check if we already added BOE data to this tooltip
-                    local hasBoEData = false
-                    for i = 1, GameTooltip:NumLines() do
-                        local lineText = _G[tooltipName .. "TextLeft" .. i]
-                        if lineText and lineText:GetText() and lineText:GetText():match("BOE Item") then
-                            hasBoEData = true
-                            break
-                        end
-                    end
-                    
-                    if not hasBoEData then
-                        ProcessBOETooltip(GameTooltip, itemLink)
-                        GameTooltip:Show() -- Refresh the tooltip
-                    end
-                end
+    -- Early exit if GameTooltip isn't visible
+    if not GameTooltip:IsVisible() then 
+        lastTooltipCache.processed = false
+        return 
+    end
+    
+    local tooltipName = GameTooltip:GetName()
+    local line1 = _G[tooltipName .. "TextLeft1"]
+    
+    if not line1 or not line1:GetText() then return end
+    
+    -- Try to get item link from various sources
+    local itemLink = nil
+    
+    -- Method 1: Check if we're mousing over a bag item (most common case first)
+    local mouseoverFrame = GetMouseFocus()
+    if mouseoverFrame and mouseoverFrame:GetName() then
+        local frameName = mouseoverFrame:GetName()
+        if frameName:match("ContainerFrame%d+Item%d+") then
+            local bag = mouseoverFrame:GetParent():GetID()
+            local slot = mouseoverFrame:GetID()
+            itemLink = GetContainerItemLink(bag, slot)
+        end
+    end
+    
+    -- Method 2: Try GetItem (may not work in WotLK)
+    if not itemLink then
+        local name, link = GameTooltip:GetItem()
+        itemLink = link
+    end
+    
+    -- Early exit if no item link or not an item
+    if not itemLink or not itemLink:match("^item:") then 
+        lastTooltipCache.processed = false
+        return 
+    end
+    
+    -- Cache check - avoid processing the same item repeatedly
+    local currentTime = GetTime()
+    if lastTooltipCache.itemLink == itemLink and 
+       lastTooltipCache.processed and 
+       (currentTime - lastTooltipCache.timestamp) < 1 then
+        return
+    end
+    
+    local itemID = tonumber(itemLink:match("item:(%d+)"))
+    if not itemID or not _G.ITEM_QUERY_RESPONSES or not _G.ITEM_QUERY_RESPONSES[itemID] then 
+        lastTooltipCache.processed = false
+        return 
+    end
+    
+    -- Quick check if we already added BOE data to this tooltip
+    -- Use a more efficient method to check for existing BOE data
+    local hasBoEData = false
+    local numLines = GameTooltip:NumLines()
+    for i = 1, numLines do
+        local lineText = _G[tooltipName .. "TextLeft" .. i]
+        if lineText then
+            local text = lineText:GetText()
+            if text and text:find("BOE Item", 1, true) then -- Use plain text search
+                hasBoEData = true
+                break
             end
         end
+    end
+    
+    if not hasBoEData then
+        ProcessBOETooltip(GameTooltip, itemLink)
+        GameTooltip:Show() -- Refresh the tooltip
+        
+        -- Update cache
+        lastTooltipCache.itemLink = itemLink
+        lastTooltipCache.timestamp = currentTime
+        lastTooltipCache.processed = true
     end
 end)
 
@@ -4258,8 +4477,6 @@ local function ProcessBOETooltip(tooltip, link)
                      -- Auto whisper and chat notification for friends who need it (only once per response)
                      local responseKey = itemID .. "_" .. friendName .. "_" .. response.timestamp
                      if not _G.PROCESSED_BOE_RESPONSES[responseKey] then
-                         -- Whisper the friend directly with FULL item link (includes affixes/forge level)
-                         SendChatMessage("Hey! I have " .. fullItemLink .. " - you need this for attunement right?", "WHISPER", nil, friendName)
                          print("|cFF00FF00[BOE Alert]|r Whispered " .. friendName .. " about " .. itemName)
                          _G.PROCESSED_BOE_RESPONSES[responseKey] = true
                      end
@@ -4275,8 +4492,6 @@ local function ProcessBOETooltip(tooltip, link)
                      -- Auto whisper for upgrade opportunities (only once per response)
                      local upgradeResponseKey = itemID .. "_" .. friendName .. "_upgrade_" .. response.timestamp
                      if not _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] then
-                         -- Use FULL item link (includes affixes/forge level)
-                         SendChatMessage("I have " .. fullItemLink .. " if you want to upgrade your" .. forgeText .. " version", "WHISPER", nil, friendName)
                          print("|cFFFFFF00[BOE Upgrade]|r Whispered " .. friendName .. " about upgrade opportunity")
                          _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] = true
                      end
@@ -4688,10 +4903,10 @@ local function CompleteRandomQuest()
         print("|cFFFFD700[Journal Points]|r Total: " .. Journal_charDB.journalPoints)
         
         -- Share quest completion with friends if enabled
-        if Journal_charDB.shareQuestCompletion and _G.SendChatMessage then
+        if Journal_charDB.shareQuestCompletion then
             local playerName = UnitName("player")
             local completionMessage = "[DJ Quest Complete] " .. playerName .. " completed random quest: " .. itemName .. " (Total Points: " .. Journal_charDB.journalPoints .. ")"
-            _G.SendChatMessage(completionMessage, "GUILD")
+            SendChatMessage(completionMessage, "GUILD")
         end
         
         -- Update and share attunement data with friends

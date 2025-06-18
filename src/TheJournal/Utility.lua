@@ -269,18 +269,11 @@ if not cacheTicker then
     end
 end
 
--- Throttled CacheItem function: Enqueues an item for caching.
 local function CacheItem(itemID)
-    local numID = tonumber(itemID)
-    if not numID then
-        return
-    end
-    local tip = CreateFrame("GameTooltip", nil, UIParent)
-    tip:SetOwner(UIParent, "ANCHOR_NONE")
-    tip:SetHyperlink("item:" .. itemID)
-    -- debugPrint("Caching item:", itemID)
-    tip:Hide()
-    tip = nil
+    local numID = tonumber(itemID) -- jic
+    local iName = GetItemInfo(itemID)
+    if not iName then iName = GetItemInfoCustom(itemID) end
+    local iName = GetItemInfoCustom(itemID)
 end
 
 
