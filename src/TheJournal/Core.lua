@@ -13,6 +13,39 @@ local ADDON_PREFIX = "DJ_ATTUNE"
 local FRIENDS_DATA = {} -- Store friends' attunement data
 local ITEM_QUERY_RESPONSES = {} -- Store BOE item query responses
 
+-- ʕ •ᴥ•ʔ✿ Initialize global friends data tables early ✿ʕ •ᴥ•ʔ
+if not _G.FRIENDS_ATTUNEMENT_DATA then
+    _G.FRIENDS_ATTUNEMENT_DATA = {}
+end
+if not _G.FRIENDS_JOURNAL_POINTS then
+    _G.FRIENDS_JOURNAL_POINTS = {}
+end
+if not _G.FRIENDS_DATA then
+    _G.FRIENDS_DATA = FRIENDS_DATA
+end
+
+-- ʕ ◕ᴥ◕ ʔ✿ Load saved friends data into global tables ✿ʕ ◕ᴥ◕ ʔ
+if Journal_charDB and Journal_charDB.friendsAttunementData then
+    local friendsLoaded = 0
+    for playerName, data in pairs(Journal_charDB.friendsAttunementData) do
+        _G.FRIENDS_ATTUNEMENT_DATA[playerName] = data
+        FRIENDS_DATA[playerName] = data
+        friendsLoaded = friendsLoaded + 1
+    end
+    
+    local pointsLoaded = 0
+    if Journal_charDB.friendsJournalPoints then
+        for playerName, points in pairs(Journal_charDB.friendsJournalPoints) do
+            _G.FRIENDS_JOURNAL_POINTS[playerName] = points
+            pointsLoaded = pointsLoaded + 1
+        end
+    end
+    
+    if friendsLoaded > 0 or pointsLoaded > 0 then
+        print("|cFF00FF00[DJ Core]|r Loaded " .. friendsLoaded .. " friends and " .. pointsLoaded .. " journal points from saved data")
+    end
+end
+
 -- Message queue and throttling system
 local MESSAGE_QUEUE = {}
 local MESSAGE_THROTTLE_DELAY = 0.1  -- 100ms between messages to prevent spam
@@ -444,6 +477,14 @@ _G.Journal_charDB.friendsAttunementData = _G.Journal_charDB.friendsAttunementDat
 _G.Journal_charDB.friendsJournalPoints = _G.Journal_charDB.friendsJournalPoints or {}
 _G.Journal_charDB.hiddenPlayers = _G.Journal_charDB.hiddenPlayers or {}
 
+-- ʕ •ᴥ•ʔ✿ Initialize global friends data tables ✿ʕ •ᴥ•ʔ
+if not _G.FRIENDS_ATTUNEMENT_DATA then
+    _G.FRIENDS_ATTUNEMENT_DATA = {}
+end
+if not _G.FRIENDS_JOURNAL_POINTS then
+    _G.FRIENDS_JOURNAL_POINTS = {}
+end
+
 -- Load hidden players from Journal_charDB on initialization
 for playerName, _ in pairs(_G.Journal_charDB.hiddenPlayers) do
     _G.Journal_FriendCache.hiddenPlayers[playerName] = true
@@ -451,6 +492,24 @@ end
 
 -- Initialize friends cache from saved variables
 FRIENDS_DATA = FRIENDS_DATA or {}
+
+-- ʕ ◕ᴥ◕ ʔ✿ Load saved friends data into global tables ✿ʕ ◕ᴥ◕ ʔ
+local friendsLoaded = 0
+for playerName, data in pairs(_G.Journal_charDB.friendsAttunementData) do
+    if not _G.Journal_FriendCache.hiddenPlayers[playerName] then
+        _G.FRIENDS_ATTUNEMENT_DATA[playerName] = data
+        FRIENDS_DATA[playerName] = data -- Also populate local FRIENDS_DATA
+        friendsLoaded = friendsLoaded + 1
+    end
+end
+
+local pointsLoaded = 0
+for playerName, points in pairs(_G.Journal_charDB.friendsJournalPoints) do
+    if not _G.Journal_FriendCache.hiddenPlayers[playerName] then
+        _G.FRIENDS_JOURNAL_POINTS[playerName] = points
+        pointsLoaded = pointsLoaded + 1
+    end
+end
 
 -- Function to clean up hidden players from current session data
 local function CleanupHiddenPlayersFromSession()
@@ -540,7 +599,7 @@ local function SaveFriendsCache(force)
     
     if not force and not saveDebounceCore.pending then
         saveDebounceCore.pending = true
-        saveDebounceCore.timer = C_Timer.NewTimer(3, function()
+        saveDebounceCore.timer = C_Timer.After(3, function()
             if GetTime() - saveDebounceCore.lastSave >= saveDebounceCore.minInterval then
                 SaveFriendsCache(true) -- Force save after debounce
                 saveDebounceCore.lastSave = GetTime()
@@ -757,7 +816,7 @@ local function AddSelfToFriendsData()
     end
     
     -- Add ourselves to the friends data
-    FRIENDS_DATA[playerName] = {
+    local playerData = {
         classId = classId,
         attuned = attuned,
         total = total,
@@ -770,6 +829,14 @@ local function AddSelfToFriendsData()
         lastSeen = "Now",
         isPlayer = true -- Mark as the current player
     }
+    
+    FRIENDS_DATA[playerName] = playerData
+    _G.FRIENDS_ATTUNEMENT_DATA[playerName] = playerData
+    
+    -- ʕ •ᴥ•ʔ✿ Also add journal points to global table ✿ʕ •ᴥ•ʔ
+    if Journal_charDB.journalPoints and Journal_charDB.journalPoints > 0 then
+        _G.FRIENDS_JOURNAL_POINTS[playerName] = Journal_charDB.journalPoints
+    end
 end
 
 
@@ -1164,7 +1231,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
             end
         end
         
-        FRIENDS_DATA[playerName] = {
+        local friendData = {
             classId = classId,
             attuned = attuned,
             total = total,
@@ -1177,6 +1244,9 @@ local function OnAddonMessage(prefix, message, channel, sender)
             lastSeenTime = now,
             isPlayer = false
         }
+        
+        FRIENDS_DATA[playerName] = friendData
+        _G.FRIENDS_ATTUNEMENT_DATA[playerName] = friendData
         
         -- Store journal points in the global table if they have any
         if journalPoints > 0 then
@@ -1318,8 +1388,12 @@ local function UpdateLastSeenTimes()
     -- Save cache and update display if anything changed
     if updated then
         SaveFriendsCache()
-        if _G.AttunementFriendsFrame and _G.AttunementFriendsFrame:IsShown() and _G.UpdateAttunementFriendsDisplay then
-            _G.UpdateAttunementFriendsDisplay()
+        if _G.AttunementFriendsFrame and _G.AttunementFriendsFrame:IsShown() then
+            if _G.ForceUpdateAttunementFriendsDisplay then
+                _G.ForceUpdateAttunementFriendsDisplay() -- ʕ •ᴥ•ʔ✿ Force update for time changes ✿ʕ•ᴥ•ʔ
+            elseif _G.UpdateAttunementFriendsDisplay then
+                _G.UpdateAttunementFriendsDisplay()
+            end
         end
     end
 end
@@ -1483,6 +1557,8 @@ SlashCmdList["DJ"] = function(msg)
     else
         print("|cFFFFD700[DJ Commands]|r Available commands:")
         print("|cFFFFD700[DJ Commands]|r /dj questmessage - Toggle quest completion sharing")
+        print("|cFFFFD700[DJ Commands]|r /djscale <number> - Set UI scale (e.g., /djscale 75 for 75%)")
+        print("|cFFFFD700[DJ Commands]|r /dj scalereset - Reset UI scale to 100% (normal size)")
         print("|cFFFFD700[DJ Commands]|r /dj - Open Dungeon Journal")
     end
 end
@@ -1968,8 +2044,9 @@ SendAddonMessage = function(prefix, message, chatType, target, priority)
     -- Simple source detection without expensive debugstack
     if prefix == "DJ_ATTUNE" then
         messageRecord.source = "DJ_ATTUNE"
-    elseif prefix == "DJ_POINTS" then
-        messageRecord.source = "DJ_POINTS"
+    -- ʕ •ᴥ•ʔ✿ DISABLED: DJ_POINTS removed - using omega-merged messages ✿ʕ•ᴥ•ʔ
+    -- elseif prefix == "DJ_POINTS" then
+    --     messageRecord.source = "DJ_POINTS"
     end
     
     -- Add to tracking
@@ -2115,5 +2192,11 @@ SlashCmdList["DJDATA"] = function(msg)
     end
     print("|cFFFF0000[DJ Data Debug]|r === END DEBUG ===")
 end
+
+-- ʕ •ᴥ•ʔ✿ Export global functions for other modules ✿ʕ •ᴥ•ʔ
+_G.AddSelfToFriendsData = AddSelfToFriendsData
+_G.SendAttunementData = SendAttunementData
+_G.RequestAttunementData = RequestAttunementData
+_G.SavePersistentFriendsData = SavePersistentFriendsData
 
 

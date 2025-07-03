@@ -7,6 +7,348 @@
 -- Note: It assumes that some globals exist (e.g., dungeonDetailFrame, Journal_charDB, debugPrint)
 -- and that other modules (Utility.lua, Core.lua) have been loaded.
 
+-- ##################################################################
+-- # BOSS TRANSFORM EDITOR TOOL
+-- ##################################################################
+
+local transformEditor = {
+    frame = nil,
+    isActive = false,
+    currentBossID = nil,
+    currentTransform = {
+        facing = 0,
+        x = 0,
+        y = 0,
+        z = 0,
+        scale = 1,
+        cameraDistance = nil,
+        cameraTarget = { x = 0, y = 0, z = 0 },
+        pitch = 0
+    },
+    allTransforms = {}
+}
+
+-- Create the transform editor UI
+local function CreateTransformEditor()
+    if transformEditor.frame then
+        return transformEditor.frame
+    end
+    
+    local frame = CreateFrame("Frame", "DJ_TransformEditor", UIParent)
+    frame:SetSize(300, 400)
+    frame:SetPoint("CENTER", UIParent, "CENTER", 400, 0)
+    frame:SetFrameStrata("FULLSCREEN_DIALOG")
+    frame:SetFrameLevel(100)
+    
+    -- Background
+    local bg = frame:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background")
+    
+    -- Border (WotLK 3.3.5a compatible)
+    local border = frame:CreateTexture(nil, "BORDER")
+    border:SetAllPoints()
+    border:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Border")
+    border:SetTexCoord(0, 1, 0, 1)
+    
+    -- Title
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", frame, "TOP", 0, -15)
+    title:SetText("Boss Transform Editor")
+    
+    -- Boss ID display
+    local bossIDText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    bossIDText:SetPoint("TOP", title, "BOTTOM", 0, -10)
+    bossIDText:SetText("Boss ID: None")
+    frame.bossIDText = bossIDText
+    
+    -- Create control sliders (WotLK 3.3.5a compatible - removed unsupported camera controls)
+    local controls = {
+        { name = "Facing", min = -3.14, max = 3.14, step = 0.1, key = "facing" },
+        { name = "X Position", min = -20, max = 20, step = 0.1, key = "x" },
+        { name = "Y Position", min = -20, max = 20, step = 0.1, key = "y" },
+        { name = "Z Position", min = -20, max = 20, step = 0.1, key = "z" },
+        { name = "Scale", min = 0.1, max = 3, step = 0.1, key = "scale" }
+    }
+    
+    frame.sliders = {}
+    local yOffset = -60
+    
+    for i, control in ipairs(controls) do
+        -- Label
+        local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, yOffset)
+        label:SetText(control.name)
+        
+        -- Value display
+        local valueText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        valueText:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, yOffset)
+        valueText:SetText("0.0")
+        
+        -- Slider
+        local slider = CreateFrame("Slider", nil, frame, "OptionsSliderTemplate")
+        slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -5)
+        slider:SetSize(250, 20)
+        slider:SetMinMaxValues(control.min, control.max)
+        slider:SetValue(0)
+        slider:SetValueStep(control.step)
+        slider:EnableMouseWheel(true)
+        
+        -- Store references
+        slider.valueText = valueText
+        slider.key = control.key
+        frame.sliders[control.key] = slider
+        
+        -- Update function
+        local function updateValue()
+            local value = slider:GetValue()
+            valueText:SetText(string.format("%.2f", value))
+            transformEditor.currentTransform[control.key] = value
+            transformEditor:ApplyCurrentTransform()
+        end
+        
+        slider:SetScript("OnValueChanged", updateValue)
+        slider:SetScript("OnMouseWheel", function(self, delta)
+            local newValue = self:GetValue() + (delta * control.step)
+            newValue = math.max(control.min, math.min(control.max, newValue))
+            self:SetValue(newValue)
+        end)
+        
+        yOffset = yOffset - 40
+    end
+    
+    -- Buttons
+    local buttonY = yOffset - 20
+    
+    -- Reset button
+    local resetBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    resetBtn:SetSize(80, 25)
+    resetBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, buttonY)
+    resetBtn:SetText("Reset")
+    resetBtn:SetScript("OnClick", function()
+        transformEditor:ResetTransform()
+    end)
+    
+    -- Save button
+    local saveBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    saveBtn:SetSize(80, 25)
+    saveBtn:SetPoint("TOP", resetBtn, "TOP", 90, 0)
+    saveBtn:SetText("Save")
+    saveBtn:SetScript("OnClick", function()
+        transformEditor:SaveCurrentTransform()
+    end)
+    
+    -- Export All button
+    local exportBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    exportBtn:SetSize(80, 25)
+    exportBtn:SetPoint("TOP", saveBtn, "TOP", 90, 0)
+    exportBtn:SetText("Export All")
+    exportBtn:SetScript("OnClick", function()
+        transformEditor:ExportAllTransforms()
+    end)
+    
+    -- Close button
+    local closeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    closeBtn:SetSize(260, 25)
+    closeBtn:SetPoint("TOP", resetBtn, "BOTTOM", 90, -10)
+    closeBtn:SetText("Close Editor")
+    closeBtn:SetScript("OnClick", function()
+        transformEditor:Hide()
+    end)
+    
+    frame:Hide()
+    transformEditor.frame = frame
+    return frame
+end
+
+-- Transform editor methods
+function transformEditor:Show(bossID)
+    if not self.frame then
+        CreateTransformEditor()
+    end
+    
+    self.currentBossID = bossID
+    self.isActive = true
+    
+    -- Load existing transform if available
+    local existing = BOSS_TRANSFORMS[bossID] or {}
+    self.currentTransform = {
+        facing = existing.facing or 0,
+        x = existing.x or 0,
+        y = existing.y or 0,
+        z = existing.z or 0,
+        scale = existing.scale or 1
+    }
+    
+    -- Update UI
+    self.frame.bossIDText:SetText("Boss ID: " .. tostring(bossID))
+    
+    -- Set slider values
+    for key, slider in pairs(self.frame.sliders) do
+        local value = self.currentTransform[key] or 0
+        slider:SetValue(value)
+        slider.valueText:SetText(string.format("%.2f", value))
+    end
+    
+    self.frame:Show()
+    self:ApplyCurrentTransform()
+end
+
+function transformEditor:Hide()
+    if self.frame then
+        self.frame:Hide()
+    end
+    self.isActive = false
+    self.currentBossID = nil
+end
+
+function transformEditor:ApplyCurrentTransform()
+    if not self.isActive or not self.currentBossID or not modelFrame then
+        return
+    end
+    
+    local transform = self.currentTransform
+    
+    -- Apply transforms to the model (WotLK 3.3.5a compatible)
+    modelFrame:SetFacing(transform.facing)
+    modelFrame:SetPosition(transform.z, transform.x, transform.y)
+    modelFrame:SetModelScale(transform.scale)
+end
+
+function transformEditor:ResetTransform()
+    self.currentTransform = {
+        facing = 0,
+        x = 0,
+        y = 0,
+        z = 0,
+        scale = 1
+    }
+    
+    -- Update sliders
+    for key, slider in pairs(self.frame.sliders) do
+        local value = self.currentTransform[key] or 0
+        slider:SetValue(value)
+    end
+    
+    self:ApplyCurrentTransform()
+end
+
+function transformEditor:SaveCurrentTransform()
+    if not self.currentBossID then
+        print("|cFFFF0000[Transform Editor]|r No boss selected!")
+        return
+    end
+    
+    -- Save to global BOSS_TRANSFORMS (WotLK 3.3.5a compatible)
+    BOSS_TRANSFORMS[self.currentBossID] = {
+        facing = self.currentTransform.facing,
+        x = self.currentTransform.x,
+        y = self.currentTransform.y,
+        z = self.currentTransform.z,
+        scale = self.currentTransform.scale
+    }
+    
+    -- Also save to our internal collection
+    self.allTransforms[self.currentBossID] = BOSS_TRANSFORMS[self.currentBossID]
+    
+    print("|cFF00FF00[Transform Editor]|r Saved transform for Boss ID: " .. self.currentBossID)
+end
+
+function transformEditor:ExportAllTransforms()
+    local output = "BOSS_TRANSFORMS = {\n"
+    
+    for bossID, transform in pairs(BOSS_TRANSFORMS) do
+        output = output .. "    [" .. bossID .. "] = {\n"
+        output = output .. "        facing = " .. (transform.facing or 0) .. ",\n"
+        output = output .. "        x = " .. (transform.x or 0) .. ",\n"
+        output = output .. "        y = " .. (transform.y or 0) .. ",\n"
+        output = output .. "        z = " .. (transform.z or 0) .. ",\n"
+        output = output .. "        scale = " .. (transform.scale or 1) .. ",\n"
+        output = output .. "    },\n"
+    end
+    
+    output = output .. "}"
+    
+    -- Copy to clipboard using CustomSetClipboard if available
+    if CustomSetClipboard then
+        CustomSetClipboard(output)
+        print("|cFF00FF00[Transform Editor]|r Exported " .. self:CountTransforms() .. " transforms to clipboard!")
+        print("|cFFFFD700[Transform Editor]|r Use Ctrl+V to paste the BOSS_TRANSFORMS table")
+    else
+        print("|cFFFF0000[Transform Editor]|r CustomSetClipboard not available!")
+        print("|cFFFFD700[Transform Editor]|r Generated output:")
+        print(output)
+    end
+end
+
+function transformEditor:CountTransforms()
+    local count = 0
+    for _ in pairs(BOSS_TRANSFORMS) do
+        count = count + 1
+    end
+    return count
+end
+
+function transformEditor:UpdateForNewBoss(bossID)
+    if not self.isActive or not self.frame then
+        return
+    end
+    
+    -- Only update if it's actually a different boss
+    if self.currentBossID == bossID then
+        return
+    end
+    
+    self.currentBossID = bossID
+    
+    -- Load existing transform if available
+    local existing = BOSS_TRANSFORMS[bossID] or {}
+    self.currentTransform = {
+        facing = existing.facing or 0,
+        x = existing.x or 0,
+        y = existing.y or 0,
+        z = existing.z or 0,
+        scale = existing.scale or 1
+    }
+    
+    -- Update UI
+    self.frame.bossIDText:SetText("Boss ID: " .. tostring(bossID))
+    
+    -- Set slider values
+    for key, slider in pairs(self.frame.sliders) do
+        local value = self.currentTransform[key] or 0
+        slider:SetValue(value)
+        slider.valueText:SetText(string.format("%.2f", value))
+    end
+    
+    print("|cFF00FF00[Transform Editor]|r Updated for Boss ID: " .. bossID)
+end
+
+-- Add slash command to open transform editor
+SLASH_DJTRANSFORM1 = "/djtransform"
+SlashCmdList["DJTRANSFORM"] = function()
+    if not transformEditor.isActive then
+        -- Get current boss ID from the model frame or current dungeon
+        local bossID = nil
+        if _G.currentDungeon and _G.currentDungeon.bosses and _G.currentDungeon.currentBossIndex then
+            local currentBoss = _G.currentDungeon.bosses[_G.currentDungeon.currentBossIndex]
+            bossID = currentBoss and currentBoss.bossID
+        end
+        
+        if bossID then
+            transformEditor:Show(bossID)
+            print("|cFF00FF00[Transform Editor]|r Opening editor for Boss ID: " .. bossID)
+            print("|cFFFFD700[Transform Editor]|r Use sliders to adjust model position, rotation, and scale")
+            print("|cFFFFD700[Transform Editor]|r Click 'Save' to store transform, 'Export All' to copy to clipboard")
+        else
+            print("|cFFFF0000[Transform Editor]|r No boss currently displayed! Open a dungeon first.")
+        end
+    else
+        transformEditor:Hide()
+        print("|cFFFFD700[Transform Editor]|r Editor closed")
+    end
+end
+
 -- Create a hidden model frame for pre-loading models.
 local preloadModelFrame = CreateFrame("PlayerModel", "PreloadModelFrame", UIParent)
 preloadModelFrame:Hide()
@@ -53,23 +395,11 @@ local function ApplyBossTransforms(frame, bossID)
         frame:SetFacing(transform.facing or 0)
         -- PlayerModel uses param order: (z, x, y)
         frame:SetPosition(transform.z or 0, transform.x or 0, transform.y or 0)
-        frame:SetModelScale(transform.scale or 1)  -- Use SetModelScale for actual 3D model scaling
-        
-        -- Try alternative camera methods for flying mobs (more widely supported)
-        if transform.cameraDistance then
-            pcall(function() frame:SetCameraDistance(transform.cameraDistance) end)
-        end
-        if transform.cameraTarget then
-            pcall(function() frame:SetCameraTarget(transform.cameraTarget.x or 0, transform.cameraTarget.y or 0, transform.cameraTarget.z or 0) end)
-        end
-        -- Try SetPitch with error protection in case it's not available
-        if transform.pitch then
-            pcall(function() frame:SetPitch(transform.pitch) end)
-        end
+        frame:SetModelScale(transform.scale or 1)
     else
         frame:SetFacing(0)
         frame:SetPosition(0, 0, 0)
-        frame:SetModelScale(1)  -- Use SetModelScale for actual 3D model scaling
+        frame:SetModelScale(1)
     end
 end
 
@@ -79,10 +409,10 @@ end
 -------------------------------------------------------------------
 local function SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
     -- Changed to "PlayerModel" here:
-    modelFrame = modelFrame or CreateFrame("DressUpModel", "Val_modelFrame", dungeonDetailFrame)
+    modelFrame = modelFrame or CreateFrame("DressUpModel", "DJ_BossModel", dungeonDetailFrame)
     modelFrame:SetSize(200, 400)
     modelFrame:SetPoint("LEFT", dungeonDetailFrame, "CENTER", -290, -70)
-    modelFrame:SetFrameStrata("FULLSCREEN") -- Ensure model frame appears above other addons
+    modelFrame:SetFrameStrata("FULLSCREEN")
     modelFrame:EnableMouse(true)
     modelFrame:Show()
 
@@ -99,7 +429,6 @@ local function SetupModelFrame(dungeon, bossData, bossKey, bossLeveled)
             modelFrame:SetCreature(bossData.bossID)
         end)
         if success then
-            -- Apply transforms after model is set
             ApplyBossTransforms(modelFrame, bossData.bossID)
         end
     end
@@ -149,9 +478,8 @@ local function SetupBossNameLabel(bossData)
             end)
         end
         
-        -- Position rare icon to the right of the boss name
         dungeonDetailFrame.rareIcon:ClearAllPoints()
-        dungeonDetailFrame.rareIcon:SetPoint("LEFT", bossNameFontString, "RIGHT", 10, 0)
+        dungeonDetailFrame.rareIcon:SetPoint("CENTER", bossNameFontString, "CENTER", 0, -30)
         dungeonDetailFrame.rareIcon:Show()
     else
         -- Hide rare icon if boss is not rare
@@ -429,6 +757,11 @@ local function ShowBoss(dungeon)
             modelFrame.storyButton:Hide()
         end
     end
+    
+    -- Update transform editor if it's active
+    if transformEditor.isActive and bossData.bossID then
+        transformEditor:UpdateForNewBoss(bossData.bossID)
+    end
 end
 
 -------------------------------------------------------------------
@@ -478,13 +811,11 @@ local function CreateBossNavigation(dungeonDetailFrame, dungeon)
     if not bossNav.spellContainer then
         bossNav.spellContainer = CreateFrame("Frame", "DJ_SpellContainer", dungeonDetailFrame)
         bossNav.spellContainer:SetSize(300, 30)
-        bossNav.spellContainer:SetPoint("TOP", bossNav.bossNameFontString, "BOTTOM", 0, -10)
         bossNav.spellContainer:EnableMouse(false)  -- Prevent mouse interference
     else
         -- Clear existing spell frames when recreating
         ClearSpellFrames()
         bossNav.spellContainer:ClearAllPoints()
-        bossNav.spellContainer:SetPoint("TOP", bossNav.bossNameFontString, "BOTTOM", 0, -10)
         bossNav.spellContainer:SetSize(300, 30)  -- Reset size
     end
     bossNav.spellContainer:Show()

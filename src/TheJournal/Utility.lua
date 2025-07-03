@@ -240,33 +240,7 @@ end
 local cacheQueue = cacheQueue or {}
 
 local function ProcessCacheQueue()
-    if #cacheQueue > 0 then
-        local itemID = table.remove(cacheQueue, 1)
-        local tip = CreateFrame("GameTooltip", nil, UIParent, "GameTooltipTemplate")
-        tip:SetOwner(UIParent, "ANCHOR_NONE")
-        local hyperlink = string.format("item:%d:0:0:0:0:0:0:0", itemID)
-        pcall(function() tip:SetHyperlink(hyperlink) end)
-        tip:Hide()
-        tip = nil
-    end
-end
 
--- Create a ticker to process one item every 1/120 seconds (approx. 120 items per second)
-if not cacheTicker then
-    if C_Timer and C_Timer.NewTicker then
-        cacheTicker = C_Timer.NewTicker(1 / 120, ProcessCacheQueue)
-    else
-        local f = CreateFrame("Frame")
-        f.elapsed = 0
-        f:SetScript("OnUpdate", function(self, elapsed)
-            self.elapsed = self.elapsed + elapsed
-            if self.elapsed >= 1 / 120 then
-                self.elapsed = 0
-                ProcessCacheQueue()
-            end
-        end)
-        cacheTicker = f
-    end
 end
 
 local function CacheItem(itemID)

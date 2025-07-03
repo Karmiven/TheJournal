@@ -3974,7 +3974,7 @@ table.insert(Journal.djDungeons, {
 -- ################# VANILLA ZONES ##########
 table.insert(Journal.djDungeons, {
     name = "Elwynn Forest", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ElywnnForest.blp", -- placeholder
     bosses = {
         {
             bossID = 472,
@@ -4024,7 +4024,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Westfall", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Westfall.blp", -- placeholder
     bosses = {
         {
             bossID = 520,
@@ -4094,7 +4094,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name = "Duskwood", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Duskwood.blp", -- placeholder
     bosses = {
         {
             bossID = 771,
@@ -4152,7 +4152,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name = "Redridge Mountains", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-RedridgeMountain.blp", -- placeholder
     bosses = {
         {
             bossID = 14273,
@@ -4215,7 +4215,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name = "Stranglethorn Vale", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-StranglethornVale.blp", -- placeholder
     bosses = {
         {
             bossID = 14487,
@@ -4279,7 +4279,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Blasted Lands", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BlastedLands.blp", -- placeholder
     bosses = {
         {
             bossID = 8298,
@@ -4350,7 +4350,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Swamp of Sorrows", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SwampOfSorrowies.blp", -- placeholder
     bosses = {
         {
             bossID = 14446,
@@ -4400,7 +4400,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Deadwind Pass", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-DeadwindPass.blp", -- placeholder
     bosses = {
 
     },
@@ -4409,7 +4409,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Stormwind City",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Stormwind.blp",
     bosses = {
         {
             bossID = 3581,
@@ -4424,7 +4424,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Burning Steppes",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BurningSteppes.blp",
     bosses = {
         {
             bossID = 10077,
@@ -4495,7 +4495,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Searing Gorge",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SearingGorge.blp",
     bosses = {
         {
             bossID = 8279,
@@ -4552,7 +4552,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Badlands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BadLands.blp",
     bosses = {
         {
             bossID = 14224,
@@ -4630,7 +4630,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Loch Modan",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-LochModan.blp",
     bosses = {
         {
             bossID = 1398,
@@ -4687,7 +4687,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Dun Morogh",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-DwarfMorogh.blp",
     bosses = {
         {
             bossID = 1130,
@@ -4737,7 +4737,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Ironforge", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Ironforge.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -4751,7 +4751,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Wetlands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Wetlands.blp",
     bosses = {
         {
             bossID = 1037,
@@ -4814,7 +4814,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name   = "Arathi Highlands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ArathiHighlands.blp",
     bosses = {
         {
             bossID = 2598,
@@ -4891,7 +4891,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name   = "The Hinterlands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Hinterland.blp",
     bosses = {
         {
             bossID = 8215,
@@ -4969,7 +4969,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Hillsbrad Foothills",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HilsbreadFoothill.blp",
     bosses = {
         {
             bossID = 14280,
@@ -5026,7 +5026,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Alterac Mountains",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-AlteracMountains.blp",
     bosses = {
         {
             bossID = 14222,
@@ -5090,7 +5090,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Silverpine Forest",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SilverpineForest.blp",
     bosses = {
         {
             bossID = 1920,
@@ -5146,7 +5146,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name   = "Tirisfal Glades",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-UndeadBrill.blp",
     bosses = {
         {
             bossID = 10356,
@@ -5217,7 +5217,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Undercity", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Undercity.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -5231,7 +5231,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Western Plaguelands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-WPL.blp",
     bosses = {
         {
             bossID = 1844,
@@ -5295,7 +5295,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Eastern Plaguelands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-EPL.blp",
     bosses = {
         {
             bossID = 10827,
@@ -5373,7 +5373,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Ghostlands",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-GhostiesLand.blp",
     bosses = {
         {
             bossID = 22062,
@@ -5388,7 +5388,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Eversong Woods",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-EversongForest.blp",
     bosses = {
         {
             bossID = 16854,
@@ -5410,7 +5410,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Isle of Quel'Danas", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-IsleofQD.blp", -- placeholder
     bosses = {
         {
             bossID = 26090,
@@ -5442,7 +5442,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Tanaris",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Tanaris.blp",
     bosses = {
         {
             bossID = 8202,
@@ -5513,7 +5513,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Un'Goro Crater",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Ungoro.blp",
     bosses = {
         {
             bossID = 6582,
@@ -5556,7 +5556,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Silithus",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Silthus.blp",
     bosses = {
         {
             bossID = 14472,
@@ -5627,7 +5627,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Thousand Needles",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ThousandNeedles.blp",
     bosses = {
         {
             bossID = 5933,
@@ -5684,7 +5684,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Feralas",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Feralas.blp",
     bosses = {
         {
             bossID = 5347,
@@ -5776,7 +5776,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Dustwallow Marsh",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-DuskwallowMarsh.blp",
     bosses = {
         {
             bossID = 4339,
@@ -5854,7 +5854,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "The Barrens",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Barrens.blp",
     bosses = {
         {
             bossID = 5797,
@@ -6086,7 +6086,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Mulgore",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Mulgore.blp",
     bosses = {
         {
             bossID = 5787,
@@ -6136,7 +6136,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Thunder Bluff", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ThunderBuff.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -6149,7 +6149,7 @@ table.insert(Journal.djDungeons, {
 })
 table.insert(Journal.djDungeons, {
     name   = "Desolace",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Desolate.blp",
     bosses = {
         {
             bossID = 14229,
@@ -6206,7 +6206,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Stonetalon Mountains",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-StoneTalonMountain.blp",
     bosses = {
         {
             bossID = 5915,
@@ -6277,7 +6277,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Durotar",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Durotar.blp",
     bosses = {
         {
             bossID = 5824,
@@ -6327,7 +6327,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Orgrimmar", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Orgrimmar.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -6341,7 +6341,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Ashenvale",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Ashenvale.blp",
     bosses = {
         {
             bossID = 3773,
@@ -6433,7 +6433,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Azshara",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Azshara.blp",
     bosses = {
         {
             bossID = 6648,
@@ -6511,7 +6511,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Felwood",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Felwood.blp",
     bosses = {
         {
             bossID = 14340,
@@ -6575,7 +6575,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Darkshore",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Darkshore.blp",
     bosses = {
         {
             bossID = 2186,
@@ -6646,7 +6646,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Moonglade", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Moonglade.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -6660,7 +6660,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Winterspring",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Winterspring.blp",
     bosses = {
         {
             bossID = 10202,
@@ -6717,7 +6717,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Bloodmyst Isle",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BloodMyst.blp",
     bosses = {
         {
             bossID = 22060,
@@ -6732,7 +6732,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Azuremyst Isle", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-AzureMyst.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -6746,7 +6746,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Teldrassil",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Teldrassil.blp",
     bosses = {
         {
             bossID = 3535,
@@ -6796,7 +6796,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Darnassus", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Darnassas.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,
@@ -6811,7 +6811,7 @@ table.insert(Journal.djDungeons, {
 -- ################# TBC ZONES ##########
 table.insert(Journal.djDungeons, {
     name   = "Hellfire Peninsula",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HellfirePen.blp",
     category = "TBC",
     bosses = {
         {
@@ -6841,7 +6841,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Zangarmarsh",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Zangarmarsh.blp",
     category   = "TBC",
     bosses = {
         {
@@ -6871,7 +6871,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Nagrand",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Nagrand.blp",
     category   = "TBC",
     bosses = {
         {
@@ -6901,7 +6901,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Terokkar Forest",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-TerokkarForest.blp",
     category   = "TBC",
     bosses = {
         {
@@ -6931,7 +6931,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Shadowmoon Valley",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ShadowmoonValley.blp",
     category   = "TBC",
     bosses = {
         {
@@ -6968,7 +6968,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Blade's Edge Mountains",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BladesEdgeMountain.blp",
     category   = "TBC",
     bosses = {
         {
@@ -6998,7 +6998,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Netherstorm",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Netherstorm.blp",
     category   = "TBC",
     bosses = {
         {
@@ -7029,7 +7029,7 @@ table.insert(Journal.djDungeons, {
 -- ############# WOTLK
 table.insert(Journal.djDungeons, {
     name   = "Borean Tundra",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-BorenTundrea.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7059,7 +7059,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Sholazar Basin",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-ShozlarBazin.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7089,7 +7089,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Icecrown",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Icecrown.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7120,7 +7120,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "The Storm Peaks",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-StormPeaks.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7164,7 +7164,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Zul'Drak",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Zuldrak.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7201,7 +7201,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Grizzly Hills",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-GrizzlyHills.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7238,7 +7238,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Howling Fjord",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-HowlingFjord.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7268,7 +7268,7 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name   = "Dragonblight",
-    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp",
+    icon   = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Dragonblight.blp",
     category   = "WOTLK",
     bosses = {
         {
@@ -7299,7 +7299,8 @@ table.insert(Journal.djDungeons, {
 
 table.insert(Journal.djDungeons, {
     name = "Dalaran", 
-    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-SiegeofNizaoTemple.blp", -- placeholder
+    category   = "WOTLK",
+    icon = "Interface\\Addons\\TheJournal\\Assets\\Buttons\\UI-EJ-DUNGEONBUTTON-Dalaran.blp", -- placeholder
     bosses = {
         {
             bossID = 36597,

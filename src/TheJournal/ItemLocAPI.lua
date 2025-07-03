@@ -11,6 +11,7 @@ local isLoaded = nil
 local lastLoadCheck = 0
 local LOAD_CHECK_INTERVAL = 5 -- Check every 5 seconds
 
+-- Source type constants for better readability
 ItemLocAPI.SOURCE_TYPES = {
     CREATURE = 1,
     OBJECT = 2,
@@ -31,7 +32,6 @@ ItemLocAPI.SORT_TYPES = {
     TYPE = 5,
 }
 
--- List of NPCs to filter out and their lower-level alternatives
 local NPC_FILTERS = {
     ["Captain Dirgehammer"] = true,
     ["Doris Volanthius"] = true,
@@ -45,12 +45,7 @@ local NPC_FILTERS = {
 
 -- Check if the ItemLoc database is loaded
 function ItemLocAPI:IsLoaded()
-    local time = GetTime()
-    if not isLoaded or (time - lastLoadCheck) > LOAD_CHECK_INTERVAL then
-        isLoaded = ItemLocIsLoaded()
-        lastLoadCheck = time
-    end
-    return isLoaded
+    return ItemLocIsLoaded()
 end
 
 -- Get the number of sources for an item
@@ -473,19 +468,3 @@ end
 
 -- Export to global namespace
 _G.ItemLocAPI = ItemLocAPI
-
--- Debug print to confirm loading - always print this
-print("|cff66ccff[DJ_Debug]|r ItemLocAPI module loaded successfully")
-
--- Test if the base functions exist
-if ItemLocIsLoaded then
-    print("|cff66ccff[DJ_Debug]|r ItemLoc base functions are available")
-    local version = ItemLocIsLoaded()
-    if version then
-        print("|cff66ccff[DJ_Debug]|r ItemLoc database loaded, version:", version)
-    else
-        print("|cff66ccff[DJ_Debug]|r ItemLoc database not loaded")
-    end
-else
-    print("|cff66ccff[DJ_Debug]|r ItemLoc base functions NOT available")
-end 
