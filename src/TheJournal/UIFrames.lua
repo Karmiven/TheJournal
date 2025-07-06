@@ -2727,6 +2727,10 @@ table.insert(UISpecialFrames, "DungeonJournalFrame")
 -- Combined filtering function for both search and category
 -- ʕ •ᴥ•ʔ✿ Unified function to filter and sort dungeons ✿ʕ•ᴥ•ʔ
 function FilterAndSortDungeons()
+    -- ʕ •ᴥ•ʔ✿ Refresh attunement cache to sort with up-to-date data ✿ʕ •ᴥ•ʔ
+    if InvalidateDungeonAttunementCache then
+        InvalidateDungeonAttunementCache()
+    end
     local query = dungeonSearchBox:GetText():lower()
     local selectedCategory = Journal_charDB.selectedCategory or "All"
     local filtered = {}
@@ -2749,38 +2753,41 @@ function FilterAndSortDungeons()
         end
     end
     
-    -- Sort filtered dungeons by category first, then by attunement percentage
+    -- Sort logic changes if we are viewing *All* expansions.
     table.sort(filtered, function(a, b)
-        local aCat = a.dungeon.category or "UNKNOWN"
-        local bCat = b.dungeon.category or "UNKNOWN"
-        
-        -- Define category order
+        local aAttunablesLeft, aTotalAttunable = CalculateDungeonAttunables(a.dungeon)
+        local bAttunablesLeft, bTotalAttunable = CalculateDungeonAttunables(b.dungeon)
+
+        local aPercentage = aTotalAttunable > 0 and (aAttunablesLeft / aTotalAttunable) or 0
+        local bPercentage = bTotalAttunable > 0 and (bAttunablesLeft / bTotalAttunable) or 0
+
+        -- If "All" expansions are selected, ignore category order entirely
+        if selectedCategory == "All" then
+            if math.abs(aPercentage - bPercentage) > 0.001 then
+                return aPercentage > bPercentage
+            end
+            if aTotalAttunable ~= bTotalAttunable then
+                return aTotalAttunable > bTotalAttunable
+            end
+            return (a.dungeon.name or "") < (b.dungeon.name or "")
+        end
+
+        -- Otherwise keep category grouping first, then percentage
+        local aCat = a.dungeon.category or "CLASSIC"
+        local bCat = b.dungeon.category or "CLASSIC"
         local categoryOrder = { CLASSIC = 1, TBC = 2, WOTLK = 3, UNKNOWN = 999 }
         local aOrder = categoryOrder[aCat] or 999
         local bOrder = categoryOrder[bCat] or 999
-        
-        -- First sort by category
         if aOrder ~= bOrder then
             return aOrder < bOrder
         end
-        
-        -- Within same category, sort by attunement percentage (highest percentage of missing items first)
-        local aAttunablesLeft, aTotalAttunable = CalculateDungeonAttunables(a.dungeon)
-        local bAttunablesLeft, bTotalAttunable = CalculateDungeonAttunables(b.dungeon)
-        
-        local aPercentage = aTotalAttunable > 0 and (aAttunablesLeft / aTotalAttunable) or 0
-        local bPercentage = bTotalAttunable > 0 and (bAttunablesLeft / bTotalAttunable) or 0
-        
+
         if math.abs(aPercentage - bPercentage) > 0.001 then
             return aPercentage > bPercentage
         end
-        
-        -- If same percentage, sort by total attunable items (more items first)
         if aTotalAttunable ~= bTotalAttunable then
             return aTotalAttunable > bTotalAttunable
         end
-        
-        -- Finally, sort by dungeon name for consistency
         return (a.dungeon.name or "") < (b.dungeon.name or "")
     end)
     
