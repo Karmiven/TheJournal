@@ -28,11 +28,3 @@ The journal can be toggled using a keyboard shortcut. The default key is F12, bu
 3. Look for "TheJournal" in the list
 4. Click the keybind and press your desired key combination
 
-## Attunement System
-
-Items can be attuned through various forge levels:
-- Titanforged (Level 1)
-- Warforged (Level 2)
-- Lightforged (Level 3)
-
-Progress is tracked per item and displayed as a percentage. Fully attuned items show their forge level status.
