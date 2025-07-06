@@ -426,3 +426,52 @@ _G.GetDynamicDungeonItems = GetDynamicDungeonItems
 _G.HasItemLocSources = HasItemLocSources 
 _G.GetItemLocationSummary = GetItemLocationSummary
 _G.IsItemInCurrentZone = IsItemInCurrentZone
+
+-- ʕ •ᴥ•ʔ✿ COLOR UTILITY FUNCTIONS ✿ ʕ •ᴥ•ʔ
+-- Provides lightweight, muted color accents for spell tooltips. Accents are only applied when the string contains no pre-existing WoW color codes.
+local DAMAGE_COLOR_MAP = {
+    Arcane   = "A6CAE2", -- light blue
+    Fire     = "E8B0A0", -- soft orange
+    Frost    = "A0E0E8", -- teal-cy
+    Shadow   = "C8A0D8", -- muted purple
+    Nature   = "A8D8A0", -- pale green
+    Holy     = "FFF2A8", -- soft yellow
+    Physical = "D8C8B8", -- beige
+    Poison   = "A8C8A0", -- mossy green
+}
+
+-- Helper: true if the string already includes a WoW color escape sequence.
+local function _HasColorCode(str)
+    return str and str:find("|cff", 1, true) ~= nil
+end
+
+-- Highlight numeric values (damage, duration, percentages) with a gentle gold tint.
+local function _AccentNumbers(text)
+    if _HasColorCode(text) then return text end
+    return text:gsub("(%d+%%?)", "|cffE5D8A8%1|r")
+end
+
+-- Infer dominant damage school from the description, then colorize the spell name accordingly.
+local function ColorizeSpellName(name, description)
+    if _HasColorCode(name) then return name end
+    local lowerDesc = (description or ""):lower()
+    local chosenHex
+    for school, hex in pairs(DAMAGE_COLOR_MAP) do
+        if lowerDesc:find(school:lower()) then
+            chosenHex = hex
+            break
+        end
+    end
+    if not chosenHex then return name end
+    return string.format("|cff%s%s|r", chosenHex, name)
+end
+
+-- Public wrapper that safely colorizes a description (numbers only, avoids double-processing).
+local function ColorizeDescription(desc)
+    return _AccentNumbers(desc)
+end
+
+-- Expose to the Journal namespace for easy access by other modules.
+_G.Journal                = _G.Journal or {}
+_G.Journal.ColorizeSpellName  = ColorizeSpellName
+_G.Journal.ColorizeDescription = ColorizeDescription

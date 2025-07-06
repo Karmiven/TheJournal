@@ -169,7 +169,13 @@ function SlashCommands.ResetAllFramesToDefaultScale()
     end
     
     if _G.AttunementFriendsFrame then
+        -- Ensure uniform scale is default
         _G.AttunementFriendsFrame:SetScale(1.0)
+
+        -- Restore original dimensions if cached
+        if _G.AttunementFriendsFrame.baseWidth and _G.AttunementFriendsFrame.baseHeight then
+            _G.AttunementFriendsFrame:SetSize(_G.AttunementFriendsFrame.baseWidth, _G.AttunementFriendsFrame.baseHeight)
+        end
     end
     
     if _G.DJ_QuestPopoutFrame then
@@ -193,7 +199,18 @@ function SlashCommands.ApplyScaleToAllFrames(scale)
     end
     
     if _G.AttunementFriendsFrame then
-        _G.AttunementFriendsFrame:SetScale(scaleFactor)
+        -- Cache default dimensions once
+        if not _G.AttunementFriendsFrame.baseWidth then
+            _G.AttunementFriendsFrame.baseWidth  = _G.AttunementFriendsFrame:GetWidth()
+            _G.AttunementFriendsFrame.baseHeight = _G.AttunementFriendsFrame:GetHeight()
+        end
+
+        -- Apply vertical scaling only: keep width, adjust height
+        local baseW   = _G.AttunementFriendsFrame.baseWidth
+        local newH    = _G.AttunementFriendsFrame.baseHeight * scaleFactor
+
+        _G.AttunementFriendsFrame:SetScale(1.0) -- prevent proportional scaling
+        _G.AttunementFriendsFrame:SetSize(baseW, newH)
     end
     
     -- ʕ ◕ᴥ◕ ʔ✿ Also apply to any quest popout frames ✿ʕ ◕ᴥ◕ ʔ

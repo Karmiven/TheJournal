@@ -356,10 +356,14 @@ preloadModelFrame:Hide()
 -- List all boss IDs that you want to preload.
 -- (You can iterate over your _G.Journal.djDungeons table and collect the bossID's.)
 local bossIDs = {}
-for _, dungeon in ipairs(_G.Journal.djDungeons) do
-    for _, boss in ipairs(dungeon.bosses) do
-        if boss.bossID then
-            table.insert(bossIDs, boss.bossID)
+
+-- ʕ •ᴥ•ʔ✿ Safeguard: Journal table may not be initialized yet ✿ ʕ •ᴥ•ʔ
+if _G.Journal and _G.Journal.djDungeons then
+    for _, dungeon in ipairs(_G.Journal.djDungeons) do
+        for _, boss in ipairs(dungeon.bosses) do
+            if boss.bossID then
+                table.insert(bossIDs, boss.bossID)
+            end
         end
     end
 end
@@ -579,10 +583,13 @@ local function SetupSpellIcons(bossData)
             spellFrame:EnableMouse(true)
             spellFrame:SetScript("OnEnter", function(self)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
-                GameTooltip:SetText(spellData.name or "Unknown Spell", 1, 1, 1)
-                
+                -- Apply muted color accents
+                local coloredName = (_G.Journal and _G.Journal.ColorizeSpellName) and _G.Journal.ColorizeSpellName(spellData.name or "Unknown Spell", spellData.description) or (spellData.name or "Unknown Spell")
+                GameTooltip:SetText(coloredName, 1, 1, 1)
+
                 if spellData.description then
-                    GameTooltip:AddLine(spellData.description, 1, 0.8, 0, true)
+                    local coloredDesc = (_G.Journal and _G.Journal.ColorizeDescription) and _G.Journal.ColorizeDescription(spellData.description) or spellData.description
+                    GameTooltip:AddLine(coloredDesc, 1, 0.8, 0, true)
                 end
                 
                 -- Add spell details

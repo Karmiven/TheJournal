@@ -364,7 +364,7 @@ local DUNGEON_AFFIX_NAMES = {
     ["Old Hillsbrad Foothills"] = "Temporal Flux",
     ["The Black Morass"] = "Escalation",
     ["Magisters' Terrace"] = "Speed Demon",
-    ["Stratholme"] = "Zombie Bomber",
+    ["The Culling of Stratholme"] = "Zombie Bomber",
     ["The Nexus"] = "High Risk High Reward",
     ["The Oculus"] = "Frozen Flight",
     ["Utgarde Keep"] = "Phoenix Rising",
@@ -401,7 +401,7 @@ local DUNGEON_AFFIXES = {
     ["Old Hillsbrad Foothills"] = "You have a debuff called |cFF66CCFFFlow of time|r. Standing still |cFFFF4500reduces stacks|r causing at |cFFFFFF00zero|r to |cFFFF4500stun|r you. Moving |cFF00FF00increases stacks|r causing at |cFFFFFF00100|r to |cFFFF4500reduce attack speed|r by |cFFFFFF0070%|r.",
     ["The Black Morass"] = "In combat take |cFFFFFF001%|r |cFFFF4500increased damage|r every |cFFFFFF003|r seconds. Out of combat |cFF00FF00remove stacks|r every |cFFFFFF002|r seconds.",
     ["Magisters' Terrace"] = "You have |cFFFFFF00100%|r |cFF00FF00increase casting speed|r. But every cast gives you |cFF9966CCMagical Backlash|r causing a |cFFFF4500stacking debuff|r that when expires you take |cFF66CCFFarcane damage|r.",
-    ["Stratholme"] = "|cFFFF4500Exploding zombie|r chases you. When it explodes it deals |cFFFF4500massive shadow damage|r.",
+    ["The Culling of Stratholme"] = "|cFFFF4500Exploding zombie|r chases you. When it explodes it deals |cFFFF4500massive shadow damage|r.",
     ["The Nexus"] = "Being close to the |cFF66CCFFAnomaly boss|r gives you a |cFFFF4500stacking debuff|r. |cFF00FF00Increases magic done|r and |cFFFF4500taken|r by up to |cFFFFFF00100%|r.",
     ["The Oculus"] = "Giving you the ability to |cFF66CCFFfly|r. Sort of like Priest levitate mobility perk but you take |cFF66CCFFfrost damage|r everytime you're in the air.",
     ["Utgarde Keep"] = "When enemies fall below |cFFFFFF0050%|r, they |cFF00FF00heal back to full|r. |cFF00FF00Healing Reduction|r talents/spells work on it.",
@@ -1813,7 +1813,7 @@ function LoadDungeonDetail(dungeon)
     if not dungeonDetailFrame.bookIcon and DUNGEON_AFFIXES[dungeon.name] then
         local bookIcon = dungeonDetailFrame:CreateTexture(nil, "OVERLAY")
         bookIcon:SetSize(24, 24)
-        bookIcon:SetPoint("BOTTOMLEFT", _G.Val_modelFrame or dungeonDetailFrame, "BOTTOMLEFT", 15, 15)
+        bookIcon:SetPoint("BOTTOMLEFT", dungeonDetailFrame, "BOTTOMLEFT", -40, -55)
         bookIcon:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
         bookIcon:SetTexCoord(0.1, 0.9, 0.1, 0.9) -- Crop the texture for better appearance
         dungeonDetailFrame.bookIcon = bookIcon
@@ -1821,16 +1821,16 @@ function LoadDungeonDetail(dungeon)
         -- Add highlight texture
         local bookHighlight = dungeonDetailFrame:CreateTexture(nil, "HIGHLIGHT")
         bookHighlight:SetSize(24, 24)
-        bookHighlight:SetPoint("BOTTOMLEFT", _G.Val_modelFrame or dungeonDetailFrame, "BOTTOMLEFT", 15, 15)
+        bookHighlight:SetPoint("BOTTOMLEFT", dungeonDetailFrame, "BOTTOMLEFT", -40, -55)
         bookHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
         bookHighlight:SetBlendMode("ADD")
         bookHighlight:Hide()
         dungeonDetailFrame.bookHighlight = bookHighlight
         
         -- Create invisible frame for mouse interaction
-        local bookFrame = CreateFrame("Frame", nil, dungeonDetailFrame)
+        local bookFrame = CreateFrame("Frame", "DJ_MythicAffixFrame", dungeonDetailFrame)
         bookFrame:SetSize(24, 24)
-        bookFrame:SetPoint("BOTTOMLEFT", _G.Val_modelFrame or dungeonDetailFrame, "BOTTOMLEFT", 15, 45)
+        bookFrame:SetPoint("BOTTOMLEFT", dungeonDetailFrame, "BOTTOMLEFT", -40, -55)
         bookFrame:SetFrameLevel((dungeonDetailFrame:GetFrameLevel() or 0) + 10)
         bookFrame:EnableMouse(true)
         dungeonDetailFrame.bookFrame = bookFrame
@@ -1883,9 +1883,9 @@ function LoadDungeonDetail(dungeon)
             dungeonDetailFrame.currentDungeon = dungeon
             -- Update position in case Val_modelFrame is now available
             dungeonDetailFrame.bookIcon:ClearAllPoints()
-            dungeonDetailFrame.bookIcon:SetPoint("BOTTOMLEFT", _G.Val_modelFrame or dungeonDetailFrame, "BOTTOMLEFT", 15, 25)
+            dungeonDetailFrame.bookIcon:SetPoint("BOTTOMLEFT", dungeonDetailFrame, "BOTTOMLEFT", -45, -75)
             dungeonDetailFrame.bookFrame:ClearAllPoints()
-            dungeonDetailFrame.bookFrame:SetPoint("BOTTOMLEFT", _G.Val_modelFrame or dungeonDetailFrame, "BOTTOMLEFT", 15, 25)
+            dungeonDetailFrame.bookFrame:SetPoint("BOTTOMLEFT", dungeonDetailFrame, "BOTTOMLEFT", -45, -75)
         else
             dungeonDetailFrame.bookIcon:Hide()
             dungeonDetailFrame.bookFrame:Hide()
@@ -2148,6 +2148,21 @@ do
             self.tex:SetVertexColor(0.7, 0.7, 0.7)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(d.name)
+
+            -- ʕ ● ᴥ ●ʔ✿ Show attunement stats ✿ʕ ● ᴥ ●ʔ
+            if CalculateDungeonAttunables then
+                local left, total = CalculateDungeonAttunables(d)
+                if total and total > 0 then
+                    local percentLeft = (left / total) * 100
+                    GameTooltip:AddLine(string.format("Attunes Remaining: %d/%d (%.0f%%)", left, total, percentLeft), 1, 0.8, 0, true)
+                end
+            end
+
+             -- ʕ •ᴥ•ʔ✿ Show dungeon level requirement ✿ʕ •ᴥ•ʔ
+             if d.levelreq then
+                GameTooltip:AddLine("\n\nDungeon Challenge Max Level: " .. d.levelreq, 0.8, 0.8, 1, true)
+            end
+
             GameTooltip:Show()
         end)
 
