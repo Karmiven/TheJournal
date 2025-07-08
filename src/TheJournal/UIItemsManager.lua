@@ -157,23 +157,112 @@ function UIItemsManager.PassesFilterIcon(iType, iSubType, eLoc, filterIcon)
     return true
 end
 
+-- Function to get items from dungeon based on difficulty filter
+local function GetItemsForDifficulty(dungeon, difficultyFilter)
+    local allItems = {}
+    
+    if difficultyFilter == "all" then
+        -- Collect from all difficulty arrays
+        if dungeon.items then
+            for _, itemID in ipairs(dungeon.items) do
+                table.insert(allItems, itemID)
+            end
+        end
+        if dungeon.items_hc then
+            for _, itemID in ipairs(dungeon.items_hc) do
+                table.insert(allItems, itemID)
+            end
+        end
+        if dungeon.items_my then
+            for _, itemID in ipairs(dungeon.items_my) do
+                table.insert(allItems, itemID)
+            end
+        end
+        if dungeon.items_10n then
+            for _, itemID in ipairs(dungeon.items_10n) do
+                table.insert(allItems, itemID)
+            end
+        end
+        if dungeon.items_10h then
+            for _, itemID in ipairs(dungeon.items_10h) do
+                table.insert(allItems, itemID)
+            end
+        end
+        if dungeon.items_25n then
+            for _, itemID in ipairs(dungeon.items_25n) do
+                table.insert(allItems, itemID)
+            end
+        end
+        if dungeon.items_25h then
+            for _, itemID in ipairs(dungeon.items_25h) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "normal" then
+        if dungeon.items then
+            for _, itemID in ipairs(dungeon.items) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "heroic" then
+        if dungeon.items_hc then
+            for _, itemID in ipairs(dungeon.items_hc) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "mythic" then
+        if dungeon.items_my then
+            for _, itemID in ipairs(dungeon.items_my) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "10n" then
+        if dungeon.items_10n then
+            for _, itemID in ipairs(dungeon.items_10n) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "10h" then
+        if dungeon.items_10h then
+            for _, itemID in ipairs(dungeon.items_10h) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "25n" then
+        if dungeon.items_25n then
+            for _, itemID in ipairs(dungeon.items_25n) do
+                table.insert(allItems, itemID)
+            end
+        end
+    elseif difficultyFilter == "25h" then
+        if dungeon.items_25h then
+            for _, itemID in ipairs(dungeon.items_25h) do
+                table.insert(allItems, itemID)
+            end
+        end
+    end
+    
+    return allItems
+end
+
 -- ʕ •ᴥ•ʔ✿ Items Preparation System ✿ʕ•ᴥ•ʔ
 function UIItemsManager.PrepareItemsToShow(dungeon, GetCacheKey, preparedItemsCache, GetCachedAttunement, SetCachedAttunement, GetCachedForge, SetCachedForge, GetCachedDropRate, CleanupItemsCache)
-    -- Check cache first
+    if not dungeon then return {} end
+    
     local cacheKey = GetCacheKey(dungeon)
+    
     if cacheKey and preparedItemsCache[cacheKey] then
         return preparedItemsCache[cacheKey]
     end
     
+    local difficultyFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.difficultyFilter or "all"
     local itemsToShow = {}
-    local final = {}
-    local filterIcon = DJ_Settings.filterType or "All"
-
-    -- Get items list (static or dynamic)
-    local itemList = _G.GetDynamicDungeonItems and _G.GetDynamicDungeonItems(dungeon) or dungeon.items or {}
-
+    
+    -- Get items based on difficulty filter
+    local dungeonItems = GetItemsForDifficulty(dungeon, difficultyFilter)
+    
     -- First pass: Convert item IDs to item info objects
-    for _, itemID in ipairs(itemList) do
+    for _, itemID in ipairs(dungeonItems) do
         local itemLink = "item:" .. itemID
         local iName, _, iQuality, _, _, iType, iSubType, _, eLoc
         
@@ -190,6 +279,9 @@ function UIItemsManager.PrepareItemsToShow(dungeon, GetCacheKey, preparedItemsCa
 
         local shouldAdd = true
         
+        -- Get attunement filter
+        local filterIcon = DJ_Settings.filterType or "All"
+        
         if filterIcon == "Attunable" then
             -- Show items that can be attuned and have progress < 100%
             local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
@@ -205,7 +297,6 @@ function UIItemsManager.PrepareItemsToShow(dungeon, GetCacheKey, preparedItemsCa
                 attuneProgress = _G.GetItemLinkAttuneProgress(itemLink) or 0
             end
             shouldAdd = (attuneProgress >= 100)
-
         end
         
         if shouldAdd then
@@ -350,12 +441,22 @@ function UIItemsManager.GetCurrentFilterInfo()
         table.insert(filterInfo, "|cFF00FF00Attuned|r")
     end
     
-    -- Get mythic filter
-    local mythicFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.mythicFilter or "all"
-    if mythicFilter == "mythic" then
+    -- Get difficulty filter
+    local difficultyFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.difficultyFilter or "all"
+    if difficultyFilter == "normal" then
+        table.insert(filterInfo, "|cFF87CEEBNormal|r")
+    elseif difficultyFilter == "heroic" then
+        table.insert(filterInfo, "|cFFFF6600Heroic|r")
+    elseif difficultyFilter == "mythic" then
         table.insert(filterInfo, "|cFFFF6600Mythic|r")
-    elseif mythicFilter == "nonmythic" then
-        table.insert(filterInfo, "|cFFFF6600Non-Mythic|r")
+    elseif difficultyFilter == "10n" then
+        table.insert(filterInfo, "|cFF9966CC10N|r")
+    elseif difficultyFilter == "10h" then
+        table.insert(filterInfo, "|cFF9966CC10H|r")
+    elseif difficultyFilter == "25n" then
+        table.insert(filterInfo, "|cFFFFB34725N|r")
+    elseif difficultyFilter == "25h" then
+        table.insert(filterInfo, "|cFFFFB34725H|r")
     end
     
     -- Get source count filter
@@ -382,6 +483,9 @@ function UIItemsManager.UpdateDungeonTitleWithFilters(dungeon, dungeonTitleText)
         dungeonTitleText:SetText(baseName)
     end
 end
+
+-- ʕ •ᴥ•ʔ✿ Make functions accessible ✿ʕ•ᴥ•ʔ
+UIItemsManager.GetItemsForDifficulty = GetItemsForDifficulty
 
 -- ʕ •ᴥ•ʔ✿ Make globally accessible ✿ʕ•ᴥ•ʔ
 _G.TheJournal_UIItemsManager = UIItemsManager

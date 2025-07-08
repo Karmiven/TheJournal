@@ -533,9 +533,14 @@ end
 -- Function to invalidate dungeon attunement cache
 local function InvalidateDungeonAttunementCache(dungeonName)
     if dungeonName then
-        -- Clear cache for specific dungeon
+        -- Clear cache for specific dungeon (both old and new cache keys)
         uiCache.dungeonAttunement[dungeonName] = nil
         uiCache.dungeonAttunementLastUpdate[dungeonName] = nil
+        
+        -- ʕ •ᴥ•ʔ✿ Clear multi-difficulty cache for this dungeon ✿ʕ•ᴥ•ʔ
+        local multiDiffKey = dungeonName .. "_all_difficulties"
+        uiCache.dungeonAttunement[multiDiffKey] = nil
+        uiCache.dungeonAttunementLastUpdate[multiDiffKey] = nil
     else
         -- Clear entire cache
         uiCache.dungeonAttunement = {}
@@ -981,6 +986,52 @@ mythicFilterButton:SetScript("OnLeave", function()
     GameTooltip:Hide()
 end)
 
+-- ʕ •ᴥ•ʔ✿ Function to detect available difficulties in a dungeon ✿ʕ•ᴥ•ʔ
+local function GetAvailableDifficulties(dungeon)
+    if not dungeon then return {} end
+    
+    local difficulties = {}
+    
+    -- Check each difficulty array
+    if dungeon.items and #dungeon.items > 0 then
+        table.insert(difficulties, "normal")
+    end
+    if dungeon.items_hc and #dungeon.items_hc > 0 then
+        table.insert(difficulties, "heroic")
+    end
+    if dungeon.items_my and #dungeon.items_my > 0 then
+        table.insert(difficulties, "mythic")
+    end
+    if dungeon.items_10n and #dungeon.items_10n > 0 then
+        table.insert(difficulties, "10n")
+    end
+    if dungeon.items_10h and #dungeon.items_10h > 0 then
+        table.insert(difficulties, "10h")
+    end
+    if dungeon.items_25n and #dungeon.items_25n > 0 then
+        table.insert(difficulties, "25n")
+    end
+    if dungeon.items_25h and #dungeon.items_25h > 0 then
+        table.insert(difficulties, "25h")
+    end
+    
+    return difficulties
+end
+
+-- ʕ •ᴥ•ʔ✿ Function to check if dungeon has multiple difficulties ✿ʕ•ᴥ•ʔ
+local function HasMultipleDifficulties(dungeon)
+    local difficulties = GetAvailableDifficulties(dungeon)
+    return #difficulties > 1
+end
+
+-- ʕ •ᴥ•ʔ✿ Function to show smart filter message ✿ʕ•ᴥ•ʔ
+local function ShowSmartFilterMessage(dungeonName, availableDifficulties)
+    if DEBUG or _G.debug then
+        local difficultyText = table.concat(availableDifficulties, ", ")
+        print("|cFF87CEEB[Smart Filter]|r " .. dungeonName .. " only has: " .. difficultyText .. " - difficulty filter auto-cleared")
+    end
+end
+
 -- Define show/hide functions now that all buttons are created
 local function HideDungeonInteriorUI()
     if filterTypeButton then filterTypeButton:Hide() end
@@ -996,8 +1047,25 @@ end
 local function ShowDungeonInteriorUI()
     if filterTypeButton then filterTypeButton:Show() end
     if sourceCountButton then sourceCountButton:Show() end
-    if mythicFilterButton then mythicFilterButton:Show() end
     if itemSearchBox then itemSearchBox:Show() end
+    
+    -- ʕ •ᴥ•ʔ✿ Smart difficulty filter - only show if multiple difficulties available ✿ʕ•ᴥ•ʔ
+    if mythicFilterButton then
+        if _G.currentDungeon and HasMultipleDifficulties(_G.currentDungeon) then
+            mythicFilterButton:Show()
+        else
+            mythicFilterButton:Hide()
+            -- ʕ ◕ᴥ◕ ʔ✿ Auto-reset filter to "all" when no multiple difficulties ✿ʕ ◕ᴥ◕ ʔ
+            if Journal_charDB and Journal_charDB.itemFilters and Journal_charDB.itemFilters.difficultyFilter ~= "all" then
+                Journal_charDB.itemFilters.difficultyFilter = "all"
+                -- Show debug message if enabled
+                if _G.currentDungeon and (DEBUG or _G.debug) then
+                    local availableDifficulties = GetAvailableDifficulties(_G.currentDungeon)
+                    ShowSmartFilterMessage(_G.currentDungeon.name, availableDifficulties)
+                end
+            end
+        end
+    end
     
     -- ʕ •ᴥ•ʔ✿ Show the item list frames when entering dungeon detail ✿ʕ•ᴥ•ʔ
     if itemsListFrame then itemsListFrame:Show() end
@@ -1300,12 +1368,22 @@ local function GetCurrentFilterInfo()
         table.insert(filterInfo, "|cFF00FF00Attuned|r")
     end
     
-    -- Get mythic filter
-    local mythicFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.mythicFilter or "all"
-    if mythicFilter == "mythic" then
+    -- Get difficulty filter
+    local difficultyFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.difficultyFilter or "all"
+    if difficultyFilter == "normal" then
+        table.insert(filterInfo, "|cFF87CEEBNormal|r")
+    elseif difficultyFilter == "heroic" then
+        table.insert(filterInfo, "|cFFFF6600Heroic|r")
+    elseif difficultyFilter == "mythic" then
         table.insert(filterInfo, "|cFFFF6600Mythic|r")
-    elseif mythicFilter == "nonmythic" then
-        table.insert(filterInfo, "|cFFFF6600Non-Mythic|r")
+    elseif difficultyFilter == "10n" then
+        table.insert(filterInfo, "|cFF9966CC10N|r")
+    elseif difficultyFilter == "10h" then
+        table.insert(filterInfo, "|cFF9966CC10H|r")
+    elseif difficultyFilter == "25n" then
+        table.insert(filterInfo, "|cFFFFB34725N|r")
+    elseif difficultyFilter == "25h" then
+        table.insert(filterInfo, "|cFFFFB34725H|r")
     end
     
     -- Get source count filter
@@ -1337,8 +1415,6 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
     wipe(displayedItems)
     local query = (Journal_charDB.itemSearchQuery or ""):lower()
     
-
-    
     -- Initialize filters if not already initialized
     if not Journal_charDB.itemFilters then
         Journal_charDB.itemFilters = {
@@ -1346,29 +1422,31 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
             maxSources = 0, -- maximum number of sources (0 = show all)
             showRareDrops = true,
             showCommonDrops = true,
-            mythicFilter = "all" -- "all", "mythic", "nonmythic"
+            difficultyFilter = "all" -- "all", "normal", "heroic", "mythic", "10n", "10h", "25n", "25h"
         }
     end
     
-    -- Migrate old mythicOnly setting to new mythicFilter
-    if Journal_charDB.itemFilters.mythicOnly ~= nil then
-        if Journal_charDB.itemFilters.mythicOnly then
-            Journal_charDB.itemFilters.mythicFilter = "mythic"
+    -- Migrate old mythicFilter setting to new difficultyFilter
+    if Journal_charDB.itemFilters.mythicFilter ~= nil then
+        if Journal_charDB.itemFilters.mythicFilter == "mythic" then
+            Journal_charDB.itemFilters.difficultyFilter = "mythic"
+        elseif Journal_charDB.itemFilters.mythicFilter == "nonmythic" then
+            Journal_charDB.itemFilters.difficultyFilter = "normal" -- Default non-mythic to normal
         else
-            Journal_charDB.itemFilters.mythicFilter = "all"
+            Journal_charDB.itemFilters.difficultyFilter = "all"
         end
-        Journal_charDB.itemFilters.mythicOnly = nil -- Remove old setting
+        Journal_charDB.itemFilters.mythicFilter = nil -- Remove old setting
     end
     
-    -- Add mythicFilter field if missing from existing filters
-    if Journal_charDB.itemFilters.mythicFilter == nil then
-        Journal_charDB.itemFilters.mythicFilter = "all"
+    -- Add difficultyFilter field if missing from existing filters
+    if Journal_charDB.itemFilters.difficultyFilter == nil then
+        Journal_charDB.itemFilters.difficultyFilter = "all"
     end
     
     local filters = Journal_charDB.itemFilters
     
     -- Handle different search types and filtering  
-    if query ~= "" or filters.maxSources > 0 or filters.mythicFilter ~= "all" then
+    if query ~= "" or filters.maxSources > 0 or filters.difficultyFilter ~= "all" then
         -- Filtering is active
         local filtered = {}
         
@@ -1402,20 +1480,20 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
                                         local showItem = true
                                         
                                         if showItem then
-                                            -- Apply mythic filter
-                                            local passesMythicFilter = true
-                                            if filters.mythicFilter ~= "all" and _G.GetItemTagsCustom then
+                                            -- Apply difficulty filter - for boss search, use simplified logic
+                                            local passesDifficultyFilter = true
+                                            if filters.difficultyFilter ~= "all" and _G.GetItemTagsCustom then
                                                 local itemTags1, itemTags2 = _G.GetItemTagsCustom(itemId)
                                                 local isMythicItem = itemTags1 and bit.band(itemTags1, 0x80) ~= 0 -- Check for 128 bit (Mythic)
                                                 
-                                                if filters.mythicFilter == "mythic" and not isMythicItem then
-                                                    passesMythicFilter = false
-                                                elseif filters.mythicFilter == "nonmythic" and isMythicItem then
-                                                    passesMythicFilter = false
+                                                if filters.difficultyFilter == "mythic" and not isMythicItem then
+                                                    passesDifficultyFilter = false
+                                                elseif filters.difficultyFilter ~= "mythic" and filters.difficultyFilter ~= "all" and isMythicItem then
+                                                    passesDifficultyFilter = false
                                                 end
                                             end
                                             
-                                            if passesMythicFilter then
+                                            if passesDifficultyFilter then
                                                 table.insert(filtered, {
                                                     baseID = itemId,
                                                     itemLink = "item:" .. itemId,
@@ -1452,16 +1530,16 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
                     end
                 end
                 
-                -- Apply mythic filter
-                if shouldInclude and filters.mythicFilter ~= "all" and _G.GetItemTagsCustom then
+                -- Apply difficulty filter - Note: This is simplified for compatibility 
+                -- Full difficulty filtering will be implemented in UIItemsManager
+                if shouldInclude and filters.difficultyFilter ~= "all" and _G.GetItemTagsCustom then
                     local itemTags1, itemTags2 = _G.GetItemTagsCustom(adjID)
                     local isMythicItem = itemTags1 and bit.band(itemTags1, 0x80) ~= 0 -- Check for 128 bit (Mythic)
                     
-                                            -- Mythic filtering logic
-                    
-                    if filters.mythicFilter == "mythic" and not isMythicItem then
+                    -- Difficulty filtering logic - simplified for backward compatibility
+                    if filters.difficultyFilter == "mythic" and not isMythicItem then
                         shouldInclude = false
-                    elseif filters.mythicFilter == "nonmythic" and isMythicItem then
+                    elseif filters.difficultyFilter ~= "mythic" and filters.difficultyFilter ~= "all" and isMythicItem then
                         shouldInclude = false
                     end
                 end
@@ -1471,22 +1549,33 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
                 -- Apply text search for items
                 if shouldInclude and query ~= "" and filters.searchType == "items" then
                     local iName
-                    local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfo(itemID)
-                    if not iName then iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID) end
-                    local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(itemID)
-                    
-                    local nameLower = iName:lower()
-                    searchTooltip:ClearLines()
-                    searchTooltip:SetHyperlink("item:" .. adjID)
-                    local tooltipText = ""
-                    for lineIndex = 1, searchTooltip:NumLines() do
-                        local leftLine  = _G["DJ_ItemSearchTooltipTextLeft" .. lineIndex]
-                        local rightLine = _G["DJ_ItemSearchTooltipTextRight" .. lineIndex]
-                        local lt        = leftLine and leftLine:GetText() or ""
-                        local rt        = rightLine and rightLine:GetText() or ""
-                        tooltipText     = tooltipText .. lt:lower() .. "\n" .. rt:lower() .. "\n"
-                    end
-                    if not (nameLower:find(query, 1, true) or tooltipText:find(query, 1, true)) then
+                    -- ʕ •ᴥ•ʔ✿ Validate itemID before calling GetItemInfo ✿ʕ •ᴥ•ʔ
+                    if adjID and tonumber(adjID) then
+                        local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfo(adjID)
+                        if not iName then iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(adjID) end
+                        local iName, _, iQuality, _, _, iType, iSubType, _, eLoc = GetItemInfoCustom(adjID)
+                        
+                        if iName then
+                            local nameLower = iName:lower()
+                            searchTooltip:ClearLines()
+                            searchTooltip:SetHyperlink("item:" .. adjID)
+                            local tooltipText = ""
+                            for lineIndex = 1, searchTooltip:NumLines() do
+                                local leftLine  = _G["DJ_ItemSearchTooltipTextLeft" .. lineIndex]
+                                local rightLine = _G["DJ_ItemSearchTooltipTextRight" .. lineIndex]
+                                local lt        = leftLine and leftLine:GetText() or ""
+                                local rt        = rightLine and rightLine:GetText() or ""
+                                tooltipText     = tooltipText .. lt:lower() .. "\n" .. rt:lower() .. "\n"
+                            end
+                            if not (nameLower:find(query, 1, true) or tooltipText:find(query, 1, true)) then
+                                shouldInclude = false
+                            end
+                        else
+                            -- ʕ •ᴥ•ʔ✿ Skip items with no name info ✿ʕ •ᴥ•ʔ
+                            shouldInclude = false
+                        end
+                    else
+                        -- ʕ •ᴥ•ʔ✿ Skip invalid item IDs ✿ʕ •ᴥ•ʔ
                         shouldInclude = false
                     end
                 end
@@ -1800,11 +1889,34 @@ function LoadDungeonDetail(dungeon)
     if _G.lastLoadedDungeon ~= dungeon.name then
         ClearDungeonDropRateCache(_G.lastLoadedDungeon)
         _G.lastLoadedDungeon = dungeon.name
+        
+        -- ʕ •ᴥ•ʔ✿ Reset difficulty filter when switching to a different dungeon ✿ʕ •ᴥ•ʔ
+        if Journal_charDB and Journal_charDB.itemFilters then
+            Journal_charDB.itemFilters.difficultyFilter = "all"
+            -- Update the UI button to reflect the reset
+            local UILayoutManager = GetUILayoutManager()
+            if UILayoutManager and mythicFilterButton then
+                UILayoutManager.UpdateDifficultyFilterButton(mythicFilterButton)
+            end
+        end
     end
     
     DungeonJournalFrame.BackgroundTexture:SetTexture("Interface\\AddOns\\TheJournal\\Assets\\interface_open.blp")
     previewFrame:Hide()
     dungeonDetailFrame:Show()
+    
+    -- ʕ •ᴥ•ʔ✿ Smart filter: Auto-clear difficulty filter if only one difficulty available ✿ʕ•ᴥ•ʔ
+    if not HasMultipleDifficulties(dungeon) then
+        if Journal_charDB and Journal_charDB.itemFilters and Journal_charDB.itemFilters.difficultyFilter ~= "all" then
+            local previousFilter = Journal_charDB.itemFilters.difficultyFilter
+            Journal_charDB.itemFilters.difficultyFilter = "all"
+            
+            -- ʕ ◕ᴥ◕ ʔ✿ Show message about auto-clearing filter ✿ʕ ◕ᴥ◕ ʔ
+            local availableDifficulties = GetAvailableDifficulties(dungeon)
+            ShowSmartFilterMessage(dungeon.name, availableDifficulties)
+        end
+    end
+    
     ShowDungeonInteriorUI()
 
     UpdateDungeonTitleWithFilters(dungeon)
@@ -1959,25 +2071,16 @@ UIDropDownMenu_SetText(categoryDropdown, "All Expansions")
 local dungeonButtons = {}
 
 -- Function to calculate attunable items for a dungeon with caching
-local function CalculateDungeonAttunables(dungeon)
-    if not dungeon or not dungeon.items or not dungeon.name then
+-- ʕ •ᴥ•ʔ✿ Calculate attunables for a single difficulty array ✿ʕ•ᴥ•ʔ
+local function CalculateDifficultyAttunables(itemArray)
+    if not itemArray or #itemArray == 0 then
         return 0, 0
-    end
-    
-    local currentTime = GetTime()
-    local cacheKey = dungeon.name
-    
-    -- Check if we have cached data that's still fresh (cache for 30 seconds)
-    local lastUpdate = uiCache.dungeonAttunementLastUpdate[cacheKey]
-    if lastUpdate and (currentTime - lastUpdate) < 30 and uiCache.dungeonAttunement[cacheKey] then
-        local cached = uiCache.dungeonAttunement[cacheKey]
-        return cached.attunablesLeft, cached.totalAttunable
     end
     
     local totalAttunable = 0
     local attunablesLeft = 0
     
-    for _, itemID in ipairs(dungeon.items) do
+    for _, itemID in ipairs(itemArray) do
         local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
         if canAttune == 1 then
             totalAttunable = totalAttunable + 1
@@ -1995,14 +2098,97 @@ local function CalculateDungeonAttunables(dungeon)
         end
     end
     
+    return attunablesLeft, totalAttunable
+end
+
+-- ʕ •ᴥ•ʔ✿ Calculate attunables for all difficulties in a dungeon ✿ʕ•ᴥ•ʔ
+local function CalculateAllDifficultyAttunables(dungeon)
+    if not dungeon or not dungeon.name then
+        return {}, 0, 0
+    end
+    
+    local currentTime = GetTime()
+    local cacheKey = dungeon.name .. "_all_difficulties"
+    
+    -- Check if we have cached data that's still fresh (cache for 30 seconds)
+    local lastUpdate = uiCache.dungeonAttunementLastUpdate[cacheKey]
+    if lastUpdate and (currentTime - lastUpdate) < 30 and uiCache.dungeonAttunement[cacheKey] then
+        local cached = uiCache.dungeonAttunement[cacheKey]
+        return cached.byDifficulty, cached.totalAttunablesLeft, cached.totalAttunable
+    end
+    
+    local byDifficulty = {}
+    local totalAttunablesLeft = 0
+    local totalAttunable = 0
+    
+    -- Define difficulty arrays to check
+    local difficulties = {
+        { key = "normal", array = dungeon.items, name = "Normal" },
+        { key = "heroic", array = dungeon.items_hc, name = "Heroic" },
+        { key = "mythic", array = dungeon.items_my, name = "Mythic" },
+        { key = "10n", array = dungeon.items_10n, name = "10N" },
+        { key = "10h", array = dungeon.items_10h, name = "10H" },
+        { key = "25n", array = dungeon.items_25n, name = "25N" },
+        { key = "25h", array = dungeon.items_25h, name = "25H" }
+    }
+    
+    for _, difficulty in ipairs(difficulties) do
+        if difficulty.array then
+            local attunablesLeft, totalAttunableForDiff = CalculateDifficultyAttunables(difficulty.array)
+            if totalAttunableForDiff > 0 then
+                byDifficulty[difficulty.key] = {
+                    attunablesLeft = attunablesLeft,
+                    totalAttunable = totalAttunableForDiff,
+                    name = difficulty.name
+                }
+                totalAttunablesLeft = totalAttunablesLeft + attunablesLeft
+                totalAttunable = totalAttunable + totalAttunableForDiff
+            end
+        end
+    end
+    
     -- Cache the results
     uiCache.dungeonAttunement[cacheKey] = {
-        attunablesLeft = attunablesLeft,
+        byDifficulty = byDifficulty,
+        totalAttunablesLeft = totalAttunablesLeft,
         totalAttunable = totalAttunable
     }
     uiCache.dungeonAttunementLastUpdate[cacheKey] = currentTime
     
-    return attunablesLeft, totalAttunable
+    return byDifficulty, totalAttunablesLeft, totalAttunable
+end
+
+-- ʕ •ᴥ•ʔ✿ Legacy function for backward compatibility ✿ʕ•ᴥ•ʔ
+local function CalculateDungeonAttunables(dungeon)
+    if not dungeon or not dungeon.name then
+        return 0, 0
+    end
+    
+    local _, totalAttunablesLeft, totalAttunable = CalculateAllDifficultyAttunables(dungeon)
+    return totalAttunablesLeft, totalAttunable
+end
+
+-- ʕ •ᴥ•ʔ✿ Color function for attunement status ✿ʕ•ᴥ•ʔ
+local function GetColorForAttunement(attunablesLeft, totalAttunable)
+    if totalAttunable == 0 then
+        return 0.5, 0.5, 0.5 -- Gray for no attunable items
+    end
+    
+    local percentageLeft = attunablesLeft / totalAttunable
+    
+    if percentageLeft == 0 then
+        -- 100% attuned - clear green
+        return 0, 1, 0
+    elseif percentageLeft <= 0.5 then
+        -- Less than 50% left to attune - yellow
+        return 1, 1, 0
+    elseif percentageLeft < 1 then
+        -- More than 50% left to attune - red
+        return 1, 0.3, 0
+    else
+        -- 100% left to attune (0% attuned) - deep red
+        return 0.8, 0, 0
+    end
 end
 
 -- Function to update attuneable text on a button
@@ -2011,41 +2197,16 @@ local function UpdateAttunableText(btn, dungeon)
         return
     end
     
-    local attunablesLeft, totalAttunable = CalculateDungeonAttunables(dungeon)
+    local byDifficulty, totalAttunablesLeft, totalAttunable = CalculateAllDifficultyAttunables(dungeon)
     
     if totalAttunable > 0 then
-        -- Calculate percentage of items attuned
-        -- Color logic based on items left to attune
-        -- 0 items left = clear green (100% attuned)
-        -- Some items left but < 50% = yellow
-        -- > 50% items left = red  
-        -- 100% items left = deep red (0% attuned)
-        local function GetColorForAttunement(attunablesLeft, totalAttunable)
-            if totalAttunable == 0 then
-                return 0.5, 0.5, 0.5 -- Gray for no attunable items
-            end
-            
-            local percentageLeft = attunablesLeft / totalAttunable
-            
-            if percentageLeft == 0 then
-                -- 100% attuned - clear green
-                return 0, 1, 0
-            elseif percentageLeft <= 0.5 then
-                -- Less than 50% left to attune - yellow
-                return 1, 1, 0
-            elseif percentageLeft < 1 then
-                -- More than 50% left to attune - red
-                return 1, 0.3, 0
-            else
-                -- 100% left to attune (0% attuned) - deep red
-                return 0.8, 0, 0
-            end
-        end
-        
-        local r, g, b = GetColorForAttunement(attunablesLeft, totalAttunable)
+        local r, g, b = GetColorForAttunement(totalAttunablesLeft, totalAttunable)
         local color = string.format("|cFF%02X%02X%02X", r * 255, g * 255, b * 255)
         
-        btn.attunableText:SetText(color .. attunablesLeft .. "/" .. totalAttunable .. " Attunable|r")
+        -- ʕ •ᴥ•ʔ✿ Create clean display text showing only total (difficulty breakdown shown in tooltip) ✿ʕ •ᴥ•ʔ
+        local displayText = color .. totalAttunablesLeft .. "/" .. totalAttunable .. " Attunable|r"
+        
+        btn.attunableText:SetText(displayText)
         btn.attunableText:Show()
     else
         btn.attunableText:Hide()
@@ -2149,12 +2310,38 @@ do
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(d.name)
 
-            -- ʕ ● ᴥ ●ʔ✿ Show attunement stats ✿ʕ ● ᴥ ●ʔ
-            if CalculateDungeonAttunables then
-                local left, total = CalculateDungeonAttunables(d)
-                if total and total > 0 then
-                    local percentLeft = (left / total) * 100
-                    GameTooltip:AddLine(string.format("Attunes Remaining: %d/%d (%.0f%%)", left, total, percentLeft), 1, 0.8, 0, true)
+            -- ʕ ● ᴥ ●ʔ✿ Show attunement stats with difficulty breakdown ✿ʕ ● ᴥ ●ʔ
+            if CalculateAllDifficultyAttunables then
+                local byDifficulty, totalAttunablesLeft, totalAttunable = CalculateAllDifficultyAttunables(d)
+                if totalAttunable and totalAttunable > 0 then
+                    local percentLeft = (totalAttunablesLeft / totalAttunable) * 100
+                    GameTooltip:AddLine(string.format("Total Attunes Remaining: %d/%d (%.0f%%)", totalAttunablesLeft, totalAttunable, percentLeft), 1, 0.8, 0, true)
+                    
+                    -- Show breakdown by difficulty if multiple difficulties exist
+                    local diffCount = 0
+                    for _ in pairs(byDifficulty) do diffCount = diffCount + 1 end
+                    
+                    if diffCount > 1 then
+                        GameTooltip:AddLine(" ")
+                        GameTooltip:AddLine("|cFF87CEEBDifficulty Breakdown:|r")
+                        
+                        -- Sort difficulties for display
+                        local sortedDifficulties = {}
+                        for diffKey, diffData in pairs(byDifficulty) do
+                            table.insert(sortedDifficulties, {
+                                key = diffKey,
+                                data = diffData,
+                                order = ({normal=1, heroic=2, mythic=3, ["10n"]=4, ["10h"]=5, ["25n"]=6, ["25h"]=7})[diffKey] or 99
+                            })
+                        end
+                        table.sort(sortedDifficulties, function(a, b) return a.order < b.order end)
+                        
+                        for _, diff in ipairs(sortedDifficulties) do
+                            local diffPercentLeft = (diff.data.attunablesLeft / diff.data.totalAttunable) * 100
+                            local r, g, b = GetColorForAttunement(diff.data.attunablesLeft, diff.data.totalAttunable)
+                            GameTooltip:AddLine(string.format("  %s: %d/%d (%.0f%%)", diff.data.name, diff.data.attunablesLeft, diff.data.totalAttunable, diffPercentLeft), r, g, b, true)
+                        end
+                    end
                 end
             end
 
@@ -2720,6 +2907,53 @@ SlashCmdList["DJCLEAR"] = function()
 end
 _G.PrintAttunementReport = PrintAttunementReport
 _G.InvalidateItemCache = InvalidateItemCache -- Expose for external use
+_G.GetAvailableDifficulties = GetAvailableDifficulties -- Expose for external use
+_G.HasMultipleDifficulties = HasMultipleDifficulties -- Expose for external use
+_G.CalculateAllDifficultyAttunables = CalculateAllDifficultyAttunables -- Expose for external use
+_G.CalculateDungeonAttunables = CalculateDungeonAttunables -- Expose for external use (legacy)
+_G.InvalidateDungeonAttunementCache = InvalidateDungeonAttunementCache -- Expose for external use
+
+-- ʕ •ᴥ•ʔ✿ Debug function to test multi-difficulty attunement display ✿ʕ•ᴥ•ʔ
+local function TestMultiDifficultyDisplay(dungeonName)
+    if not dungeonName then
+        print("|cFFFF0000[Multi-Difficulty Test]|r Usage: /run _G.TestMultiDifficultyDisplay('Naxxramas')")
+        return
+    end
+    
+    -- Find the dungeon by name
+    local dungeon = nil
+    for _, d in ipairs(_G.dungeonData or {}) do
+        if d.name and d.name:lower():find(dungeonName:lower()) then
+            dungeon = d
+            break
+        end
+    end
+    
+    if not dungeon then
+        print("|cFFFF0000[Multi-Difficulty Test]|r Dungeon not found: " .. dungeonName)
+        return
+    end
+    
+    print("|cFF87CEEB[Multi-Difficulty Test]|r Testing " .. dungeon.name)
+    
+    local availableDifficulties = GetAvailableDifficulties(dungeon)
+    print("|cFF87CEEB[Available Difficulties]|r " .. table.concat(availableDifficulties, ", "))
+    
+    local byDifficulty, totalLeft, totalAttunable = CalculateAllDifficultyAttunables(dungeon)
+    print("|cFF87CEEB[Total Attunables]|r " .. totalLeft .. "/" .. totalAttunable)
+    
+    if totalAttunable > 0 then
+        for diffKey, diffData in pairs(byDifficulty) do
+            local r, g, b = GetColorForAttunement(diffData.attunablesLeft, diffData.totalAttunable)
+            local color = string.format("|cFF%02X%02X%02X", r * 255, g * 255, b * 255)
+            print(color .. "  " .. diffData.name .. ": " .. diffData.attunablesLeft .. "/" .. diffData.totalAttunable .. "|r")
+        end
+    end
+    
+    print("|cFF87CEEB[Has Multiple Difficulties]|r " .. tostring(HasMultipleDifficulties(dungeon)))
+end
+
+_G.TestMultiDifficultyDisplay = TestMultiDifficultyDisplay -- Expose for debugging
 
 -- Add escape key functionality to close the journal
 table.insert(UISpecialFrames, "DungeonJournalFrame")
@@ -2755,8 +2989,8 @@ function FilterAndSortDungeons()
     
     -- Sort logic changes if we are viewing *All* expansions.
     table.sort(filtered, function(a, b)
-        local aAttunablesLeft, aTotalAttunable = CalculateDungeonAttunables(a.dungeon)
-        local bAttunablesLeft, bTotalAttunable = CalculateDungeonAttunables(b.dungeon)
+        local _, aAttunablesLeft, aTotalAttunable = CalculateAllDifficultyAttunables(a.dungeon)
+        local _, bAttunablesLeft, bTotalAttunable = CalculateAllDifficultyAttunables(b.dungeon)
 
         local aPercentage = aTotalAttunable > 0 and (aAttunablesLeft / aTotalAttunable) or 0
         local bPercentage = bTotalAttunable > 0 and (bAttunablesLeft / bTotalAttunable) or 0
@@ -2834,21 +3068,33 @@ function GenerateAttunementReport()
     
     for _, btn in ipairs(dungeonButtons) do
         if btn and btn.dungeon then
-            local attunablesLeft, dungeonTotal = CalculateDungeonAttunables(btn.dungeon)
+            local byDifficulty, totalAttunablesLeft, totalAttunable = CalculateAllDifficultyAttunables(btn.dungeon)
             local attunementPercentage = 0
-            if dungeonTotal > 0 then
-                attunementPercentage = attunablesLeft / dungeonTotal
+            if totalAttunable > 0 then
+                attunementPercentage = totalAttunablesLeft / totalAttunable
             end
             
-            -- Collect unique items from this dungeon for global calculation
-            if btn.dungeon.items then
-                for _, itemID in ipairs(btn.dungeon.items) do
-                    local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
-                    if canAttune == 1 then
-                        globalUniqueItems[itemID] = true
-                        local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
-                        if attuneProgress >= 100 then
-                            globalAttunedItems[itemID] = true
+            -- Collect unique items from all difficulty arrays for global calculation
+            local difficulties = {
+                { array = btn.dungeon.items },
+                { array = btn.dungeon.items_hc },
+                { array = btn.dungeon.items_my },
+                { array = btn.dungeon.items_10n },
+                { array = btn.dungeon.items_10h },
+                { array = btn.dungeon.items_25n },
+                { array = btn.dungeon.items_25h }
+            }
+            
+            for _, difficulty in ipairs(difficulties) do
+                if difficulty.array then
+                    for _, itemID in ipairs(difficulty.array) do
+                        local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
+                        if canAttune == 1 then
+                            globalUniqueItems[itemID] = true
+                            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                            if attuneProgress >= 100 then
+                                globalAttunedItems[itemID] = true
+                            end
                         end
                     end
                 end
@@ -2856,9 +3102,10 @@ function GenerateAttunementReport()
             
             table.insert(reportData, {
                 name = btn.dungeon.name or "Unknown",
-                attunablesLeft = attunablesLeft,
-                totalAttunable = dungeonTotal,
-                attunementPercentage = attunementPercentage
+                attunablesLeft = totalAttunablesLeft,
+                totalAttunable = totalAttunable,
+                attunementPercentage = attunementPercentage,
+                difficultyBreakdown = byDifficulty
             })
         end
     end

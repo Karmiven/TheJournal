@@ -90,28 +90,56 @@ function UILayoutManager.OnSourceCountEnter(button)
     GameTooltip:Show()
 end
 
--- ʕ •ᴥ•ʔ✿ Mythic Filter Options ✿ʕ•ᴥ•ʔ
-local mythicFilterOptions = {
+-- ʕ •ᴥ•ʔ✿ Difficulty Filter Options ✿ʕ•ᴥ•ʔ
+local difficultyFilterOptions = {
     { state = "all", text = "All Difficulties", icon = "Interface\\Icons\\INV_Misc_Gem_01" },
-    { state = "mythic", text = "Mythic Only", icon = "Interface\\Icons\\INV_Misc_Gem_Emerald_01" },
-    { state = "nonmythic", text = "Non-Mythic", icon = "Interface\\Icons\\INV_Misc_Gem_Ruby_01" }
+    { state = "normal", text = "Normal", icon = "Interface\\Icons\\INV_Misc_Gem_Sapphire_01" },
+    { state = "heroic", text = "Heroic", icon = "Interface\\Icons\\INV_Misc_Gem_Ruby_01" },
+    { state = "mythic", text = "Mythic", icon = "Interface\\Icons\\INV_Misc_Gem_Emerald_01" },
+    { state = "10n", text = "10-Man Normal", icon = "Interface\\Icons\\INV_Misc_Gem_Amethyst_01" },
+    { state = "10h", text = "10-Man Heroic", icon = "Interface\\Icons\\INV_Misc_Gem_Amethyst_02" },
+    { state = "25n", text = "25-Man Normal", icon = "Interface\\Icons\\INV_Misc_Gem_Topaz_01" },
+    { state = "25h", text = "25-Man Heroic", icon = "Interface\\Icons\\INV_Misc_Gem_Topaz_02" }
 }
 
-local currentMythicIndex = 1
+local currentDifficultyIndex = 1
 
-function UILayoutManager.InitializeMythicFilter()
-    -- Find current index based on saved setting
-    if Journal_charDB.itemFilters.mythicFilter == "mythic" then
-        currentMythicIndex = 2
-    elseif Journal_charDB.itemFilters.mythicFilter == "nonmythic" then
-        currentMythicIndex = 3
-    else
-        currentMythicIndex = 1
+function UILayoutManager.InitializeDifficultyFilter()
+    -- Find current index based on saved setting - support old mythicFilter migration
+    local currentFilter = "all"
+    if Journal_charDB.itemFilters then
+        -- Migration from old mythicFilter
+        if Journal_charDB.itemFilters.mythicFilter then
+            if Journal_charDB.itemFilters.mythicFilter == "mythic" then
+                currentFilter = "mythic"
+            elseif Journal_charDB.itemFilters.mythicFilter == "nonmythic" then
+                currentFilter = "normal"
+            else
+                currentFilter = "all"
+            end
+            Journal_charDB.itemFilters.difficultyFilter = currentFilter
+            Journal_charDB.itemFilters.mythicFilter = nil -- Remove old setting
+        else
+            currentFilter = Journal_charDB.itemFilters.difficultyFilter or "all"
+        end
+    end
+    
+    -- Find index for current filter
+    for i, option in ipairs(difficultyFilterOptions) do
+        if option.state == currentFilter then
+            currentDifficultyIndex = i
+            break
+        end
     end
 end
 
-function UILayoutManager.UpdateMythicFilterButton(button)
-    local opt = mythicFilterOptions[currentMythicIndex]
+-- Legacy function name for compatibility
+function UILayoutManager.InitializeMythicFilter()
+    UILayoutManager.InitializeDifficultyFilter()
+end
+
+function UILayoutManager.UpdateDifficultyFilterButton(button)
+    local opt = difficultyFilterOptions[currentDifficultyIndex]
     button:SetNormalTexture(opt.icon)
     local tex = button:GetNormalTexture()
     if tex then
@@ -119,20 +147,66 @@ function UILayoutManager.UpdateMythicFilterButton(button)
         tex:SetSize(24, 24)
     end
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-    Journal_charDB.itemFilters.mythicFilter = opt.state
+    
+    -- Initialize itemFilters if needed
+    if not Journal_charDB.itemFilters then
+        Journal_charDB.itemFilters = {}
+    end
+    Journal_charDB.itemFilters.difficultyFilter = opt.state
 end
 
-function UILayoutManager.OnMythicFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
+-- Legacy function name for compatibility
+function UILayoutManager.UpdateMythicFilterButton(button)
+    UILayoutManager.UpdateDifficultyFilterButton(button)
+end
+
+function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
     -- Store tooltip state before making changes
     local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == button
     
-    currentMythicIndex = currentMythicIndex + 1
-    if currentMythicIndex > #mythicFilterOptions then
-        currentMythicIndex = 1
+    -- ʕ •ᴥ•ʔ✿ Smart filtering: Skip unavailable difficulties for current dungeon ✿ʕ•ᴥ•ʔ
+    local availableDifficulties = {}
+    if _G.currentDungeon and _G.GetAvailableDifficulties then
+        local dungeonDifficulties = _G.GetAvailableDifficulties(_G.currentDungeon)
+        availableDifficulties = {"all"}
+        for _, diff in ipairs(dungeonDifficulties) do
+            table.insert(availableDifficulties, diff)
+        end
+    else
+        -- Fallback to all options
+        for _, opt in ipairs(difficultyFilterOptions) do
+            table.insert(availableDifficulties, opt.state)
+        end
     end
-    UILayoutManager.UpdateMythicFilterButton(button)
-    -- Reset warning flag when filter changes
-    _G.mythicFilterWarningShown = false
+    
+    -- Find next available difficulty
+    local currentState = difficultyFilterOptions[currentDifficultyIndex].state
+    local nextIndex = nil
+    
+    for i = 1, #availableDifficulties do
+        if availableDifficulties[i] == currentState then
+            local nextDifficulty = availableDifficulties[i + 1] or availableDifficulties[1]
+            for j, opt in ipairs(difficultyFilterOptions) do
+                if opt.state == nextDifficulty then
+                    nextIndex = j
+                    break
+                end
+            end
+            break
+        end
+    end
+    
+    if nextIndex then
+        currentDifficultyIndex = nextIndex
+    else
+        -- Fallback to normal cycling
+        currentDifficultyIndex = currentDifficultyIndex + 1
+        if currentDifficultyIndex > #difficultyFilterOptions then
+            currentDifficultyIndex = 1
+        end
+    end
+    
+    UILayoutManager.UpdateDifficultyFilterButton(button)
     
     -- Invalidate cache when filter changes
     InvalidateItemsCache()
@@ -143,25 +217,55 @@ function UILayoutManager.OnMythicFilterClick(button, InvalidateItemsCache, LoadD
     
     -- Restore tooltip if it was shown before the click
     if tooltipWasShown then
-        local opt = mythicFilterOptions[currentMythicIndex]
-        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-        GameTooltip:ClearLines()
-        GameTooltip:SetText("|cFFFF6600" .. "Mythic Filter: " .. opt.text .. "|r")
-        GameTooltip:AddLine("All Difficulties: Show all items", 1, 1, 1)
-        GameTooltip:AddLine("Mythic Only: Show only mythic items", 1, 1, 1)
-        GameTooltip:AddLine("Non-Mythic: Show only non-mythic items", 1, 1, 1)
-        GameTooltip:Show()
+        UILayoutManager.ShowDifficultyFilterTooltip(button)
     end
 end
 
-function UILayoutManager.OnMythicFilterEnter(button)
-    local opt = mythicFilterOptions[currentMythicIndex]
+-- Legacy function name for compatibility
+function UILayoutManager.OnMythicFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
+    UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
+end
+
+function UILayoutManager.ShowDifficultyFilterTooltip(button)
+    local opt = difficultyFilterOptions[currentDifficultyIndex]
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-    GameTooltip:SetText("|cFFFF6600" .. "Mythic Filter: " .. opt.text .. "|r")
-    GameTooltip:AddLine("All Difficulties: Show all items", 1, 1, 1)
-    GameTooltip:AddLine("Mythic Only: Show only mythic items", 1, 1, 1)
-    GameTooltip:AddLine("Non-Mythic: Show only non-mythic items", 1, 1, 1)
+    GameTooltip:ClearLines()
+    GameTooltip:SetText("|cFFFF6600" .. "Difficulty Filter: " .. opt.text .. "|r")
+    
+    -- ʕ •ᴥ•ʔ✿ Show available difficulties for current dungeon ✿ʕ•ᴥ•ʔ
+    if _G.currentDungeon and _G.GetAvailableDifficulties then
+        local availableDifficulties = _G.GetAvailableDifficulties(_G.currentDungeon)
+        if #availableDifficulties > 1 then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cFF87CEEB" .. _G.currentDungeon.name .. " Available Difficulties:|r")
+            for _, diff in ipairs(availableDifficulties) do
+                for _, filterOpt in ipairs(difficultyFilterOptions) do
+                    if filterOpt.state == diff then
+                        local color = (diff == opt.state) and "|cFF00FF00" or "|cFFFFFFFF"
+                        GameTooltip:AddLine(color .. "• " .. filterOpt.text .. "|r")
+                        break
+                    end
+                end
+            end
+        else
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("|cFF888888This dungeon only has one difficulty|r")
+        end
+    else
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Click to cycle through difficulty filters", 1, 1, 1)
+    end
+    
     GameTooltip:Show()
+end
+
+function UILayoutManager.OnDifficultyFilterEnter(button)
+    UILayoutManager.ShowDifficultyFilterTooltip(button)
+end
+
+-- Legacy function name for compatibility
+function UILayoutManager.OnMythicFilterEnter(button)
+    UILayoutManager.OnDifficultyFilterEnter(button)
 end
 
 -- ʕ •ᴥ•ʔ✿ UI Show/Hide Management ✿ʕ•ᴥ•ʔ
@@ -250,7 +354,7 @@ end
 -- ʕ •ᴥ•ʔ✿ Initialize All Systems ✿ʕ•ᴥ•ʔ
 function UILayoutManager.Initialize()
     UILayoutManager.InitializeSourceFilter()
-    UILayoutManager.InitializeMythicFilter()
+    UILayoutManager.InitializeDifficultyFilter()
 end
 
 -- ʕ •ᴥ•ʔ✿ Make globally accessible ✿ʕ•ᴥ•ʔ
