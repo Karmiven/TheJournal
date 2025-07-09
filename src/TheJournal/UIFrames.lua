@@ -199,7 +199,6 @@ local function ProcessCacheUpdates()
     
     -- Cache global function references locally
     local GetItemAttuneProgress = _G.GetItemAttuneProgress
-    local GetItemLinkAttuneProgress = _G.GetItemLinkAttuneProgress
     local GetItemAttuneForge = _G.GetItemAttuneForge
     
     while processed < batchSize and queueLength > 0 do
@@ -208,13 +207,7 @@ local function ProcessCacheUpdates()
         
         -- Only update if not already cached
         if smartCache.attunement[itemID] == nil then
-            local progress = 0
-            if GetItemAttuneProgress then
-                progress = GetItemAttuneProgress(itemID) or 0
-            elseif GetItemLinkAttuneProgress then
-                local itemLink = "item:" .. itemID
-                progress = GetItemLinkAttuneProgress(itemLink) or 0
-            end
+            local progress = GetItemAttuneProgress and GetItemAttuneProgress(itemID) or 0
             SetCachedAttunement(itemID, progress)
             
             -- Only get forge level if attuned
@@ -1895,6 +1888,15 @@ function LoadDungeonDetail(dungeon)
         ClearDungeonDropRateCache(_G.lastLoadedDungeon)
         _G.lastLoadedDungeon = dungeon.name
         
+        -- ʕ •ᴥ•ʔ✿ Invalidate attunement cache when switching dungeons ✿ʕ •ᴥ•ʔ
+        uiCache.dungeonAttunement = {}
+        uiCache.dungeonAttunementLastUpdate = {}
+        
+        -- ʕ •ᴥ•ʔ✿ Also invalidate UIDungeonManagement cache ✿ʕ •ᴥ•ʔ
+        if _G.UIDungeonManagement and _G.UIDungeonManagement.InvalidateDungeonAttunementCache then
+            _G.UIDungeonManagement.InvalidateDungeonAttunementCache()
+        end
+        
         -- ʕ •ᴥ•ʔ✿ Reset difficulty filter when switching to a different dungeon ✿ʕ •ᴥ•ʔ
         if Journal_charDB and Journal_charDB.itemFilters then
             Journal_charDB.itemFilters.difficultyFilter = "all"
@@ -2115,9 +2117,9 @@ local function CalculateAllDifficultyAttunables(dungeon)
     local currentTime = GetTime()
     local cacheKey = dungeon.name .. "_all_difficulties"
     
-    -- Check if we have cached data that's still fresh (cache for 30 seconds)
+    -- Check if we have cached data that's still fresh (cache for 5 seconds)
     local lastUpdate = uiCache.dungeonAttunementLastUpdate[cacheKey]
-    if lastUpdate and (currentTime - lastUpdate) < 30 and uiCache.dungeonAttunement[cacheKey] then
+    if lastUpdate and (currentTime - lastUpdate) < 5 and uiCache.dungeonAttunement[cacheKey] then
         local cached = uiCache.dungeonAttunement[cacheKey]
         return cached.byDifficulty, cached.totalAttunablesLeft, cached.totalAttunable
     end
@@ -3179,6 +3181,12 @@ end
 function ShowJournal()
     if DungeonJournalFrame then
         DungeonJournalFrame:Show()
+        
+        -- ʕ •ᴥ•ʔ✿ Refresh bag scanner when opening journal ✿ʕ •ᴥ•ʔ
+        if _G.TheJournal_UIBagScanner and _G.TheJournal_UIBagScanner.RefreshBagScan then
+            _G.TheJournal_UIBagScanner.RefreshBagScan()
+        end
+        
         -- Use a timer to ensure UI state is fully loaded before sorting
         C_Timer.After(0.1, function()
             -- Sort dungeons immediately when showing

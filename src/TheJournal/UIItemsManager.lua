@@ -284,18 +284,14 @@ function UIItemsManager.PrepareItemsToShow(dungeon, GetCacheKey, preparedItemsCa
         
         if filterIcon == "Attunable" then
             -- Show items that can be attuned and have progress < 100%
+            -- ʕ •ᴥ•ʔ✿ Always check current status, never use cache for filters ✿ʕ •ᴥ•ʔ
             local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
             local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
             shouldAdd = (canAttune == 1) and (attuneProgress < 100)
         elseif filterIcon == "Attuned" then
             -- Show only fully attuned items - use item ID-based function
-            local attuneProgress = 0
-            if _G.GetItemAttuneProgress then
-                attuneProgress = _G.GetItemAttuneProgress(itemID) or 0
-            elseif _G.GetItemLinkAttuneProgress then
-                local itemLink = "item:" .. itemID
-                attuneProgress = _G.GetItemLinkAttuneProgress(itemLink) or 0
-            end
+            -- ʕ •ᴥ•ʔ✿ Always check current status, never use cache for filters ✿ʕ •ᴥ•ʔ
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
             shouldAdd = (attuneProgress >= 100)
         end
         
@@ -317,14 +313,7 @@ function UIItemsManager.PrepareItemsToShow(dungeon, GetCacheKey, preparedItemsCa
             
             if progress == nil then
                 -- Not in cache, get immediately for visible items
-                if _G.GetItemAttuneProgress then
-                    progress = _G.GetItemAttuneProgress(item.baseID) or 0
-                elseif _G.GetItemLinkAttuneProgress then
-                    local itemLink = "item:" .. item.baseID
-                    progress = _G.GetItemLinkAttuneProgress(itemLink) or 0
-                else
-                    progress = 0
-                end
+                progress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(item.baseID) or 0
                 
                 -- Cache the progress immediately
                 SetCachedAttunement(item.baseID, progress)

@@ -258,7 +258,6 @@ function Performance.ProcessCacheUpdates()
     local queueLength = #smartCache.updateQueue
     
     local GetItemAttuneProgress = _G.GetItemAttuneProgress
-    local GetItemLinkAttuneProgress = _G.GetItemLinkAttuneProgress
     local GetItemAttuneForge = _G.GetItemAttuneForge
     
     while processed < batchSize and queueLength > 0 do
@@ -266,13 +265,7 @@ function Performance.ProcessCacheUpdates()
         queueLength = queueLength - 1
         
         if smartCache.attunement[itemID] == nil then
-            local progress = 0
-            if GetItemAttuneProgress then
-                progress = GetItemAttuneProgress(itemID) or 0
-            elseif GetItemLinkAttuneProgress then
-                local itemLink = "item:" .. itemID
-                progress = GetItemLinkAttuneProgress(itemLink) or 0
-            end
+            local progress = GetItemAttuneProgress and GetItemAttuneProgress(itemID) or 0
             Performance.SetCachedAttunement(itemID, progress)
             
             if progress >= 100 and smartCache.forge[itemID] == nil then

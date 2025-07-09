@@ -198,9 +198,9 @@ function UIDungeonManagement.CalculateDungeonAttunables(dungeon)
     local currentTime = GetTime()
     local cacheKey = dungeon.name
     
-    -- Check if we have cached data that's still fresh (cache for 30 seconds)
+    -- Check if we have cached data that's still fresh (cache for 5 seconds)
     local lastUpdate = dungeonCache.dungeonAttunementLastUpdate[cacheKey]
-    if lastUpdate and (currentTime - lastUpdate) < 30 and dungeonCache.dungeonAttunement[cacheKey] then
+    if lastUpdate and (currentTime - lastUpdate) < 5 and dungeonCache.dungeonAttunement[cacheKey] then
         local cached = dungeonCache.dungeonAttunement[cacheKey]
         return cached.attunablesLeft, cached.totalAttunable
     end

@@ -13,6 +13,7 @@ local bagItemCounts = {}
 local GetContainerNumSlots = GetContainerNumSlots
 local GetContainerItemLink = GetContainerItemLink
 local GetContainerItemInfo = GetContainerItemInfo
+local GetInventoryItemLink = GetInventoryItemLink
 local GetTime = GetTime
 local tonumber = tonumber
 local pairs = pairs
@@ -29,6 +30,8 @@ bagEventFrame:RegisterEvent("BAG_UPDATE")
 bagEventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 bagEventFrame:RegisterEvent("PLAYER_LOGIN")
 bagEventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+bagEventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+bagEventFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 
 -- ʕ •ᴥ•ʔ✿ Core bag scanning function ✿ʕ •ᴥ•ʔ
 function UIBagScanner.ScanAllBags()
@@ -75,6 +78,19 @@ function UIBagScanner.ScanAllBags()
         end
     end
     
+    -- ʕ •ᴥ•ʔ✿ Scan equipped gear (slots 0-19) ✿ʕ •ᴥ•ʔ
+    for slot = 0, 19 do
+        local itemLink = GetInventoryItemLink("player", slot)
+        if itemLink then
+            local itemID = tonumber(itemLink:match("item:(%d+)"))
+            if itemID then
+                -- ʕ •ᴥ•ʔ✿ Equipped items count as 1 ✿ʕ •ᴥ•ʔ
+                bagItemHash[itemID] = true
+                bagItemCounts[itemID] = (bagItemCounts[itemID] or 0) + 1
+            end
+        end
+    end
+    
     -- ʕ •ᴥ•ʔ✿ Trigger UI update if journal is open ✿ʕ •ᴥ•ʔ
     if _G.currentDungeon and _G.LoadDungeonDetail then
         UIBagScanner.UpdateJournalDisplay()
@@ -102,6 +118,31 @@ function UIBagScanner.UpdateJournalDisplay()
     end)
 end
 
+-- ʕ •ᴥ•ʔ✿ Invalidate attunement cache when items change ✿ʕ •ᴥ•ʔ
+function UIBagScanner.InvalidateAttunementCache()
+    -- Clear UI cache
+    if _G.uiCache then
+        _G.uiCache.dungeonAttunement = {}
+        _G.uiCache.dungeonAttunementLastUpdate = {}
+    end
+    
+    -- Clear UIDungeonManagement cache
+    if _G.UIDungeonManagement and _G.UIDungeonManagement.InvalidateDungeonAttunementCache then
+        _G.UIDungeonManagement.InvalidateDungeonAttunementCache()
+    end
+    
+    -- ʕ •ᴥ•ʔ✿ Clear prepared items cache so filters update properly ✿ʕ •ᴥ•ʔ
+    if _G.preparedItemsCache then
+        _G.preparedItemsCache = {}
+    end
+    
+    -- Clear smart cache for attunement data
+    if _G.smartCache then
+        _G.smartCache.attunement = {}
+        _G.smartCache.forge = {}
+    end
+end
+
 -- ʕ •ᴥ•ʔ✿ Event handler ✿ʕ •ᴥ•ʔ
 bagEventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -109,8 +150,23 @@ bagEventFrame:SetScript("OnEvent", function(self, event, ...)
         C_Timer.After(2, function()
             UIBagScanner.ScanAllBags()
         end)
-    elseif event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" then
+    elseif event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         UIBagScanner.ScanAllBags()
+    elseif event == "CHAT_MSG_SYSTEM" then
+        local message = ...
+        if message and (message:find("attuned") or message:find("Attunement") or message:find("forge")) then
+            -- ʕ •ᴥ•ʔ✿ Invalidate cache when attunement status changes ✿ʕ •ᴥ•ʔ
+            UIBagScanner.InvalidateAttunementCache()
+            
+            -- ʕ •ᴥ•ʔ✿ Force refresh the journal if it's open ✿ʕ •ᴥ•ʔ
+            if _G.DungeonJournalFrame and _G.DungeonJournalFrame:IsShown() and _G.currentDungeon then
+                C_Timer.After(0.5, function()
+                    if _G.LoadDungeonDetail then
+                        _G.LoadDungeonDetail(_G.currentDungeon)
+                    end
+                end)
+            end
+        end
     end
 end)
 
@@ -134,7 +190,7 @@ function UIBagScanner.AddBagIndicatorToButton(button, itemID)
         button.bagCountText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
     end
     
-    -- ʕ •ᴥ•ʔ✿ Check if item is in bags ✿ʕ •ᴥ•ʔ
+    -- ʕ •ᴥ•ʔ✿ Check if item is in bags or equipped ✿ʕ •ᴥ•ʔ
     local isInBags = UIBagScanner.IsItemInBags(itemID)
     local itemCount = UIBagScanner.GetItemCountInBags(itemID)
     
@@ -151,7 +207,17 @@ function UIBagScanner.AddBagIndicatorToButton(button, itemID)
             button.bagCountText:Hide()
         end
         
-
+        -- ʕ •ᴥ•ʔ✿ Add tooltip to show bag/equipped status ✿ʕ •ᴥ•ʔ
+        if not button.bagTooltipScript then
+            button.bagTooltipScript = true
+            button:HookScript("OnEnter", function(self)
+                if self.bagIndicator and self.bagIndicator:IsShown() then
+                    GameTooltip:AddLine("|cFF00FF88You own this item|r")
+                    GameTooltip:AddLine("|cFFFFFFFFIn bags/equipped: " .. (UIBagScanner.GetItemCountInBags(itemID) or 0) .. "|r")
+                    GameTooltip:Show()
+                end
+            end)
+        end
     else
         button.bagIndicator:Hide()
         button.bagCountText:Hide()
@@ -196,6 +262,21 @@ end
 SLASH_BAGDEBUG1 = "/bagdebug"
 SlashCmdList["BAGDEBUG"] = function()
     UIBagScanner.DebugPrintBagContents()
+end
+
+-- ʕ •ᴥ•ʔ✿ Attunement cache clear command ✿ʕ •ᴥ•ʔ
+SLASH_CLEARATTUNECACHE1 = "/clearattunecache"
+SLASH_CLEARATTUNECACHE2 = "/refreshattune"
+SlashCmdList["CLEARATTUNECACHE"] = function()
+    UIBagScanner.InvalidateAttunementCache()
+    print("|cFF00FF00[The Journal]|r Attunement cache cleared!")
+    
+    -- Force refresh the journal if it's open
+    if _G.DungeonJournalFrame and _G.DungeonJournalFrame:IsShown() and _G.currentDungeon then
+        if _G.LoadDungeonDetail then
+            _G.LoadDungeonDetail(_G.currentDungeon)
+        end
+    end
 end
 
 return UIBagScanner 

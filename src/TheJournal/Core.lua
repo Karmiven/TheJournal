@@ -1554,6 +1554,11 @@ SlashCmdList["DJ"] = function(msg)
     elseif args == "" then
         if DungeonJournalFrame then
             DungeonJournalFrame:Show()
+            
+            -- ʕ •ᴥ•ʔ✿ Refresh bag scanner when opening journal ✿ʕ •ᴥ•ʔ
+            if _G.TheJournal_UIBagScanner and _G.TheJournal_UIBagScanner.RefreshBagScan then
+                _G.TheJournal_UIBagScanner.RefreshBagScan()
+            end
         end
     else
         print("|cFFFFD700[DJ Commands]|r Available commands:")
