@@ -25,10 +25,10 @@
 
 - **Dungeon & Raid Navigation**: Browse all available dungeons and raids.
 - **Item Tracking**: View items, attunement progress, and forge levels.
-- **Bag Scanner**: Instantly see which items you have in your bags (with icons and counts).
+- **Bag Scanner**: Instantly see which items you have in your bags
 - **Friends System**: Track friends' attunement progress and share items.
 - **Bounty System**: Track and manage bounties for items.
-- **Quest System**: Take on random attunement quests for extra rewards!
+- **Quest System**: Take on random attunement quests for bragging rights!
 
 ---
 
@@ -73,8 +73,7 @@ A: Models must be in WDB cache to be rendered, load the model in game and it wil
 
 ## 🙏 Thanks & Credits
 
-- Inspired by the WoW community and all who love attunement challenges.
 - Special thanks to testers, contributors, and friends who made this possible.
 
 **Happy adventuring!**  
-*For support or feedback, reach out via GitHub or in-game.*
+*For support or feedback, reach out via GitHub, discord, or in-game.*
