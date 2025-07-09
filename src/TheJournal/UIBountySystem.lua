@@ -91,5 +91,5 @@ local DUNGEON_AFFIX_NAMES = {
 _G.BountySystem = BountySystem
 
 -- ʕノ•ᴥ•ʔノ✿ Auto-initialize ✿ʕノ•ᴥ•ʔノ
-print("|cFF00FF00[DJ Bounty System]|r Bounty system module loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
 

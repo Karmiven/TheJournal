@@ -179,7 +179,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
     end
     
     if totalFriends == 0 then
-        print("|cFFFFD700[DJ Friends]|r No friends data available. Adding self...")
+        -- ʕ •ᴥ•ʔ✿ No friends data available. Adding self silently ✿ʕ •ᴥ•ʔ
         if _G.AddSelfToFriendsData then
             _G.AddSelfToFriendsData()
         end
@@ -188,7 +188,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
         for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
             totalFriends = totalFriends + 1
         end
-        print("|cFFFFD700[DJ Friends]|r After adding self, total friends: " .. totalFriends)
+        -- ʕ •ᴥ•ʔ✿ After adding self, total friends: " .. totalFriends .. " silently ✿ʕ •ᴥ•ʔ
     end
     
     -- ʕ •ᴥ•ʔ✿ Ensure player data is in global friends data ✿ʕ•ᴥ•ʔ
@@ -238,7 +238,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
             if not friendEntries[i] then
                 friendEntries[i] = CreateFriendEntry(i)
                 if not friendEntries[i] then
-                    print("|cFFFF0000[DJ Friends]|r Failed to create friend entry " .. i)
+                    -- ʕ •ᴥ•ʔ✿ Failed to create friend entry " .. i .. " silently ✿ʕ •ᴥ•ʔ
                     return
                 end
             end

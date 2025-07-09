@@ -1826,6 +1826,11 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
             btn.favoriteIcon:Hide()
         end
 
+        -- ʕ •ᴥ•ʔ✿ Add bag indicator ✿ʕ•ᴥ•ʔ
+        if _G.TheJournal_UIBagScanner and _G.TheJournal_UIBagScanner.AddBagIndicatorToButton then
+            _G.TheJournal_UIBagScanner.AddBagIndicatorToButton(btn, info.baseID)
+        end
+
         -- Add bounty icon if item is bountied (positioned on the item icon)
         SetFrameBounty(btn, iLink, btn.iconTex)
 
@@ -3583,7 +3588,7 @@ function UpdateAttunementFriendsDisplay()
     end
     
     if totalFriends == 0 then
-        print("|cFFFFD700[DJ Friends]|r No friends data available. Adding self...")
+        -- ʕ •ᴥ•ʔ✿ No friends data available. Adding self silently ✿ʕ •ᴥ•ʔ
         if _G.AddSelfToFriendsData then
             _G.AddSelfToFriendsData()
         end
@@ -3592,7 +3597,7 @@ function UpdateAttunementFriendsDisplay()
         for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA or {}) do
             totalFriends = totalFriends + 1
         end
-        print("|cFFFFD700[DJ Friends]|r After adding self, total friends: " .. totalFriends)
+        -- ʕ •ᴥ•ʔ✿ After adding self, total friends: " .. totalFriends .. " silently ✿ʕ •ᴥ•ʔ
     end
     
     -- ʕノ•ᴥ•ʔノ✿ Ensure player data is in global friends data ✿ʕノ•ᴥ•ʔノ
@@ -3644,7 +3649,7 @@ function UpdateAttunementFriendsDisplay()
             if not friendEntries[i] then
                 friendEntries[i] = CreateFriendEntry(i)
                 if not friendEntries[i] then
-                    print("|cFFFF0000[DJ Friends]|r Failed to create friend entry " .. i)
+                    -- ʕ •ᴥ•ʔ✿ Failed to create friend entry " .. i .. " silently ✿ʕ •ᴥ•ʔ
                     return
                 end
             end
@@ -4069,7 +4074,7 @@ initFrame:SetScript("OnEvent", function(self, event)
         C_Timer.After(2, function()
             -- ʕ ◕ᴥ◕ ʔ✿ Initialize friends system directly ✿ʕ ◕ᴥ◕ ʔ
             InitializeFriendsDisplay()
-            print("|cFF00FF00[DJ Friends]|r Friends leaderboard initialized!")
+            -- ʕ •ᴥ•ʔ✿ Friends leaderboard initialized silently ✿ʕ •ᴥ•ʔ
             
             -- ʕ •ᴥ•ʔ✿ Initialize quest system ✿ʕ•ᴥ•ʔ
             local UIQuestManager = _G.TheJournal_UIQuestManager
@@ -4081,16 +4086,16 @@ initFrame:SetScript("OnEvent", function(self, event)
                 if UIQuestManager.HookExistingFunctions then
                     UIQuestManager.HookExistingFunctions()
                 end
-                print("|cFF00FF00[DJ Quest]|r Quest system initialized!")
+                -- ʕ •ᴥ•ʔ✿ Quest system initialized silently ✿ʕ •ᴥ•ʔ
             else
-                print("|cFFFF0000[DJ Quest]|r UIQuestManager not available!")
+                -- ʕ •ᴥ•ʔ✿ UIQuestManager not available silently ✿ʕ •ᴥ•ʔ
             end
             
             -- Initial sort after login
             RefreshAllAttunableText()
             FilterAndSortDungeons()
             
-            print("|cFF00FF00[DJ Features]|r Friends system and quest system loaded!")
+            -- ʕ •ᴥ•ʔ✿ Features loaded silently ✿ʕ •ᴥ•ʔ
         end)
     end
 end)

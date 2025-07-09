@@ -243,4 +243,4 @@ C_Timer.After(1, function()
     SlashCommands.ApplySavedScale()
 end)
 
-print("|cFF00FF00[DJ Slash Commands]|r Extended slash commands loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ

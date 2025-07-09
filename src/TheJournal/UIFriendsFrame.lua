@@ -234,8 +234,6 @@ function FriendsFrame.UpdateAttunementFriendsDisplay()
     if _G.UpdateAttunementFriendsDisplay then
         return _G.UpdateAttunementFriendsDisplay()
     end
-    
-    print("|cFFFF0000[DJ Friends Frame]|r Global UpdateAttunementFriendsDisplay not available!")
 end
 
 --[[ ʕ •ᴥ•ʔ✿ DISABLED TO PREVENT DUPLICATE QUEST ICONS ✿ʕ•ᴥ•ʔ
@@ -468,7 +466,7 @@ end
 -- ＼ʕ •ᴥ•ʔ／✿ Disable auto-initialization to prevent conflicts with UIFrames.lua ✿＼ʕ •ᴥ•ʔ／
 -- The main UIFrames.lua handles all initialization to avoid conflicts
 
-print("|cFF00FF00[DJ Friends Frame]|r Friends attunement frame loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
 
 -- NOTE: Do not assign this module to a global here to avoid clobbering
 -- existing modules (e.g. TheJournal_UIFriendsAttunement). If external

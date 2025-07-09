@@ -31,7 +31,7 @@ function UIInitializationManager.SetupQuestSystem()
         if _G.TheJournal_UIQuestManager then
             _G.TheJournal_UIQuestManager.Initialize()
         else
-            print("|cFFFF0000[DJ Error]|r UIQuestManager not loaded!")
+            -- ʕ •ᴥ•ʔ✿ UIQuestManager not loaded silently ✿ʕ •ᴥ•ʔ
         end
     end)
 end
@@ -292,7 +292,7 @@ function UIInitializationManager.InitializeAll()
         UIInitializationManager.SetupQuestSystem()
     end)
     
-    print("|cFF00FF00[DJ Features]|r Random Item Quest system and enhanced friend tooltips loaded!")
+    -- ʕ •ᴥ•ʔ✿ Features loaded silently ✿ʕ •ᴥ•ʔ
     
     return {
         friendsLoaded = friendsLoaded,

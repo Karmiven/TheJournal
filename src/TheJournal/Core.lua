@@ -41,9 +41,7 @@ if Journal_charDB and Journal_charDB.friendsAttunementData then
         end
     end
     
-    if friendsLoaded > 0 or pointsLoaded > 0 then
-        print("|cFF00FF00[DJ Core]|r Loaded " .. friendsLoaded .. " friends and " .. pointsLoaded .. " journal points from saved data")
-    end
+    -- ʕ •ᴥ•ʔ✿ Load silently ✿ʕ •ᴥ•ʔ
 end
 
 -- Message queue and throttling system
@@ -409,9 +407,7 @@ local function LoadFriendsFromCache()
             end
         end
         
-        if loadedCount > 0 then
-            print("|cFF87CEEB[DJ Friends]|r Loaded " .. loadedCount .. " friends from cache")
-        end
+        -- ʕ •ᴥ•ʔ✿ Load silently ✿ʕ •ᴥ•ʔ
     end
 end
 
@@ -1536,6 +1532,11 @@ f:SetScript("OnEvent", function(self, event, ...)
             -- Ensure we're added to friends data
             if _G.AddSelfToFriendsData then
                 _G.AddSelfToFriendsData()
+            end
+            
+            -- ʕ •ᴥ•ʔ✿ Initialize bag scanner ✿ʕ •ᴥ•ʔ
+            if _G.TheJournal_UIBagScanner and _G.TheJournal_UIBagScanner.Initialize then
+                _G.TheJournal_UIBagScanner.Initialize()
             end
         end)
     end

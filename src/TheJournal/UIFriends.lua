@@ -67,5 +67,5 @@ _G.AutoSendData = AutoSendData
 -- Logic should be implemented as needed based on new module requirements
 
 -- ʕノ•ᴥ•ʔノ✿ Auto-initialize ✿ʕノ•ᴥ•ʔノ
-print("|cFF00FF00[DJ Friends]|r Friends management module loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
 

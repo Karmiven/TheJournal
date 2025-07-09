@@ -27,7 +27,7 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
     else
         -- Fallback to UIParent if container not found
         btn:SetParent(UIParent)
-        print("|cFFFF0000[DJ Warning]|r ItemsListContainer not found, using UIParent as fallback")
+        -- ʕ •ᴥ•ʔ✿ ItemsListContainer not found, using UIParent as fallback silently ✿ʕ •ᴥ•ʔ
     end
     
     btn:SetSize(180, 40)

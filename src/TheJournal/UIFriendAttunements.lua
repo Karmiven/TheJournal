@@ -122,4 +122,4 @@ _G.GetFriendsWhoNeedItem = FriendAttunements.GetFriendsWhoNeedItem
 -- ＼ʕ •ᴥ•ʔ／✿ Auto-initialize ✿＼ʕ •ᴥ•ʔ／
 FriendAttunements.Initialize()
 
-print("|cFF00FF00[DJ Friend Attunements]|r Enhanced friend tooltips loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ

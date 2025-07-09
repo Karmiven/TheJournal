@@ -167,7 +167,7 @@ end
 
 function UILegacyCompatibility.MarkMigrationComplete()
     migrationStatus.completed = true
-    print("|cFF00FF00[Migration]|r UIFrames migration completed successfully!")
+    -- ʕ •ᴥ•ʔ✿ Migration completed silently ✿ʕ •ᴥ•ʔ
 end
 
 -- ʕ •ᴥ•ʔ✿ Deprecated function warnings ✿ʕ•ᴥ•ʔ

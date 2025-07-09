@@ -242,5 +242,5 @@ local cleanupTimer = C_Timer.NewTicker(300, CleanupProcessedResponses)
 -- ＼ʕ •ᴥ•ʔ／✿ Export global functions ✿＼ʕ •ᴥ•ʔ／
 _G.TooltipEnhancement = TooltipEnhancement
 
-print("|cFF00FF00[DJ Tooltip Enhancement]|r Tooltip enhancement module loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
 

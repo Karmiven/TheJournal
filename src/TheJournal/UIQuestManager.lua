@@ -143,13 +143,13 @@ end
 -- ʕ •ᴥ•ʔ✿ Initialize Quest UI ✿ʕ•ᴥ•ʔ
 function UIQuestManager.InitializeUI()
     if not _G.DungeonJournalFrame then 
-        print("|cFFFF0000[DJ Quest]|r DungeonJournalFrame not available yet!")
+        -- ʕ •ᴥ•ʔ✿ DungeonJournalFrame not available yet silently ✿ʕ •ᴥ•ʔ
         return 
     end
     
     -- ʕ •ᴥ•ʔ✿ Check if already initialized to prevent duplicates ✿ʕ•ᴥ•ʔ
     if randomQuestIcon then
-        print("|cFFFFD700[DJ Quest]|r Quest UI already initialized, skipping...")
+        -- ʕ •ᴥ•ʔ✿ Quest UI already initialized, skipping silently ✿ʕ •ᴥ•ʔ
         return
     end
     
@@ -629,7 +629,7 @@ function UIQuestManager.Initialize()
     UIQuestManager.InitializeUI()
     UIQuestManager.HookExistingFunctions()
     
-    print("|cFF00FF00[DJ Quest System]|r Random Item Quest system loaded!")
+    -- ʕ •ᴥ•ʔ✿ Quest system loaded silently ✿ʕ •ᴥ•ʔ
 end
 
 -- ʕ ● ᴥ ●ʔ✿ Global Functions Export ✿ʕ ● ᴥ ●ʔ

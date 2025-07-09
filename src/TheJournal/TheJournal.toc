@@ -31,5 +31,6 @@ UIPerformance.lua
 UIBountySystem.lua
 UIFriendsFrame.lua
 UITooltipEnhancement.lua
+UIBagScanner.lua
 UIFrames.lua
 Bindings.xml

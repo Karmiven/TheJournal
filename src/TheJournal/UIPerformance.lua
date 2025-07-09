@@ -404,4 +404,4 @@ _G.InvalidateItemCache = Performance.InvalidateItemCache
 -- ＼ʕ •ᴥ•ʔ／✿ Auto-initialize ✿＼ʕ •ᴥ•ʔ／
 Performance.Initialize()
 
-print("|cFF00FF00[DJ Performance]|r Performance optimization module loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ

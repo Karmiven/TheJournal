@@ -64,4 +64,4 @@ _G.Messaging = Messaging
 -- ʕ ● ᴥ ●ʔ✿ Auto-initialize ✿ʕ ● ᴥ ●ʔ
 Messaging.Initialize()
 
-print("|cFF00FF00[DJ Messaging]|r Communication system loaded!")
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ

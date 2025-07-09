@@ -58,7 +58,7 @@ local function InitializeCache()
     
     -- Debug: Check how many dungeons are available
     local dungeonCount = #_G.Journal.djDungeons
-    print("|cFF00FF00[DJ Cache]|r Found " .. dungeonCount .. " dungeons to cache")
+            -- ʕ •ᴥ•ʔ✿ Dungeons cached silently ✿ʕ •ᴥ•ʔ
     
     -- Cache all existing dungeons
     for i, dungeon in ipairs(_G.Journal.djDungeons) do
@@ -79,7 +79,7 @@ local function InitializeCache()
                 if type(k) == "number" and type(v) == "table" then
                     -- When a new dungeon is added, update the cache
                     CacheDungeon(v)
-                    print("|cFF00FF00[DJ Cache]|r Added new dungeon to cache: " .. (v.name or "Unknown"))
+                    -- ʕ •ᴥ•ʔ✿ Dungeon added silently ✿ʕ •ᴥ•ʔ
                 end
             end,
             __len = function(t)
@@ -87,14 +87,12 @@ local function InitializeCache()
             end
         })
         metatableSetup = true
-        print("|cFF00FF00[DJ Cache]|r Metatable hook installed")
+        -- ʕ •ᴥ•ʔ✿ Metatable hook installed silently ✿ʕ •ᴥ•ʔ
     end
     
     -- Print debug info
-    print("|cFF00FF00[DJ Cache]|r Initialized with " .. #dungeonCache.allDungeons .. " dungeons")
-    for category, dungeons in pairs(dungeonCache.byCategory) do
-        print("|cFF00FF00[DJ Cache]|r Category " .. category .. ": " .. #dungeons .. " dungeons")
-    end
+            -- ʕ •ᴥ•ʔ✿ Cache initialized silently ✿ʕ •ᴥ•ʔ
+          -- ʕ •ᴥ•ʔ✿ Categories initialized silently ✿ʕ •ᴥ•ʔ
     
     dungeonCache.initialized = true
 end
@@ -129,11 +127,11 @@ initFrame:RegisterEvent("PLAYER_LOGIN")
 initFrame:SetScript("OnEvent", function(self, event, addonName)
     if event == "ADDON_LOADED" and addonName == "TheJournal" then
         -- Initialize on addon load
-        print("|cFF00FF00[DJ Cache]|r ADDON_LOADED event triggered")
+        -- ʕ •ᴥ•ʔ✿ Addon loaded silently ✿ʕ •ᴥ•ʔ
         InitializeCache()
     elseif event == "PLAYER_LOGIN" then
         -- Re-initialize after login to ensure all data is loaded
-        print("|cFF00FF00[DJ Cache]|r PLAYER_LOGIN event triggered, re-initializing in 1 second")
+        -- ʕ •ᴥ•ʔ✿ Re-initializing silently ✿ʕ •ᴥ•ʔ
         C_Timer.After(1, function()
             InitializeCache()
             -- Unregister events after successful initialization
