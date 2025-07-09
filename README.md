@@ -50,11 +50,11 @@
 **Q: The Journal isn’t showing up!**  
 A: Make sure the folder is named `TheJournal` and enabled in your AddOns list.
 
-**Q: My bag icons aren’t updating.**  
-A: Try `/bagrefresh` or `/refreshbags` to force a scan.
+**Q: Its not tracking any attuned items in the dungeon preview, showing missing all items.**  
+A: Try `/reload` first, on first load we can sometimes too fast.
 
 **Q: How do I share my attunement progress?**  
-A: Use `/dj report` or check the Friends panel for sharing options.
+A: Use `/dj report` to get a report or look in the Attunement Leaderboard, it is updated on Journal Open.
 
 **Q: Can I contribute or suggest features?**  
 A: Absolutely! See below.
