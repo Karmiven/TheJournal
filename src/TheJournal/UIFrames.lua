@@ -2505,7 +2505,7 @@ end)
 -- Slash command
 SLASH_DJREPORT1 = "/dj"
 SlashCmdList["DJREPORT"] = function(msg)
-    msg = string.lower(string.trim(msg or ""))
+    msg = string.lower((msg or ""):match("^%s*(.-)%s*$"))
     if msg == "report" then
         PrintAttunementReport()
     elseif msg == "debug" then
@@ -2513,6 +2513,24 @@ SlashCmdList["DJREPORT"] = function(msg)
         print("|cFFFFD700[DJ Debug]|r Debug mode " .. (_G.debug and "ENABLED" or "DISABLED"))
         if _G.debug then
             print("|cFF00FF00[DJ DEBUG]|r Debug test message - this confirms debug is working!")
+        end
+    elseif msg == "factiontooltip" then
+        -- ʕ ● ᴥ ●ʔ✿ Initialize setting if not set ✿ʕ ● ᴥ ●ʔ
+        if Journal_charDB.showFactionTooltips == nil then
+            Journal_charDB.showFactionTooltips = true
+        end
+        
+        Journal_charDB.showFactionTooltips = not Journal_charDB.showFactionTooltips
+        local status = Journal_charDB.showFactionTooltips and "|cFF00FF00enabled|r" or "|cFFFF0000disabled|r"
+        print("|cFFFFD700[DJ Faction]|r Faction tooltips " .. status)
+        
+        -- ʕ ◕ᴥ◕ ʔ✿ Debug info ✿ʕ ◕ᴥ◕ ʔ
+        print("|cFF87CEEB[DJ Debug]|r FactionTooltipEnhancement available: " .. tostring(_G.FactionTooltipEnhancement ~= nil))
+        print("|cFF87CEEB[DJ Debug]|r hashFactionItems available: " .. tostring(_G.hashFactionItems ~= nil))
+        if _G.hashFactionItems then
+            local count = 0
+            for _ in pairs(_G.hashFactionItems) do count = count + 1 end
+            print("|cFF87CEEB[DJ Debug]|r hashFactionItems has " .. count .. " entries")
         end
     elseif msg == "clearcache" then
         if _G.Journal_FriendCache then
@@ -2584,6 +2602,7 @@ SlashCmdList["DJREPORT"] = function(msg)
         print("|cFF87CEEB/dj showcache|r - Show cached friends")
         print("|cFF87CEEB/dj hide <name>|r - Hide player from leaderboard")
         print("|cFF87CEEB/dj unhide <name>|r - Unhide player from leaderboard")
+        print("|cFF87CEEB/dj factiontooltip|r - Toggle faction tooltips")
         print("|cFF87CEEB/dj testboe <item>|r - Test if friends need BOE item")
         print("|cFF87CEEB/testboe <item>|r - Same as above (standalone command)")
         print("|cFF87CEEB|r")
@@ -2601,7 +2620,7 @@ SLASH_DJ2 = "/tj"
 SLASH_DJ3 = "/j"
 SLASH_DJ4 = "/ej"
 SlashCmdList["DJ"] = function(msg)
-    msg = string.lower(string.trim(msg or ""))
+    msg = string.lower((msg or ""):match("^%s*(.-)%s*$"))
     if msg == "report" then
         PrintAttunementReport()
     elseif msg == "friends" then
@@ -2622,6 +2641,46 @@ SlashCmdList["DJ"] = function(msg)
         if _G.debug then
             print("|cFF00FF00[DJ DEBUG]|r Debug test message - this confirms debug is working!")
         end
+    elseif msg == "factiontooltip" then
+        -- ʕ ● ᴥ ●ʔ✿ Initialize setting if not set ✿ʕ ● ᴥ ●ʔ
+        if Journal_charDB.showFactionTooltips == nil then
+            Journal_charDB.showFactionTooltips = true
+        end
+        
+        Journal_charDB.showFactionTooltips = not Journal_charDB.showFactionTooltips
+        local status = Journal_charDB.showFactionTooltips and "|cFF00FF00enabled|r" or "|cFFFF0000disabled|r"
+        print("|cFFFFD700[DJ Faction]|r Faction tooltips " .. status)
+        
+        -- ʕ ◕ᴥ◕ ʔ✿ Debug info ✿ʕ ◕ᴥ◕ ʔ
+        print("|cFF87CEEB[DJ Debug]|r FactionTooltipEnhancement available: " .. tostring(_G.FactionTooltipEnhancement ~= nil))
+        print("|cFF87CEEB[DJ Debug]|r hashFactionItems available: " .. tostring(_G.hashFactionItems ~= nil))
+        if _G.hashFactionItems then
+            local count = 0
+            for _ in pairs(_G.hashFactionItems) do count = count + 1 end
+            print("|cFF87CEEB[DJ Debug]|r hashFactionItems has " .. count .. " entries")
+        end
+    elseif msg == "testfaction" then
+        -- ʕ ◕ᴥ◕ ʔ✿ Test faction tooltip with known Alliance item (ID 60) ✿ʕ ◕ᴥ◕ ʔ
+        local testItemID = 60 -- Known Alliance item
+        local testItemLink = "item:" .. testItemID
+        print("|cFF87CEEB[DJ Faction Test]|r Testing faction tooltip for item " .. testItemID)
+        
+        -- Test the faction detection
+        local factionType = _G.FactionTooltipEnhancement and _G.FactionTooltipEnhancement.GetItemFaction(testItemID)
+        if factionType then
+            print("|cFF87CEEB[DJ Faction Test]|r Item " .. testItemID .. " is faction " .. factionType)
+        else
+            print("|cFF87CEEB[DJ Faction Test]|r Item " .. testItemID .. " is not faction-specific")
+        end
+        
+        -- Test the tooltip processing
+        if _G.FactionTooltipEnhancement and _G.FactionTooltipEnhancement.ProcessFactionTooltip then
+            print("|cFF87CEEB[DJ Faction Test]|r Calling ProcessFactionTooltip manually...")
+            _G.FactionTooltipEnhancement.ProcessFactionTooltip(GameTooltip, testItemLink)
+        else
+            print("|cFF87CEEB[DJ Faction Test]|r FactionTooltipEnhancement.ProcessFactionTooltip not available")
+        end
+
     elseif msg:find("^testboe") then
         print("|cFF00FFFF[Manual BOE DEBUG]|r Processing testboe command with message: " .. tostring(msg))
         
@@ -2631,7 +2690,12 @@ SlashCmdList["DJ"] = function(msg)
         local itemID = nil
 
         -- First, try to extract item ID from any format in the message
-        itemID = tonumber(msg:match("item:(%d+)")) or tonumber(msg:match("testboe%s+(%d+)"))
+        local linkInMsg = msg:match("|c%x+|h%[.-%]|h|r")
+        if linkInMsg then
+            itemID = CustomExtractItemId(linkInMsg)
+        else
+            itemID = tonumber(msg:match("testboe%s+(%d+)"))
+        end
         print("|cFF00FFFF[Manual BOE DEBUG]|r Extracted item ID: " .. tostring(itemID))
         
         -- If we have an item ID, check if we captured the original link before chat processing
@@ -2655,7 +2719,7 @@ SlashCmdList["DJ"] = function(msg)
         if not originalItemLink then
             originalItemLink = msg:match("|c%x+|h%[.-%]|h|r")
             if originalItemLink then
-                itemID = tonumber(originalItemLink:match("item:(%d+)"))
+                itemID = CustomExtractItemId(originalItemLink)
                 itemLink = originalItemLink
                 print("|cFFFFFF00[Manual BOE]|r Found item link in message (may be processed): " .. originalItemLink)
             end
@@ -2673,10 +2737,10 @@ SlashCmdList["DJ"] = function(msg)
             -- Try to get basic item info (this will NOT have affixes/forge data)
             if itemName then
                 local foundName, foundLink = GetItemInfo(itemName)
-                if foundLink then
-                    itemLink = foundLink
-                    itemID = tonumber(foundLink:match("item:(%d+)"))
-                    itemName = foundName
+                            if foundLink then
+                itemLink = foundLink
+                itemID = CustomExtractItemId(foundLink)
+                itemName = foundName
                     print("|cFFFF0000[Manual BOE WARNING]|r Using basic item link (NO AFFIXES): " .. foundLink)
                 else
                     print("|cFFFFD700[DJ BOE Test]|r Searching for item: " .. itemName)
@@ -2708,7 +2772,7 @@ SlashCmdList["DJ"] = function(msg)
         
         -- Final fallback - use what we have
         if not itemID and itemLink then
-            itemID = tonumber(itemLink:match("item:(%d+)"))
+            itemID = CustomExtractItemId(itemLink)
         end
         
         local displayName = itemName or ("Item " .. (itemID or "Unknown"))
@@ -2800,6 +2864,8 @@ SlashCmdList["DJ"] = function(msg)
         print("|cFF87CEEB/dj share|r - Share your attunement progress (guild/party/friends)")
         print("|cFF87CEEB/dj request|r - Request attunement data (guild/party/friends)")
         print("|cFF87CEEB/dj debug|r - Toggle debug mode for BOE tooltips")
+        print("|cFF87CEEB/dj factiontooltip|r - Toggle faction tooltips")
+        print("|cFF87CEEB/dj testfaction|r - Test faction tooltip system")
         print("|cFF87CEEB/dj testboe [Item Link]|r - Check if friends need BOE item")
     end
 end
@@ -2815,6 +2881,7 @@ function ToggleJournal()
     end
 end
 
+-- todo 
 -- Event handler for cache invalidation when items are attuned
 local smartCacheFrame = CreateFrame("Frame")
 smartCacheFrame:RegisterEvent("CHAT_MSG_SYSTEM")

@@ -6,56 +6,184 @@
 
 local TooltipEnhancement = {}
 
--- ʕ ◕ᴥ◕ ʔ✿ Create frame to handle tooltip updates ✿ʕ ◕ᴥ◕ ʔ
+-- ʕ ◕ᴥ◕ ʔ✿ Faction Tooltip Enhancement System ✿ʕ ◕ᴥ◕ ʔ
+local FactionTooltipEnhancement = {}
+
+-- ʕ ● ᴥ ●ʔ✿ Check if faction tooltips are enabled ✿ʕ ● ᴥ ●ʔ
+function FactionTooltipEnhancement.IsFactionTooltipEnabled()
+    return Journal_charDB and Journal_charDB.showFactionTooltips ~= false
+end
+
+-- ʕノ•ᴥ•ʔノ✿ Check if item is faction-specific ✿ʕノ•ᴥ•ʔノ
+function FactionTooltipEnhancement.GetItemFaction(itemID)
+    if not _G.hashFactionItems or not itemID then
+        return nil
+    end
+    return _G.hashFactionItems[itemID]
+end
+
+-- ＼ʕ •ᴥ•ʔ／✿ Check if faction data is already present on the tooltip ✿＼ʕ •ᴥ•ʔ／
+function FactionTooltipEnhancement.HasFactionData(tooltip)
+    local tooltipName = tooltip:GetName()
+    local line1 = _G[tooltipName .. "TextLeft1"]
+    if line1 then
+        local text = line1:GetText()
+        if text and text:find("INV_BannerPVP", 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+-- ʕ •ᴥ•ʔ✿ Old faction cache check removed - using simpler per-frame tracking ✿ʕ •ᴥ•ʔ
+
+-- ʕ ◕ᴥ◕ ʔ✿ Process faction tooltip enhancement ✿ʕ ◕ᴥ◕ ʔ
+function FactionTooltipEnhancement.ProcessFactionTooltip(tooltip, itemLink)
+    -- ʕ ◕ᴥ◕ ʔ✿ Debug - always show this when enabled to test if function is being called ✿ʕ ◕ᴥ◕ ʔ
+    
+    if not FactionTooltipEnhancement.IsFactionTooltipEnabled() then
+        return
+    end
+    
+    if not itemLink or not itemLink:match("^|c%x+|Hitem:") then
+        return
+    end
+    
+    local itemID = CustomExtractItemId(itemLink)
+    if not itemID or itemID == 0 then
+        return
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Cache checking is now handled by OnUpdate frame ✿ʕ ◕ᴥ◕ ʔ
+    
+    if FactionTooltipEnhancement.HasFactionData(tooltip) then
+        return
+    end
+    
+    local factionType = FactionTooltipEnhancement.GetItemFaction(itemID)
+    if not factionType then
+        return
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Debug output ✿ʕ ◕ᴥ◕ ʔ
+    
+    local factionIcon = ""
+    
+    if factionType == 1 then
+        factionIcon = "|TInterface\\Icons\\INV_BannerPVP_02:16:16|t"
+    elseif factionType == 2 then
+        factionIcon = "|TInterface\\Icons\\INV_BannerPVP_01:16:16|t"
+    end
+    
+    if factionIcon ~= "" then
+        -- ʕ ● ᴥ ●ʔ✿ Modify the item name line directly to include faction icon ✿ʕ ● ᴥ ●ʔ
+        local tooltipName = tooltip:GetName()
+        local line1 = _G[tooltipName .. "TextLeft1"]
+        if line1 then
+            local currentText = line1:GetText()
+            if currentText and not currentText:find("INV_BannerPVP") then
+                line1:SetText(factionIcon .. " " .. currentText)
+            end
+        end
+        
+        -- ʕ ◕ᴥ◕ ʔ✿ Cache tracking handled by OnUpdate frame ✿ʕ ◕ᴥ◕ ʔ
+    end
+end
+
+-- ʕ ◕ᴥ◕ ʔ✿ Single unified tooltip processing frame ✿ʕ ◕ᴥ◕ ʔ
 local tooltipFrame = CreateFrame("Frame")
-local lastTooltipCache = {
+local lastProcessedTooltip = {
     itemLink = nil,
     timestamp = 0,
-    processed = false
+    boeProcessed = false,
+    factionProcessed = false
 }
 
 tooltipFrame:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = (self.elapsed or 0) + elapsed
-    if self.elapsed < 0.25 then return end
+    if self.elapsed < 0.3 then return end  -- ʕ ◕ᴥ◕ ʔ✿ Check every 0.3 seconds ✿ʕ ◕ᴥ◕ ʔ
     self.elapsed = 0
     
     if not GameTooltip:IsVisible() then 
-        lastTooltipCache.processed = false
+        lastProcessedTooltip.itemLink = nil
+        lastProcessedTooltip.boeProcessed = false
+        lastProcessedTooltip.factionProcessed = false
         return 
     end
     
     local tooltipName = GameTooltip:GetName()
     local line1 = _G[tooltipName .. "TextLeft1"]
-    if not line1 or not line1:GetText() then return end
+    if not line1 or not line1:GetText() then 
+        lastProcessedTooltip.itemLink = nil
+        lastProcessedTooltip.boeProcessed = false
+        lastProcessedTooltip.factionProcessed = false
+        return 
+    end
     
     local itemLink = TooltipEnhancement.GetItemLinkFromTooltip()
-    if not itemLink then 
-        lastTooltipCache.processed = false
+    if not itemLink or not itemLink:match("^|c%x+|Hitem:") then 
+        lastProcessedTooltip.itemLink = nil
+        lastProcessedTooltip.boeProcessed = false
+        lastProcessedTooltip.factionProcessed = false
+        return 
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Only process if this is a new tooltip ✿ʕ ◕ᴥ◕ ʔ
+    if lastProcessedTooltip.itemLink == itemLink then
+        return  -- Already processed this tooltip
+    end
+    
+    local itemID = CustomExtractItemId(itemLink)
+    if not itemID or itemID == 0 then 
+        lastProcessedTooltip.itemLink = nil
+        lastProcessedTooltip.boeProcessed = false
+        lastProcessedTooltip.factionProcessed = false
         return 
     end
     
     local currentTime = GetTime()
-    if TooltipEnhancement.TooltipCacheCheck(itemLink, currentTime) then return end
     
-    local itemID = tonumber(itemLink:match("item:(%d+)"))
-    if not itemID or not _G.ITEM_QUERY_RESPONSES or not _G.ITEM_QUERY_RESPONSES[itemID] then 
-        lastTooltipCache.processed = false
-        return 
+    -- ʕ ● ᴥ ●ʔ✿ Process BOE tooltips ✿ʕ ● ᴥ ●ʔ
+    if _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
+        if not TooltipEnhancement.HasBoEData(GameTooltip, itemLink, itemID) then
+            ProcessBOETooltip(GameTooltip, itemLink)
+            lastProcessedTooltip.boeProcessed = true
+        end
     end
     
-    if not TooltipEnhancement.HasBoEData(GameTooltip, itemLink, itemID) then
-        ProcessBOETooltip(GameTooltip, itemLink)
+    -- ʕ ◕ᴥ◕ ʔ✿ Process faction tooltips ✿ʕ ◕ᴥ◕ ʔ
+    if FactionTooltipEnhancement.IsFactionTooltipEnabled() then
+        if not FactionTooltipEnhancement.HasFactionData(GameTooltip) then
+            FactionTooltipEnhancement.ProcessFactionTooltip(GameTooltip, itemLink)
+            lastProcessedTooltip.factionProcessed = true
+        end
+    end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Update tooltip display if anything was processed ✿ʕ ● ᴥ ●ʔ
+    if lastProcessedTooltip.boeProcessed or lastProcessedTooltip.factionProcessed then
         GameTooltip:Show()
-        
-        lastTooltipCache.itemLink = itemLink
-        lastTooltipCache.timestamp = currentTime
-        lastTooltipCache.processed = true
     end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Mark this tooltip as processed ✿ʕ ● ᴥ ●ʔ
+    lastProcessedTooltip.itemLink = itemLink
+    lastProcessedTooltip.timestamp = currentTime
 end)
 
 -- ʕ ● ᴥ ●ʔ✿ Get item link from various sources ✿ʕ ● ᴥ ●ʔ
 function TooltipEnhancement.GetItemLinkFromTooltip()
     local itemLink = nil
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ First try to get item link directly from GameTooltip ✿ʕ ◕ᴥ◕ ʔ
+    local name, link = GameTooltip:GetItem()
+    if link then
+        local itemID = CustomExtractItemId(link)
+        if itemID and itemID > 0 then
+            itemLink = link
+            return itemLink
+        end
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Fallback: try container frame detection ✿ʕ ◕ᴥ◕ ʔ
     local mouseoverFrame = GetMouseFocus()
     if mouseoverFrame and mouseoverFrame:GetName() then
         local frameName = mouseoverFrame:GetName()
@@ -63,21 +191,19 @@ function TooltipEnhancement.GetItemLinkFromTooltip()
             local bag = mouseoverFrame:GetParent():GetID()
             local slot = mouseoverFrame:GetID()
             itemLink = GetContainerItemLink(bag, slot)
+            if itemLink then
+                local itemID = CustomExtractItemId(itemLink)
+                if itemID and itemID > 0 then
+                    return itemLink
+                end
+            end
         end
     end
-    if not itemLink then
-        local name, link = GameTooltip:GetItem()
-        itemLink = link
-    end
+    
     return itemLink
 end
 
--- ʕノ•ᴥ•ʔノ✿ Check tooltip cache ✿ʕノ•ᴥ•ʔノ
-function TooltipEnhancement.TooltipCacheCheck(itemLink, currentTime)
-    return lastTooltipCache.itemLink == itemLink and 
-           lastTooltipCache.processed and 
-           (currentTime - lastTooltipCache.timestamp) < 1
-end
+-- ʕノ•ᴥ•ʔノ✿ Cache check function removed - using simpler approach to prevent spam ✿ʕノ•ᴥ•ʔノ
 
 -- ＼ʕ •ᴥ•ʔ／✿ Check if BOE data is already present on the tooltip ✿＼ʕ •ᴥ•ʔ／
 function TooltipEnhancement.HasBoEData(tooltip, itemLink, itemID)
@@ -131,8 +257,8 @@ end
 
 -- ʕ ◕ᴥ◕ ʔ✿ Enhanced BOE Processing ✿ʕ ◕ᴥ◕ ʔ
 local function ProcessBOETooltip(tooltip, link)
-    if not link or not link:match("^item:") then return end
-    local itemID = tonumber(link:match("item:(%d+)"))
+    if not link or not CustomExtractItemId(link) then return end
+    local itemID = CustomExtractItemId(link)
     if not itemID then return end
     
     if _G.debug then
@@ -241,6 +367,7 @@ local cleanupTimer = C_Timer.NewTicker(300, CleanupProcessedResponses)
 
 -- ＼ʕ •ᴥ•ʔ／✿ Export global functions ✿＼ʕ •ᴥ•ʔ／
 _G.TooltipEnhancement = TooltipEnhancement
+_G.FactionTooltipEnhancement = FactionTooltipEnhancement
 
 -- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
 

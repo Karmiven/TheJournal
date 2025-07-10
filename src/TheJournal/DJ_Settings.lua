@@ -72,9 +72,30 @@ useItemLocCheckbox:SetScript("OnClick", function(self)
     print("Reload the interface or re-open dungeons to see changes")
 end)
 
--- Recache instructions and button (placed below the ItemLoc option)
+-- "Show Faction Tooltips" Option
+local showFactionTooltipsLabel = configPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+showFactionTooltipsLabel:SetPoint("TOPLEFT", useItemLocLabel, "BOTTOMLEFT", 0, -30)
+-- Initialize setting if not set
+if settings.showFactionTooltips == nil then
+    settings.showFactionTooltips = true -- Default to enabled
+end
+showFactionTooltipsLabel:SetText("Show Faction Tooltips: " .. (settings.showFactionTooltips and "Enabled" or "Disabled"))
+
+local showFactionTooltipsCheckbox = CreateFrame("CheckButton", "Journal_charDB_ShowFactionTooltips_CheckButton", configPanel,
+    "InterfaceOptionsCheckButtonTemplate")
+showFactionTooltipsCheckbox:SetPoint("LEFT", showFactionTooltipsLabel, "RIGHT", 10, 0)
+showFactionTooltipsCheckbox:SetText("")
+showFactionTooltipsCheckbox:SetChecked(settings.showFactionTooltips)
+showFactionTooltipsCheckbox:SetScript("OnClick", function(self)
+    settings.showFactionTooltips = self:GetChecked()
+    local status = settings.showFactionTooltips and "Enabled" or "Disabled"
+    showFactionTooltipsLabel:SetText("Show Faction Tooltips: " .. status)
+    print("Faction tooltips are now", status)
+end)
+
+-- Recache instructions and button (placed below the faction tooltips option)
 local recacheLabel = configPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-recacheLabel:SetPoint("TOPLEFT", useItemLocLabel, "BOTTOMLEFT", 0, -30)
+recacheLabel:SetPoint("TOPLEFT", showFactionTooltipsLabel, "BOTTOMLEFT", 0, -30)
 recacheLabel:SetText("Re-cache Data: Press the button below to reset cached data.")
 
 local recacheButton = CreateFrame("Button", "Journal_charDB_RecacheButton", configPanel, "UIPanelButtonTemplate")

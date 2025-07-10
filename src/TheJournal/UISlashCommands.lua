@@ -79,6 +79,18 @@ function SlashCommands.HandleDebugCommand()
     print("|cFFFFD700[DJ Debug]|r Debug mode " .. (DEBUG and "ENABLED" or "DISABLED"))
 end
 
+-- ʕ ◕ᴥ◕ ʔ✿ Handle faction tooltip command ✿ʕ ◕ᴥ◕ ʔ
+function SlashCommands.HandleFactionTooltipCommand()
+    -- ʕ ● ᴥ ●ʔ✿ Initialize setting if not set ✿ʕ ● ᴥ ●ʔ
+    if Journal_charDB.showFactionTooltips == nil then
+        Journal_charDB.showFactionTooltips = true
+    end
+    
+    Journal_charDB.showFactionTooltips = not Journal_charDB.showFactionTooltips
+    local status = Journal_charDB.showFactionTooltips and "|cFF00FF00enabled|r" or "|cFFFF0000disabled|r"
+    print("|cFFFFD700[DJ Faction]|r Faction tooltips " .. status)
+end
+
 -- ʕノ•ᴥ•ʔノ✿ Handle scale command ✿ʕノ•ᴥ•ʔノ
 function SlashCommands.HandleScaleCommand(scaleValue)
     local scale = tonumber(scaleValue)
@@ -124,6 +136,8 @@ function SlashCommands.HandleSlashCommand(msg)
         SlashCommands.HandleFriendsDebugCommand()
     elseif msg == "debug" then
         SlashCommands.HandleDebugCommand()
+    elseif msg == "factiontooltip" then
+        SlashCommands.HandleFactionTooltipCommand()
     elseif msg == "scale" then
         SlashCommands.HandleScaleCommand(nil) -- Show current scale
     elseif msg == "scalereset" then

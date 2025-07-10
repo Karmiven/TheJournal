@@ -19,7 +19,32 @@ local previewQuestIcon = nil
 local unattunedItemsCache = {}
 local cacheLastUpdated = 0
 
--- ʕ ◕ᴥ◕ ʔ✿ Update Cache Function ✿ʕ ◕ᴥ◕ ʔ
+-- ʕ ◕ᴥ◕ ʔ✿ Faction Checking for Quest Items ✿ʕ ◕ᴥ◕ ʔ
+local function IsItemFactionCompatible(itemID)
+    -- ʕ ● ᴥ ●ʔ✿ Check if item is faction-specific ✿ʕ ● ᴥ ●ʔ
+    if not _G.hashFactionItems or not itemID then
+        return true -- If no faction data, assume it's compatible
+    end
+    
+    local itemFaction = _G.hashFactionItems[itemID]
+    if not itemFaction then
+        return true -- Not faction-specific, so it's compatible
+    end
+    
+    -- ʕノ•ᴥ•ʔノ✿ Get player's faction ✿ʕノ•ᴥ•ʔノ
+    local playerFaction = UnitFactionGroup("player")
+    
+    -- ＼ʕ •ᴥ•ʔ／✿ Check compatibility ✿＼ʕ •ᴥ•ʔ／
+    if itemFaction == 1 and playerFaction == "Alliance" then
+        return true -- Alliance item for Alliance player
+    elseif itemFaction == 2 and playerFaction == "Horde" then
+        return true -- Horde item for Horde player
+    else
+        return false -- Faction mismatch
+    end
+end
+
+-- ʕ ● ᴥ ●ʔ✿ Update Cache Function ✿ʕ ● ᴥ ●ʔ
 local function UpdateUnattunedItemsCache()
     local currentTime = GetTime()
     if currentTime - cacheLastUpdated < 30 then
@@ -60,23 +85,42 @@ local function UpdateUnattunedItemsCache()
     cacheLastUpdated = currentTime
 end
 
--- ʕ ● ᴥ ●ʔ✿ Get Random Unattuned Item ✿ʕ ● ᴥ ●ʔ
+-- ʕ ● ᴥ ●ʔ✿ Get Random Unattuned Item with Faction Checking ✿ʕ ● ᴥ ●ʔ
 function UIQuestManager.GetRandomUnattunedItem()
     UpdateUnattunedItemsCache()
     
-    if #unattunedItemsCache > 0 then
+    if #unattunedItemsCache == 0 then
+        return nil, "No suitable items found"
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Try to find a faction-compatible item ✿ʕ ◕ᴥ◕ ʔ
+    local maxAttempts = 50 -- Prevent infinite loops
+    local attempts = 0
+    
+    while attempts < maxAttempts do
+        attempts = attempts + 1
+        
         local randomIndex = math.random(1, #unattunedItemsCache)
         local selectedItem = unattunedItemsCache[randomIndex]
+        local itemIsValid = false
         
-        local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(selectedItem.itemID) or 0
-        local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(selectedItem.itemID) or 0
-        
-        if canAttune == 1 and attuneProgress < 100 then
-            return selectedItem.itemID, selectedItem.dungeonName
+        -- ʕ ● ᴥ ●ʔ✿ Check faction compatibility first ✿ʕ ● ᴥ ●ʔ
+        if IsItemFactionCompatible(selectedItem.itemID) then
+            -- ＼ʕ •ᴥ•ʔ／✿ Verify item is still valid ✿＼ʕ •ᴥ•ʔ／
+            local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(selectedItem.itemID) or 0
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(selectedItem.itemID) or 0
+            
+            if canAttune == 1 and attuneProgress < 100 then
+                return selectedItem.itemID, selectedItem.dungeonName
+            end
         end
     end
     
-    return nil, "No suitable items found"
+    -- ʕ ◕ᴥ◕ ʔ✿ If we couldn't find a faction-compatible item, show a message ✿ʕ ◕ᴥ◕ ʔ
+    local playerFaction = UnitFactionGroup("player")
+    print("|cFFFF8000[Quest Warning]|r Could not find a " .. playerFaction .. "-compatible quest item after " .. maxAttempts .. " attempts")
+    
+    return nil, "No faction-compatible items found"
 end
 
 -- ʕノ•ᴥ•ʔノ✿ Start Random Quest ✿ʕノ•ᴥ•ʔノ
@@ -88,6 +132,10 @@ function UIQuestManager.StartRandomQuest()
     local itemID, sourceName = UIQuestManager.GetRandomUnattunedItem()
     if not itemID then
         print("|cFFFFD700[Random Quest]|r No items available for random quest!")
+        if sourceName and sourceName:find("faction-compatible") then
+            local playerFaction = UnitFactionGroup("player")
+            print("|cFFFF8000[Random Quest]|r Unable to find " .. playerFaction .. "-compatible quest items. Try again later.")
+        end
         return nil
     end
     
@@ -99,7 +147,16 @@ function UIQuestManager.StartRandomQuest()
     }
     
     local itemName = _G.GetItemInfoCustom and _G.GetItemInfoCustom(itemID) or GetItemInfo(itemID) or ("Item " .. itemID)
-    print("|cFF00FF00[Random Quest Started]|r Attune " .. itemName .. "!")
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Show faction compatibility info ✿ʕ ◕ᴥ◕ ʔ
+    local factionMessage = ""
+    if _G.hashFactionItems and _G.hashFactionItems[itemID] then
+        local itemFaction = _G.hashFactionItems[itemID]
+        local factionName = (itemFaction == 1) and "|cFF0080FFAlliance|r" or "|cFFFF0000Horde|r"
+        factionMessage = " |cFF888888(" .. factionName .. " faction)|r"
+    end
+    
+    print("|cFF00FF00[Random Quest Started]|r Attune " .. itemName .. factionMessage .. "!")
     print("|cFF87CEEB[Random Quest]|r Source: " .. sourceName)
     
     UIQuestManager.UpdateCurrentQuestDisplay()

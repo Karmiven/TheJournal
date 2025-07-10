@@ -16,6 +16,53 @@ local table_remove = table.remove
 local string_match = string.match
 local string_find = string.find
 
+-- ʕ •ᴥ•ʔ✿ Aggressive Tooltip Repositioning (MoveAnything override) ✿ʕ•ᴥ•ʔ
+function UIItemsManager.ForceTooltipPosition(anchorFrame)
+    if not anchorFrame or not GameTooltip:IsShown() then return end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Create persistent repositioning frame ✿ʕ ◕ᴥ◕ ʔ
+    if not _G.DJ_TooltipForcer then
+        local forcer = CreateFrame("Frame")
+        forcer.anchorFrame = nil
+        forcer.isActive = false
+        _G.DJ_TooltipForcer = forcer
+    end
+    
+    local forcer = _G.DJ_TooltipForcer
+    forcer.anchorFrame = anchorFrame
+    forcer.isActive = true
+    
+    -- ʕ ● ᴥ ●ʔ✿ Aggressive repositioning function ✿ʕ ● ᴥ ●ʔ
+    local function RepositionTooltip()
+        if forcer.isActive and forcer.anchorFrame and GameTooltip:IsShown() then
+            GameTooltip:ClearAllPoints()
+            GameTooltip:SetPoint("BOTTOMLEFT", forcer.anchorFrame, "BOTTOMRIGHT", 3, 3)
+        end
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Initial positioning ✿ʕ ◕ᴥ◕ ʔ
+    RepositionTooltip()
+    
+    -- ʕ ● ᴥ ●ʔ✿ Continuous aggressive repositioning to fight MoveAnything ✿ʕ ● ᴥ ●ʔ
+    forcer:SetScript("OnUpdate", function(self, elapsed)
+        self.elapsed = (self.elapsed or 0) + elapsed
+        if self.elapsed >= 0.05 then -- Check every 50ms
+            self.elapsed = 0
+            if self.isActive and self.anchorFrame and GameTooltip:IsShown() then
+                -- ʕ ◕ᴥ◕ ʔ✿ Force position if it's been moved ✿ʕ ◕ᴥ◕ ʔ
+                local point, relativeTo, relativePoint, xOfs, yOfs = GameTooltip:GetPoint(1)
+                if not (point == "BOTTOMLEFT" and relativeTo == self.anchorFrame and relativePoint == "BOTTOMRIGHT" and xOfs == 0 and yOfs == 0) then
+                    RepositionTooltip()
+                end
+            else
+                -- ʕ ● ᴥ ●ʔ✿ Stop forcing when conditions not met ✿ʕ ● ᴥ ●ʔ
+                self.isActive = false
+                self:SetScript("OnUpdate", nil)
+            end
+        end
+    end)
+end
+
 -- ʕ •ᴥ•ʔ✿ Item Button Management ✿ʕ•ᴥ•ʔ
 function UIItemsManager.AcquireItemButton(dIndex, iIndex)
     local btn = GetItemButton()
@@ -79,13 +126,25 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
     btn:RegisterForClicks("LeftButtonUp")
     btn:SetScript("OnEnter", function(self)
         if self.itemLink then
+            -- ʕ •ᴥ•ʔ✿ Always use regular GameTooltip for full addon support ✿ʕ•ᴥ•ʔ
             GameTooltip_SetDefaultAnchor(GameTooltip, self)
             GameTooltip:SetHyperlink(self.itemLink)
             GameTooltip:Show()
+            
+            -- ʕ ◕ᴥ◕ ʔ✿ Force aggressive repositioning if quest icon is visible ✿ʕ ◕ᴥ◕ ʔ
+            local randomQuestIcon = _G.randomQuestIcon or _G.DJ_RandomQuestIcon or _G["DJ_RandomQuestIcon"]
+            if randomQuestIcon and randomQuestIcon:IsShown() then
+                UIItemsManager.ForceTooltipPosition(randomQuestIcon)
+            end
         end
     end)
     btn:SetScript("OnLeave", function(self) 
-        GameTooltip:Hide() 
+        GameTooltip:Hide()
+        -- ʕ •ᴥ•ʔ✿ Stop aggressive tooltip repositioning ✿ʕ•ᴥ•ʔ
+        if _G.DJ_TooltipForcer then
+            _G.DJ_TooltipForcer.isActive = false
+            _G.DJ_TooltipForcer:SetScript("OnUpdate", nil)
+        end
     end)
 
     btn:SetScript("OnClick", function(self, button)
