@@ -15,9 +15,9 @@ local questPointsText = nil
 local randomQuestIcon = nil
 local previewQuestIcon = nil
 
--- ʕ •ᴥ•ʔ✿ Quest Rolling Configuration ✿ʕ•ᴥ•ʔ
-local MAX_ROLL_ATTEMPTS = 100 -- Prevent infinite loops
-local ROLL_BATCH_SIZE = 10 -- Check multiple items per attempt
+-- ʕ •ᴥ•ʔ✿ Cache System ✿ʕ•ᴥ•ʔ
+local unattunedItemsCache = {}
+local cacheLastUpdated = 0
 
 -- ʕ ◕ᴥ◕ ʔ✿ Faction Checking for Quest Items ✿ʕ ◕ᴥ◕ ʔ
 local function IsItemFactionCompatible(itemID)
@@ -44,90 +44,81 @@ local function IsItemFactionCompatible(itemID)
     end
 end
 
--- ʕ ● ᴥ ●ʔ✿ Check if item is valid for quest ✿ʕ ● ᴥ ●ʔ
-local function IsItemValidForQuest(itemID)
-    if not itemID or itemID <= 0 then
-        return false
+-- ʕ ● ᴥ ●ʔ✿ Update Cache Function ✿ʕ ● ᴥ ●ʔ
+local function UpdateUnattunedItemsCache()
+    local currentTime = GetTime()
+    if currentTime - cacheLastUpdated < 30 then
+        return
     end
     
-    -- ʕ ◕ᴥ◕ ʔ✿ Check if item exists and is attunable ✿ʕ ◕ᴥ◕ ʔ
-    local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
-    if canAttune ~= 1 then
-        return false
-    end
+    wipe(unattunedItemsCache)
     
-    -- ʕ ● ᴥ ●ʔ✿ Check attunement progress ✿ʕ ● ᴥ ●ʔ
-    local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
-    if attuneProgress >= 100 then
-        return false
-    end
-    
-    -- ʕノ•ᴥ•ʔノ✿ Check faction compatibility ✿ʕノ•ᴥ•ʔノ
-    if not IsItemFactionCompatible(itemID) then
-        return false
-    end
-    
-    -- ʕ ● ᴥ ●ʔ✿ Check if item has sources ✿ʕ ● ᴥ ●ʔ
-    local hasSource = false
-    if _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
-        local bestSource = _G.ItemLocAPI:GetBestSource(itemID)
-        hasSource = bestSource and bestSource.chance and bestSource.chance > 0
-    elseif _G.ItemLocGetSourceCount then
-        local sourceCount = _G.ItemLocGetSourceCount(itemID) or 0
-        hasSource = sourceCount > 0
-    else
-        -- If no source checking available, assume it has sources
-        hasSource = true
-    end
-    
-    return hasSource
-end
-
--- ʕ ● ᴥ ●ʔ✿ Get Random Unattuned Item with Efficient Rolling ✿ʕ ● ᴥ ●ʔ
-function UIQuestManager.GetRandomUnattunedItem()
-    local attempts = 0
-    local checkedItems = {}
-    
-    while attempts < MAX_ROLL_ATTEMPTS do
-        attempts = attempts + 1
-        
-        -- ʕ ◕ᴥ◕ ʔ✿ Generate a batch of random item IDs ✿ʕ ◕ᴥ◕ ʔ
-        for i = 1, ROLL_BATCH_SIZE do
-            local randomItemID = random(1, MAX_ITEMID)
-            
-            -- ʕ ● ᴥ ●ʔ✿ Skip if we've already checked this item ✿ʕ ● ᴥ ●ʔ
-            if not checkedItems[randomItemID] then
-                checkedItems[randomItemID] = true
-                
-                -- ʕノ•ᴥ•ʔノ✿ Check if this item is valid for quest ✿ʕノ•ᴥ•ʔノ
-                if IsItemValidForQuest(randomItemID) then
-                    -- ʕ ● ᴥ ●ʔ✿ Find the dungeon source for this item ✿ʕ ● ᴥ ●ʔ
-                    local sourceName = "Unknown Source"
-                    if _G.dungeonData then
-                        for _, dungeon in ipairs(_G.dungeonData) do
-                            if dungeon.items then
-                                for _, itemID in ipairs(dungeon.items) do
-                                    if itemID == randomItemID then
-                                        sourceName = dungeon.name
-                                        break
-                                    end
-                                end
-                                if sourceName ~= "Unknown Source" then
-                                    break
-                                end
-                            end
+    local dungeonData = _G.dungeonData or {}
+    for _, dungeon in ipairs(dungeonData) do
+        if dungeon.items then
+            for _, itemID in ipairs(dungeon.items) do
+                local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
+                if canAttune == 1 then
+                    local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(itemID) or 0
+                    if attuneProgress < 100 then
+                        local hasSource = false
+                        if _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
+                            local bestSource = _G.ItemLocAPI:GetBestSource(itemID, dungeon.name)
+                            hasSource = bestSource and bestSource.chance and bestSource.chance > 0
+                        elseif _G.ItemLocGetSourceCount then
+                            local sourceCount = _G.ItemLocGetSourceCount(itemID) or 0
+                            hasSource = sourceCount > 0
+                        end
+                        
+                        if hasSource then
+                            table.insert(unattunedItemsCache, {
+                                itemID = itemID,
+                                dungeonName = dungeon.name
+                            })
                         end
                     end
-                    
-                    return randomItemID, sourceName
                 end
             end
         end
     end
     
-    -- ʕ ◕ᴥ◕ ʔ✿ If we couldn't find a valid item, show a message ✿ʕ ◕ᴥ◕ ʔ
+    cacheLastUpdated = currentTime
+end
+
+-- ʕ ● ᴥ ●ʔ✿ Get Random Unattuned Item with Faction Checking ✿ʕ ● ᴥ ●ʔ
+function UIQuestManager.GetRandomUnattunedItem()
+    UpdateUnattunedItemsCache()
+    
+    if #unattunedItemsCache == 0 then
+        return nil, "No suitable items found"
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Try to find a faction-compatible item ✿ʕ ◕ᴥ◕ ʔ
+    local maxAttempts = 50 -- Prevent infinite loops
+    local attempts = 0
+    
+    while attempts < maxAttempts do
+        attempts = attempts + 1
+        
+        local randomIndex = math.random(1, #unattunedItemsCache)
+        local selectedItem = unattunedItemsCache[randomIndex]
+        local itemIsValid = false
+        
+        -- ʕ ● ᴥ ●ʔ✿ Check faction compatibility first ✿ʕ ● ᴥ ●ʔ
+        if IsItemFactionCompatible(selectedItem.itemID) then
+            -- ＼ʕ •ᴥ•ʔ／✿ Verify item is still valid ✿＼ʕ •ᴥ•ʔ／
+            local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(selectedItem.itemID) or 0
+            local attuneProgress = _G.GetItemAttuneProgress and _G.GetItemAttuneProgress(selectedItem.itemID) or 0
+            
+            if canAttune == 1 and attuneProgress < 100 then
+                return selectedItem.itemID, selectedItem.dungeonName
+            end
+        end
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ If we couldn't find a faction-compatible item, show a message ✿ʕ ◕ᴥ◕ ʔ
     local playerFaction = UnitFactionGroup("player")
-    print("|cFFFF8000[Quest Warning]|r Could not find a " .. playerFaction .. "-compatible quest item after " .. (MAX_ROLL_ATTEMPTS * ROLL_BATCH_SIZE) .. " attempts")
+    print("|cFFFF8000[Quest Warning]|r Could not find a " .. playerFaction .. "-compatible quest item after " .. maxAttempts .. " attempts")
     
     return nil, "No faction-compatible items found"
 end
