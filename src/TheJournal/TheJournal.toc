@@ -10,12 +10,16 @@
 DJ_HordeAlliance.lua
 Constants.lua
 DJ_Dataset.lua
+
 DungeonCache.lua
 ItemLocAPI.lua
 Core.lua
+
 DJ_Settings.lua
 Utility.lua
 BossNavigation.lua
+
+
 UICore.lua
 UIItems.lua
 UIFriends.lua
@@ -33,6 +37,9 @@ UIPerformance.lua
 UIBountySystem.lua
 UIFriendsFrame.lua
 UITooltipEnhancement.lua
+UIBOETooltipEnhancement.lua
+UICtrlAltHover.lua
 UIBagScanner.lua
 UIFrames.lua
+
 Bindings.xml

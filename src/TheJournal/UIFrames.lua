@@ -49,6 +49,16 @@ local function UpdateDungeonCache(dungeonName)
 end
 
 local function GetCachedDropRate(itemId, dungeonName)
+    -- Use the existing UIPerformance module reference
+    if UIPerformance and UIPerformance.GetCachedDropRate then
+        return UIPerformance.GetCachedDropRate(itemId, dungeonName)
+    end
+
+    -- Fallback to global function if module not available
+    if _G.GetCachedDropRate and _G.GetCachedDropRate ~= GetCachedDropRate then
+        return _G.GetCachedDropRate(itemId, dungeonName)
+    end
+
     return 0 -- Default fallback
 end
 

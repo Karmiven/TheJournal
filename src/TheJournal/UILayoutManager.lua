@@ -195,13 +195,70 @@ local function GetDifficultyFilterOptions()
     return options
 end
 
+-- ʕ •ᴥ•ʔ✿ Static Difficulty Filter Options for DungeonDetail context ✿ʕ•ᴥ•ʔ
+local staticDifficultyFilterOptions = {
+    { state = "all", text = "All Difficulties", icon = "Interface\\Icons\\INV_Misc_Gem_01" },
+    { state = "normal", text = "Normal", icon = "Interface\\Icons\\INV_Misc_Gem_Sapphire_01" },
+    { state = "heroic", text = "Heroic", icon = "Interface\\Icons\\INV_Misc_Gem_Ruby_01" },
+    { state = "mythic", text = "Mythic", icon = "Interface\\Icons\\INV_Misc_Gem_Emerald_01" },
+    { state = "10n", text = "10-Man Normal", icon = "Interface\\Icons\\INV_Misc_Gem_Amethyst_01" },
+    { state = "10h", text = "10-Man Heroic", icon = "Interface\\Icons\\INV_Misc_Gem_Amethyst_02" },
+    { state = "25n", text = "25-Man Normal", icon = "Interface\\Icons\\INV_Misc_Gem_Topaz_01" },
+    { state = "25h", text = "25-Man Heroic", icon = "Interface\\Icons\\INV_Misc_Gem_Topaz_02" }
+}
+
+-- ʕ •ᴥ•ʔ✿ Context-aware difficulty options selector ✿ʕ•ᴥ•ʔ
+local function GetContextAwareDifficultyOptions()
+    -- ʕ •ᴥ•ʔ✿ DEBUG: Show context detection ✿ʕ•ᴥ•ʔ
+    print("DEBUG: GetContextAwareDifficultyOptions called")
+    print("DEBUG: _G.currentDungeon exists:", _G.currentDungeon ~= nil)
+    if _G.currentDungeon then
+        print("DEBUG: Current dungeon:", _G.currentDungeon.name or "unknown")
+    end
+
+    -- If we're viewing a specific dungeon (DungeonDetail context), use filtered static options
+    if _G.currentDungeon then
+        local filteredOptions = {}
+
+        -- Always include "All" as first option
+        table.insert(filteredOptions, staticDifficultyFilterOptions[1]) -- "all"
+
+        -- Get available difficulties for current dungeon
+        if _G.GetAvailableDifficulties then
+            local availableDifficulties = _G.GetAvailableDifficulties(_G.currentDungeon)
+            print("DEBUG: Available difficulties for " .. (_G.currentDungeon.name or "unknown") .. ":", table.concat(availableDifficulties, ", "))
+
+            -- Add only difficulties that are available for this dungeon
+            for _, difficulty in ipairs(availableDifficulties) do
+                for _, staticOption in ipairs(staticDifficultyFilterOptions) do
+                    if staticOption.state == difficulty and staticOption.state ~= "all" then
+                        table.insert(filteredOptions, staticOption)
+                        break
+                    end
+                end
+            end
+        else
+            -- Fallback: use all static options if GetAvailableDifficulties not available
+            filteredOptions = staticDifficultyFilterOptions
+        end
+
+        print("DEBUG: Using filtered difficulty options, count:", #filteredOptions)
+        return filteredOptions
+    else
+        -- If we're in grid preview, use dynamic options
+        local dynamicOptions = GetDifficultyFilterOptions()
+        print("DEBUG: Using dynamic difficulty options, count:", #dynamicOptions)
+        return dynamicOptions
+    end
+end
+
 local difficultyFilterOptions = {{ state = "all", text = "All", icon = "Interface\\Icons\\INV_Misc_Gem_01" }}
 
 local currentDifficultyIndex = 1
 
 function UILayoutManager.InitializeDifficultyFilter()
     -- Refresh options first
-    difficultyFilterOptions = GetDifficultyFilterOptions()
+    difficultyFilterOptions = GetContextAwareDifficultyOptions()
 
     -- Find current index based on saved setting - support old mythicFilter migration
     local currentFilter = "all"
@@ -244,25 +301,45 @@ end
 
 function UILayoutManager.UpdateDifficultyFilterButton(button)
     -- Refresh options first
-    difficultyFilterOptions = GetDifficultyFilterOptions()
-
-    -- Bounds check and reset index if needed
-    if currentDifficultyIndex > #difficultyFilterOptions or currentDifficultyIndex < 1 then
-        currentDifficultyIndex = 1
-    end
+    difficultyFilterOptions = GetContextAwareDifficultyOptions()
 
     -- Safety check for empty options
     if #difficultyFilterOptions == 0 then
         difficultyFilterOptions = {{ state = "all", text = "All (0)", icon = "Interface\\Icons\\INV_Misc_Gem_01" }}
         currentDifficultyIndex = 1
+    else
+        -- ʕ •ᴥ•ʔ✿ Only preserve filter choice when initializing, not when actively clicking ✿ʕ•ᴥ•ʔ
+        -- Simple bounds check without overriding user's active selection
+        if currentDifficultyIndex > #difficultyFilterOptions or currentDifficultyIndex < 1 then
+            -- Try to find saved filter first, then fall back to index 1
+            local savedFilter = Journal_charDB.itemFilters and Journal_charDB.itemFilters.difficultyFilter or "all"
+            local foundIndex = nil
+
+            for i, option in ipairs(difficultyFilterOptions) do
+                if option.state == savedFilter then
+                    foundIndex = i
+                    break
+                end
+            end
+
+            currentDifficultyIndex = foundIndex or 1
+        end
     end
 
     local opt = difficultyFilterOptions[currentDifficultyIndex]
+
+    -- ʕ •ᴥ•ʔ✿ DEBUG: Verify texture update ✿ʕ•ᴥ•ʔ
+    print("DEBUG: UpdateDifficultyFilterButton - Setting texture to:", opt.icon)
+    print("DEBUG: UpdateDifficultyFilterButton - Filter text:", opt.text)
+
     button:SetNormalTexture(opt.icon)
     local tex = button:GetNormalTexture()
     if tex then
         tex:SetTexCoord(0, 1, 0, 1)
         tex:SetSize(24, 24)
+        print("DEBUG: UpdateDifficultyFilterButton - Texture set successfully")
+    else
+        print("DEBUG: UpdateDifficultyFilterButton - WARNING: Could not get texture")
     end
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 
@@ -270,7 +347,13 @@ function UILayoutManager.UpdateDifficultyFilterButton(button)
     if not Journal_charDB.itemFilters then
         Journal_charDB.itemFilters = {}
     end
-    Journal_charDB.itemFilters.difficultyFilter = opt.state
+    -- Only update DB if it doesn't already match (avoid redundant saves)
+    if Journal_charDB.itemFilters.difficultyFilter ~= opt.state then
+        Journal_charDB.itemFilters.difficultyFilter = opt.state
+        print("DEBUG: UpdateDifficultyFilterButton - Updated DB filter to:", opt.state)
+    else
+        print("DEBUG: UpdateDifficultyFilterButton - DB filter already correct:", opt.state)
+    end
 end
 
 -- Legacy function name for compatibility
@@ -279,25 +362,20 @@ function UILayoutManager.UpdateMythicFilterButton(button)
 end
 
 function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
+    -- ʕ •ᴥ•ʔ✿ DEBUG: Verify click handler is called ✿ʕ•ᴥ•ʔ
+    print("DEBUG: OnDifficultyFilterClick called")
+
     -- Store tooltip state before making changes
     local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == button
 
     -- Refresh difficulty options in case dungeons have changed
-    difficultyFilterOptions = GetDifficultyFilterOptions()
+    difficultyFilterOptions = GetContextAwareDifficultyOptions()
 
-    -- ʕ •ᴥ•ʔ✿ Smart filtering: Skip unavailable difficulties for current dungeon ✿ʕ•ᴥ•ʔ
-    local availableDifficulties = {}
-    if _G.currentDungeon and _G.GetAvailableDifficulties then
-        local dungeonDifficulties = _G.GetAvailableDifficulties(_G.currentDungeon)
-        availableDifficulties = {"all"}
-        for _, diff in ipairs(dungeonDifficulties) do
-            table.insert(availableDifficulties, diff)
-        end
-    else
-        -- Fallback to all options
-        for _, opt in ipairs(difficultyFilterOptions) do
-            table.insert(availableDifficulties, opt.state)
-        end
+    -- ʕ •ᴥ•ʔ✿ DEBUG: Show current options ✿ʕ•ᴥ•ʔ
+    print("DEBUG: Current options count:", #difficultyFilterOptions)
+    print("DEBUG: Current index:", currentDifficultyIndex)
+    if difficultyFilterOptions[currentDifficultyIndex] then
+        print("DEBUG: Current filter:", difficultyFilterOptions[currentDifficultyIndex].state)
     end
 
     -- Safety check for current index
@@ -305,30 +383,47 @@ function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, L
         currentDifficultyIndex = 1
     end
 
-    -- Find next available difficulty
-    local currentState = difficultyFilterOptions[currentDifficultyIndex].state
-    local nextIndex = nil
-
-    for i = 1, #availableDifficulties do
-        if availableDifficulties[i] == currentState then
-            local nextDifficulty = availableDifficulties[i + 1] or availableDifficulties[1]
-            for j, opt in ipairs(difficultyFilterOptions) do
-                if opt.state == nextDifficulty then
-                    nextIndex = j
-                    break
-                end
-            end
-            break
-        end
-    end
-
-    if nextIndex then
-        currentDifficultyIndex = nextIndex
-    else
-        -- Fallback to normal cycling
+    -- ʕ •ᴥ•ʔ✿ Different logic for DungeonDetail vs Grid context ✿ʕ•ᴥ•ʔ
+    if _G.currentDungeon then
+        -- ʕ •ᴥ•ʔ✿ DungeonDetail context: Simple cycling through all options ✿ʕ•ᴥ•ʔ
+        print("DEBUG: DungeonDetail context - cycling from", currentDifficultyIndex)
         currentDifficultyIndex = currentDifficultyIndex + 1
         if currentDifficultyIndex > #difficultyFilterOptions then
             currentDifficultyIndex = 1
+        end
+        print("DEBUG: New index after cycling:", currentDifficultyIndex)
+    else
+        -- ʕ •ᴥ•ʔ✿ Grid context: Smart filtering for available difficulties ✿ʕ•ᴥ•ʔ
+        local availableDifficulties = {}
+        for _, opt in ipairs(difficultyFilterOptions) do
+            table.insert(availableDifficulties, opt.state)
+        end
+
+        -- Find next available difficulty
+        local currentState = difficultyFilterOptions[currentDifficultyIndex].state
+        local nextIndex = nil
+
+        for i = 1, #availableDifficulties do
+            if availableDifficulties[i] == currentState then
+                local nextDifficulty = availableDifficulties[i + 1] or availableDifficulties[1]
+                for j, opt in ipairs(difficultyFilterOptions) do
+                    if opt.state == nextDifficulty then
+                        nextIndex = j
+                        break
+                    end
+                end
+                break
+            end
+        end
+
+        if nextIndex then
+            currentDifficultyIndex = nextIndex
+        else
+            -- Fallback to normal cycling
+            currentDifficultyIndex = currentDifficultyIndex + 1
+            if currentDifficultyIndex > #difficultyFilterOptions then
+                currentDifficultyIndex = 1
+            end
         end
     end
 
@@ -336,6 +431,19 @@ function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, L
     if currentDifficultyIndex > #difficultyFilterOptions or currentDifficultyIndex < 1 then
         currentDifficultyIndex = 1
     end
+
+    -- ʕ •ᴥ•ʔ✿ DEBUG: Show final state ✿ʕ•ᴥ•ʔ
+    print("DEBUG: Final index:", currentDifficultyIndex)
+    if difficultyFilterOptions[currentDifficultyIndex] then
+        print("DEBUG: Final filter:", difficultyFilterOptions[currentDifficultyIndex].state)
+    end
+
+    -- ʕ •ᴥ•ʔ✿ Save filter to database BEFORE updating button ✿ʕ•ᴥ•ʔ
+    if not Journal_charDB.itemFilters then
+        Journal_charDB.itemFilters = {}
+    end
+    Journal_charDB.itemFilters.difficultyFilter = difficultyFilterOptions[currentDifficultyIndex].state
+    print("DEBUG: Saved new filter to DB before button update:", difficultyFilterOptions[currentDifficultyIndex].state)
 
     UILayoutManager.UpdateDifficultyFilterButton(button)
 
@@ -361,6 +469,8 @@ end
 
 -- Legacy function name for compatibility
 function UILayoutManager.OnMythicFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
+    -- ʕ •ᴥ•ʔ✿ DEBUG: Verify legacy function is called ✿ʕ•ᴥ•ʔ
+    print("DEBUG: OnMythicFilterClick called (legacy wrapper)")
     UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
 end
 
@@ -496,7 +606,7 @@ function UILayoutManager.Initialize()
 
     -- Update difficulty options when dungeons are available
     if _G.dungeonButtons and #_G.dungeonButtons > 0 then
-        difficultyFilterOptions = GetDifficultyFilterOptions()
+        difficultyFilterOptions = GetContextAwareDifficultyOptions()
     end
 end
 
