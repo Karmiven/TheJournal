@@ -4701,26 +4701,46 @@ dungeonListRefreshButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-
 
 -- ʕ •ᴥ•ʔ✿ Refresh Button Click Handler ✿ʕ•ᴥ•ʔ
 function OnDungeonListRefreshClick()
-    -- ʕ •ᴥ•ʔ✿ Invalidate all caches to force fresh data ✿ʕ•ᴥ•ʔ
-    if InvalidateDungeonAttunementCache then
-        InvalidateDungeonAttunementCache()
+    -- ʕ •ᴥ•ʔ✿ Use comprehensive cache clearing from UIBagScanner ✿ʕ•ᴥ•ʔ
+    if _G.UIBagScanner and _G.UIBagScanner.InvalidateAttunementCache then
+        _G.UIBagScanner.InvalidateAttunementCache()
+    else
+        -- Fallback to manual cache clearing if UIBagScanner not available
+        if InvalidateDungeonAttunementCache then
+            InvalidateDungeonAttunementCache()
+        end
+
+        -- Clear item caches
+        if preparedItemsCache then
+            wipe(preparedItemsCache)
+        end
+
+        -- Clear attunement caches
+        if uiCache and uiCache.dungeonAttunement then
+            wipe(uiCache.dungeonAttunement)
+        end
+        if uiCache and uiCache.dungeonAttunementLastUpdate then
+            wipe(uiCache.dungeonAttunementLastUpdate)
+        end
+
+        -- Clear smart cache for attunement data
+        if smartCache then
+            smartCache.attunement = {}
+            smartCache.forge = {}
+        end
     end
 
-    -- Clear item caches
-    if preparedItemsCache then
-        wipe(preparedItemsCache)
-    end
 
-    -- Clear attunement caches
-    if uiCache and uiCache.dungeonAttunement then
-        wipe(uiCache.dungeonAttunement)
-    end
-    if uiCache and uiCache.dungeonAttunementLastUpdate then
-        wipe(uiCache.dungeonAttunementLastUpdate)
-    end
 
     -- Refresh the dungeon list
     FilterAndSortDungeons()
+
+    -- Force refresh current dungeon view if open
+    if _G.currentDungeon and _G.LoadDungeonDetail then
+        C_Timer.After(0.1, function()
+            _G.LoadDungeonDetail(_G.currentDungeon)
+        end)
+    end
 
     -- Show feedback
     print("|cFF87CEEB[TheJournal]|r Dungeon list refreshed!")

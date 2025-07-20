@@ -209,13 +209,6 @@ local staticDifficultyFilterOptions = {
 
 -- ʕ •ᴥ•ʔ✿ Context-aware difficulty options selector ✿ʕ•ᴥ•ʔ
 local function GetContextAwareDifficultyOptions()
-    -- ʕ •ᴥ•ʔ✿ DEBUG: Show context detection ✿ʕ•ᴥ•ʔ
-    print("DEBUG: GetContextAwareDifficultyOptions called")
-    print("DEBUG: _G.currentDungeon exists:", _G.currentDungeon ~= nil)
-    if _G.currentDungeon then
-        print("DEBUG: Current dungeon:", _G.currentDungeon.name or "unknown")
-    end
-
     -- If we're viewing a specific dungeon (DungeonDetail context), use filtered static options
     if _G.currentDungeon then
         local filteredOptions = {}
@@ -226,7 +219,6 @@ local function GetContextAwareDifficultyOptions()
         -- Get available difficulties for current dungeon
         if _G.GetAvailableDifficulties then
             local availableDifficulties = _G.GetAvailableDifficulties(_G.currentDungeon)
-            print("DEBUG: Available difficulties for " .. (_G.currentDungeon.name or "unknown") .. ":", table.concat(availableDifficulties, ", "))
 
             -- Add only difficulties that are available for this dungeon
             for _, difficulty in ipairs(availableDifficulties) do
@@ -241,13 +233,10 @@ local function GetContextAwareDifficultyOptions()
             -- Fallback: use all static options if GetAvailableDifficulties not available
             filteredOptions = staticDifficultyFilterOptions
         end
-
-        print("DEBUG: Using filtered difficulty options, count:", #filteredOptions)
         return filteredOptions
     else
         -- If we're in grid preview, use dynamic options
         local dynamicOptions = GetDifficultyFilterOptions()
-        print("DEBUG: Using dynamic difficulty options, count:", #dynamicOptions)
         return dynamicOptions
     end
 end
@@ -327,19 +316,13 @@ function UILayoutManager.UpdateDifficultyFilterButton(button)
     end
 
     local opt = difficultyFilterOptions[currentDifficultyIndex]
-
-    -- ʕ •ᴥ•ʔ✿ DEBUG: Verify texture update ✿ʕ•ᴥ•ʔ
-    print("DEBUG: UpdateDifficultyFilterButton - Setting texture to:", opt.icon)
-    print("DEBUG: UpdateDifficultyFilterButton - Filter text:", opt.text)
-
     button:SetNormalTexture(opt.icon)
     local tex = button:GetNormalTexture()
     if tex then
         tex:SetTexCoord(0, 1, 0, 1)
         tex:SetSize(24, 24)
-        print("DEBUG: UpdateDifficultyFilterButton - Texture set successfully")
     else
-        print("DEBUG: UpdateDifficultyFilterButton - WARNING: Could not get texture")
+        --print("DEBUG: UpdateDifficultyFilterButton - WARNING: Could not get texture")
     end
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 
@@ -350,9 +333,8 @@ function UILayoutManager.UpdateDifficultyFilterButton(button)
     -- Only update DB if it doesn't already match (avoid redundant saves)
     if Journal_charDB.itemFilters.difficultyFilter ~= opt.state then
         Journal_charDB.itemFilters.difficultyFilter = opt.state
-        print("DEBUG: UpdateDifficultyFilterButton - Updated DB filter to:", opt.state)
     else
-        print("DEBUG: UpdateDifficultyFilterButton - DB filter already correct:", opt.state)
+        --print("DEBUG: UpdateDifficultyFilterButton - DB filter already correct:", opt.state)
     end
 end
 
@@ -362,21 +344,11 @@ function UILayoutManager.UpdateMythicFilterButton(button)
 end
 
 function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
-    -- ʕ •ᴥ•ʔ✿ DEBUG: Verify click handler is called ✿ʕ•ᴥ•ʔ
-    print("DEBUG: OnDifficultyFilterClick called")
-
     -- Store tooltip state before making changes
     local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == button
 
     -- Refresh difficulty options in case dungeons have changed
     difficultyFilterOptions = GetContextAwareDifficultyOptions()
-
-    -- ʕ •ᴥ•ʔ✿ DEBUG: Show current options ✿ʕ•ᴥ•ʔ
-    print("DEBUG: Current options count:", #difficultyFilterOptions)
-    print("DEBUG: Current index:", currentDifficultyIndex)
-    if difficultyFilterOptions[currentDifficultyIndex] then
-        print("DEBUG: Current filter:", difficultyFilterOptions[currentDifficultyIndex].state)
-    end
 
     -- Safety check for current index
     if currentDifficultyIndex > #difficultyFilterOptions or currentDifficultyIndex < 1 then
@@ -386,12 +358,10 @@ function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, L
     -- ʕ •ᴥ•ʔ✿ Different logic for DungeonDetail vs Grid context ✿ʕ•ᴥ•ʔ
     if _G.currentDungeon then
         -- ʕ •ᴥ•ʔ✿ DungeonDetail context: Simple cycling through all options ✿ʕ•ᴥ•ʔ
-        print("DEBUG: DungeonDetail context - cycling from", currentDifficultyIndex)
         currentDifficultyIndex = currentDifficultyIndex + 1
         if currentDifficultyIndex > #difficultyFilterOptions then
             currentDifficultyIndex = 1
         end
-        print("DEBUG: New index after cycling:", currentDifficultyIndex)
     else
         -- ʕ •ᴥ•ʔ✿ Grid context: Smart filtering for available difficulties ✿ʕ•ᴥ•ʔ
         local availableDifficulties = {}
@@ -432,18 +402,11 @@ function UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, L
         currentDifficultyIndex = 1
     end
 
-    -- ʕ •ᴥ•ʔ✿ DEBUG: Show final state ✿ʕ•ᴥ•ʔ
-    print("DEBUG: Final index:", currentDifficultyIndex)
-    if difficultyFilterOptions[currentDifficultyIndex] then
-        print("DEBUG: Final filter:", difficultyFilterOptions[currentDifficultyIndex].state)
-    end
-
     -- ʕ •ᴥ•ʔ✿ Save filter to database BEFORE updating button ✿ʕ•ᴥ•ʔ
     if not Journal_charDB.itemFilters then
         Journal_charDB.itemFilters = {}
     end
     Journal_charDB.itemFilters.difficultyFilter = difficultyFilterOptions[currentDifficultyIndex].state
-    print("DEBUG: Saved new filter to DB before button update:", difficultyFilterOptions[currentDifficultyIndex].state)
 
     UILayoutManager.UpdateDifficultyFilterButton(button)
 
@@ -469,8 +432,6 @@ end
 
 -- Legacy function name for compatibility
 function UILayoutManager.OnMythicFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
-    -- ʕ •ᴥ•ʔ✿ DEBUG: Verify legacy function is called ✿ʕ•ᴥ•ʔ
-    print("DEBUG: OnMythicFilterClick called (legacy wrapper)")
     UILayoutManager.OnDifficultyFilterClick(button, InvalidateItemsCache, LoadDungeonDetail)
 end
 
