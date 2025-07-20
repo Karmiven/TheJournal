@@ -22,7 +22,7 @@ end
 -- ʕ ● ᴥ ●ʔ✿ Handle friends debug command ✿ʕ ● ᴥ ●ʔ
 function SlashCommands.HandleFriendsDebugCommand()
     print("|cFFFFD700[DJ Debug]|r === FRIENDS DATA DEBUG ===")
-    
+
     -- ʕノ•ᴥ•ʔノ✿ Check FRIENDS_JOURNAL_POINTS ✿ʕノ•ᴥ•ʔノ
     if _G.FRIENDS_JOURNAL_POINTS then
         local count = 0
@@ -34,7 +34,7 @@ function SlashCommands.HandleFriendsDebugCommand()
     else
         print("|cFFFF0000[DJ Debug]|r FRIENDS_JOURNAL_POINTS is nil!")
     end
-    
+
     -- ＼ʕ •ᴥ•ʔ／✿ Check Journal_charDB.friendsJournalPoints ✿＼ʕ •ᴥ•ʔ／
     if Journal_charDB and Journal_charDB.friendsJournalPoints then
         local count = 0
@@ -46,7 +46,7 @@ function SlashCommands.HandleFriendsDebugCommand()
     else
         print("|cFFFF0000[DJ Debug]|r Journal_charDB.friendsJournalPoints is nil!")
     end
-    
+
     -- ʕ •ᴥ•ʔ✿ Check FRIENDS_ATTUNEMENT_DATA ✿ʕ •ᴥ•ʔ
     if _G.FRIENDS_ATTUNEMENT_DATA then
         local count = 0
@@ -59,7 +59,7 @@ function SlashCommands.HandleFriendsDebugCommand()
     else
         print("|cFFFF0000[DJ Debug]|r FRIENDS_ATTUNEMENT_DATA is nil!")
     end
-    
+
     -- ʕ ◕ᴥ◕ ʔ✿ Check our own data ✿ʕ ◕ᴥ◕ ʔ
     local playerName = UnitName("player")
     print("|cFF00FF00[DJ Debug]|r Your name: " .. playerName)
@@ -69,7 +69,7 @@ function SlashCommands.HandleFriendsDebugCommand()
     else
         print("|cFF00FF00[DJ Debug]|r Your quest item: none")
     end
-    
+
     print("|cFFFFD700[DJ Debug]|r === END DEBUG ===")
 end
 
@@ -85,7 +85,7 @@ function SlashCommands.HandleFactionTooltipCommand()
     if Journal_charDB.showFactionTooltips == nil then
         Journal_charDB.showFactionTooltips = true
     end
-    
+
     Journal_charDB.showFactionTooltips = not Journal_charDB.showFactionTooltips
     local status = Journal_charDB.showFactionTooltips and "|cFF00FF00enabled|r" or "|cFFFF0000disabled|r"
     print("|cFFFFD700[DJ Faction]|r Faction tooltips " .. status)
@@ -94,7 +94,7 @@ end
 -- ʕノ•ᴥ•ʔノ✿ Handle scale command ✿ʕノ•ᴥ•ʔノ
 function SlashCommands.HandleScaleCommand(scaleValue)
     local scale = tonumber(scaleValue)
-    
+
     if not scale then
         local currentScale = (Journal_charDB.uiScale or 100)
         print("|cFFFFD700[DJ Scale]|r Current UI scale: " .. currentScale .. "%")
@@ -102,13 +102,13 @@ function SlashCommands.HandleScaleCommand(scaleValue)
         print("|cFFFFD700[DJ Scale]|r Use /dj scalereset to reset to 100% if frames go off-screen")
         return
     end
-    
+
     -- ʕ ◕ᴥ◕ ʔ✿ Clamp scale between 25% and 200% ✿ʕ ◕ᴥ◕ ʔ
     scale = math.max(25, math.min(200, scale))
-    
+
     -- ʕ ● ᴥ ●ʔ✿ Store scale setting ✿ʕ ● ᴥ ●ʔ
     Journal_charDB.uiScale = scale
-    
+
     -- ＼ʕ •ᴥ•ʔ／✿ Apply scale to all frames ✿＼ʕ •ᴥ•ʔ／
     if _G.DungeonJournalFrame then
         SlashCommands.ApplyScaleToAllFrames(scale)
@@ -122,14 +122,14 @@ end
 -- ʕノ•ᴥ•ʔノ✿ Enhanced slash command handler ✿ʕノ•ᴥ•ʔノ
 function SlashCommands.HandleSlashCommand(msg)
     msg = string.lower(string.trim(msg or ""))
-    
+
     -- ʕ ◕ᴥ◕ ʔ✿ Check for scale command with parameter ✿ʕ ◕ᴥ◕ ʔ
     local scaleMatch = msg:match("^scale%s+(.+)")
     if scaleMatch then
         SlashCommands.HandleScaleCommand(scaleMatch)
         return
     end
-    
+
     if msg == "points" then
         SlashCommands.HandlePointsCommand()
     elseif msg == "friendsdebug" then
@@ -181,7 +181,7 @@ function SlashCommands.ResetAllFramesToDefaultScale()
     if _G.DungeonJournalFrame then
         _G.DungeonJournalFrame:SetScale(1.0)
     end
-    
+
     if _G.AttunementFriendsFrame then
         -- Ensure uniform scale is default
         _G.AttunementFriendsFrame:SetScale(1.0)
@@ -191,11 +191,11 @@ function SlashCommands.ResetAllFramesToDefaultScale()
             _G.AttunementFriendsFrame:SetSize(_G.AttunementFriendsFrame.baseWidth, _G.AttunementFriendsFrame.baseHeight)
         end
     end
-    
+
     if _G.DJ_QuestPopoutFrame then
         _G.DJ_QuestPopoutFrame:SetScale(1.0)
     end
-    
+
     if _G.DJ_TransformEditor then
         _G.DJ_TransformEditor:SetScale(1.0)
     end
@@ -205,13 +205,13 @@ end
 function SlashCommands.ApplyScaleToAllFrames(scale)
     -- ʕ ◕ᴥ◕ ʔ✿ First reset all frames to default scale to avoid compounding ✿ʕ ◕ᴥ◕ ʔ
     SlashCommands.ResetAllFramesToDefaultScale()
-    
+
     local scaleFactor = scale / 100
-    
+
     if _G.DungeonJournalFrame then
         _G.DungeonJournalFrame:SetScale(scaleFactor)
     end
-    
+
     if _G.AttunementFriendsFrame then
         -- Cache default dimensions once
         if not _G.AttunementFriendsFrame.baseWidth then
@@ -226,12 +226,12 @@ function SlashCommands.ApplyScaleToAllFrames(scale)
         _G.AttunementFriendsFrame:SetScale(1.0) -- prevent proportional scaling
         _G.AttunementFriendsFrame:SetSize(baseW, newH)
     end
-    
+
     -- ʕ ◕ᴥ◕ ʔ✿ Also apply to any quest popout frames ✿ʕ ◕ᴥ◕ ʔ
     if _G.DJ_QuestPopoutFrame then
         _G.DJ_QuestPopoutFrame:SetScale(scaleFactor)
     end
-    
+
     -- ＼ʕ •ᴥ•ʔ／✿ Apply to transform editor if it exists ✿＼ʕ •ᴥ•ʔ／
     if _G.DJ_TransformEditor then
         _G.DJ_TransformEditor:SetScale(scaleFactor)

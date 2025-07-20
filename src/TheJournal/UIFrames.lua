@@ -318,18 +318,41 @@ end
 
 -- Check if an item is bountied
 local function IsItemBountied(itemId)
-    if not itemId or not _G.GetCustomGameData then return false end
+    if not itemId or not _G.GetCustomGameData then
+        return false 
+    end
+    
     local bountiedValue = _G.GetCustomGameData(31, itemId)
+    -- ʕ •ᴥ•ʔ✿ Only print debug for bounties that are found ✿ʕ •ᴥ•ʔ
+    if (bountiedValue or 0) > 0 then
+        print(string.format("UIFrames: Found bounty - ItemID=%s, BountiedValue=%s", tostring(itemId), tostring(bountiedValue)))
+    end
     return (bountiedValue or 0) > 0
 end
 
 -- Set bounty icon on a frame, positioned relative to an icon
 local function SetFrameBounty(frame, itemLink, iconFrame)
+    -- ʕ •ᴥ•ʔ✿ Only run bounty system when journal is open ✿ʕ •ᴥ•ʔ
+    if not DungeonJournalFrame or not DungeonJournalFrame:IsShown() then
+        return
+    end
+
+    -- ʕ •ᴥ•ʔ✿ Validate inputs ✿ʕ •ᴥ•ʔ
+    if not frame or not itemLink then 
+        return 
+    end
+
     local bountyFrameName = (frame:GetName() or "UnnamedFrame") .. '_Bounty'
     local bountyFrame = _G[bountyFrameName]
     local itemId = GetItemIDFromLink(itemLink)
 
-    if itemId and IsItemBountied(itemId) then
+    if not itemId then
+        return
+    end
+
+    local isBountied = IsItemBountied(itemId)
+
+    if itemId and isBountied then
         if not bountyFrame then
             bountyFrame = CreateFrame('Frame', bountyFrameName, frame)
             bountyFrame:SetWidth(BOUNTY_ICON.SIZE)
@@ -338,12 +361,14 @@ local function SetFrameBounty(frame, itemLink, iconFrame)
             bountyFrame.texture = bountyFrame:CreateTexture(nil, 'OVERLAY')
             bountyFrame.texture:SetAllPoints()
             bountyFrame.texture:SetTexture(BOUNTY_ICON.TEXTURE)
+            print("UIFrames: Created bounty icon for itemID", itemId)
         end
         bountyFrame:SetParent(frame)
         -- Position relative to the icon frame instead of the button frame
         local targetFrame = iconFrame or frame
         bountyFrame:SetPoint('TOPRIGHT', targetFrame, 'TOPRIGHT', -2, -2)
         bountyFrame:Show()
+        print("UIFrames: Showing bounty icon for itemID", itemId)
     elseif bountyFrame then
         bountyFrame:Hide()
     end
@@ -1835,7 +1860,11 @@ DisplayItemsList = function(dungeon, versionIndex, itemsToShow)
         end
 
         -- Add bounty icon if item is bountied (positioned on the item icon)
-        SetFrameBounty(btn, iLink, btn.iconTex)
+        if _G.BountySystem and _G.BountySystem.SetFrameBounty then
+            _G.BountySystem.SetFrameBounty(btn, iLink, btn.iconTex)
+        else
+            SetFrameBounty(btn, iLink, btn.iconTex)
+        end
 
         local col = (shownItems - 1) % NUM_COLS
         local row = math.floor((shownItems - 1) / NUM_COLS)
@@ -3597,6 +3626,11 @@ function ShowJournal()
             _G.TheJournal_UIBagScanner.RefreshBagScan()
         end
 
+        -- ʕ •ᴥ•ʔ✿ Refresh bounty frames when opening journal ✿ʕ •ᴥ•ʔ
+        if _G.BountySystem and _G.BountySystem.RefreshAllBountyFrames then
+            _G.BountySystem.RefreshAllBountyFrames()
+        end
+
         -- Use a timer to ensure UI state is fully loaded before sorting
         C_Timer.After(0.1, function()
             -- Sort dungeons immediately when showing
@@ -3611,6 +3645,11 @@ end
 function HideJournal()
     if DungeonJournalFrame then
         DungeonJournalFrame:Hide()
+        
+        -- ʕ •ᴥ•ʔ✿ Clean up bounty frames when journal closes ✿ʕ •ᴥ•ʔ
+        if _G.BountySystem and _G.BountySystem.CleanupAllBountyFrames then
+            _G.BountySystem.CleanupAllBountyFrames()
+        end
     end
 end
 
@@ -3773,36 +3812,15 @@ _G.scrollChild = scrollChild
 -- Table to store friend entry frames
 local friendEntries = {}
 
--- Function to convert vector color (r,g,b) to WoW color string format
--- Accepts color values in 0-1 range and converts to |cFFRRGGBB format
-local function VectorToColorString(r, g, b)
-    -- Ensure values are within valid range and provide defaults
-    r = math.max(0, math.min(1, r or 1))
-    g = math.max(0, math.min(1, g or 1))
-    b = math.max(0, math.min(1, b or 1))
-
-    -- Convert 0-1 range to 0-255 and format as hex
-    local rHex = string.format("%02x", math.floor(r * 255))
-    local gHex = string.format("%02x", math.floor(g * 255))
-    local bHex = string.format("%02x", math.floor(b * 255))
-    return "|cFF" .. rHex .. gHex .. bHex
-end
-
--- Dynamic class color function - now works directly with class IDs
 local function GetClassColor(classId)
     if not classId or type(classId) ~= "number" then
         return "|cFFFFFFFF"
     end
 
-    -- Try to get the color using the class ID directly
     if _G.CustomGetClassColor then
-        local r, g, b = _G.CustomGetClassColor(classId)
-        if r and g and b then
-            return VectorToColorString(r, g, b)
-        end
+        local r, g, b, string = _G.CustomGetClassColor(classId)
+        return string
     end
-
-    -- Final fallback to white
     return "|cFFFFFFFF"
 end
 
@@ -4730,16 +4748,17 @@ function OnDungeonListRefreshClick()
         end
     end
 
-
+    -- ʕ •ᴥ•ʔ✿ Immediately refresh all attunement text on dungeon buttons ✿ʕ•ᴥ•ʔ
+    if RefreshAllAttunableText then
+        RefreshAllAttunableText()
+    end
 
     -- Refresh the dungeon list
     FilterAndSortDungeons()
 
-    -- Force refresh current dungeon view if open
+    -- ʕ •ᴥ•ʔ✿ Immediately refresh current dungeon view if open ✿ʕ•ᴥ•ʔ
     if _G.currentDungeon and _G.LoadDungeonDetail then
-        C_Timer.After(0.1, function()
-            _G.LoadDungeonDetail(_G.currentDungeon)
-        end)
+        LoadDungeonDetail(_G.currentDungeon)
     end
 
     -- Show feedback

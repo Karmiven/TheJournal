@@ -57,6 +57,11 @@ end
 function Performance.ReleaseItemButton(button)
     if not button or not activeItemButtons[button] then return end
 
+    -- ʕ •ᴥ•ʔ✿ Clean up bounty frame if it exists ✿ʕ•ᴥ•ʔ
+    if _G.BountySystem and _G.BountySystem.CleanupBountyFrame then
+        _G.BountySystem.CleanupBountyFrame(button)
+    end
+
     button:Hide()
     button:ClearAllPoints()
     button:SetParent(UIParent)
