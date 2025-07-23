@@ -1678,6 +1678,7 @@ SlashCmdList["DJ"] = function(msg)
         print("|cFFFFD700[DJ Commands]|r /dj scalereset - Reset UI scale to 100% (normal size)")
         print("|cFFFFD700[DJ Commands]|r /testboe [item] - Test if friends need BOE item")
         print("|cFFFFD700[DJ Commands]|r /testboe auto - Toggle automatic BOE testing on tooltip hover")
+        print("|cFFFFD700[DJ Commands]|r /tooltipmode [secure/direct] - Toggle tooltip display mode")
         print("|cFFFFD700[DJ Commands]|r /boedebug - Toggle debug mode for BOE testing")
         print("|cFFFFD700[DJ Commands]|r /djc - Open settings panel")
         print("|cFFFFD700[DJ Commands]|r /dj - Open Dungeon Journal")
@@ -1915,6 +1916,44 @@ SlashCmdList["TESTBOE"] = function(msg)
     end
 
     PerformBOETest(itemID, link, false)
+end
+
+-- ʕ •ᴥ•ʔ✿ Tooltip Mode Command ✿ʕ •ᴥ•ʔ
+SLASH_TOOLTIPMODE1 = "/tooltipmode"
+SlashCmdList["TOOLTIPMODE"] = function(msg)
+    local args = string.lower(msg or "")
+
+    if args == "" or args == "help" then
+        print("|cFFFFD700[Tooltip Mode]|r Available modes:")
+        print("|cFFFFD700[Tooltip Mode]|r   secure - Use separate frames (recommended, no taint)")
+        print("|cFFFFD700[Tooltip Mode]|r   direct - Add to GameTooltip directly (may cause taint)")
+        local currentMode = (_G.DJ_Settings and _G.DJ_Settings.useDirectTooltip) and "direct" or "secure"
+        print("|cFFFFD700[Tooltip Mode]|r Current mode: |cFF00FF00" .. currentMode .. "|r")
+        return
+    end
+
+    if args == "secure" then
+        _G.DJ_Settings = _G.DJ_Settings or {}
+        _G.DJ_Settings.useDirectTooltip = false
+        if Journal_charDB then
+            Journal_charDB.useDirectTooltip = false
+        end
+        print("|cFFFFD700[Tooltip Mode]|r Switched to |cFF00FF00secure mode|r (separate frames)")
+        print("|cFFFFD700[Tooltip Mode]|r Tooltip information will appear in frames next to tooltips")
+        print("|cFFFFD700[Tooltip Mode]|r |cFF00FF00Reload UI (/reload) for changes to take effect|r")
+    elseif args == "direct" then
+        _G.DJ_Settings = _G.DJ_Settings or {}
+        _G.DJ_Settings.useDirectTooltip = true
+        if Journal_charDB then
+            Journal_charDB.useDirectTooltip = true
+        end
+        print("|cFFFFD700[Tooltip Mode]|r Switched to |cFFFFFF00direct mode|r (in GameTooltip)")
+        print("|cFFFF0000[Warning]|r Direct mode may cause GameTooltip taint!")
+        print("|cFFFFD700[Tooltip Mode]|r |cFF00FF00Reload UI (/reload) for changes to take effect|r")
+    else
+        print("|cFFFFD700[Tooltip Mode]|r Invalid mode. Use 'secure' or 'direct'")
+        print("|cFFFFD700[Tooltip Mode]|r Type '/tooltipmode help' for more information")
+    end
 end
 
 -- Function to find boss ID by name from dungeon data

@@ -15,7 +15,7 @@ if not C_Timer then
             end
         end)
     end
-    
+
     function C_Timer.NewTicker(delay, func, iterations)
         local f = CreateFrame("Frame")
         f.elapsed = 0
@@ -38,6 +38,15 @@ if not C_Timer then
                 f:SetScript("OnUpdate", nil)
             end
         }
+    end
+end
+
+-- ʕ •ᴥ•ʔ✿ Cross-version texture color compatibility ✿ʕ •ᴥ•ʔ
+local function SetTextureColor(texture, r, g, b, a)
+    if texture.SetColorTexture then
+        texture:SetColorTexture(r, g, b, a)
+    else
+        texture:SetTexture(r, g, b, a)
     end
 end
 
@@ -282,10 +291,10 @@ local function ClearSpellFrames()
     -- Clear spell frames from the spell container
     if _G.dungeonDetailFrame and _G.dungeonDetailFrame.bossNav and _G.dungeonDetailFrame.bossNav.spellContainer then
         local spellContainer = _G.dungeonDetailFrame.bossNav.spellContainer
-        
+
         -- Get all children frames
         local children = { spellContainer:GetChildren() }
-        
+
         -- Properly clean up each child frame
         for i = 1, #children do
             local child = children[i]
@@ -295,11 +304,11 @@ local function ClearSpellFrames()
                 child:SetScript("OnEnter", nil)
                 child:SetScript("OnLeave", nil)
                 child:EnableMouse(false)
-                
+
                 -- Hide and remove from parent
                 child:Hide()
                 child:SetParent(nil)
-                
+
                 -- Clear the texture references to prevent memory leaks
                 local regions = { child:GetRegions() }
                 for j = 1, #regions do
@@ -310,12 +319,12 @@ local function ClearSpellFrames()
                 end
             end
         end
-        
+
         -- Clear the container itself
         spellContainer:Hide()
         spellContainer:SetSize(1, 1)
     end
-    
+
     -- Also clear any orphaned global spell frames by name pattern
     for i = 1, 20 do  -- Assume max 20 spell frames
         local frameName = "DJ_SpellIcon" .. i
@@ -330,7 +339,7 @@ local function ClearSpellFrames()
             _G[frameName] = nil
         end
     end
-    
+
     -- Hide tooltip if it's still showing
     if GameTooltip:IsShown() then
         GameTooltip:Hide()
@@ -348,14 +357,14 @@ _G.ClearSpellFrames        = ClearSpellFrames
 
 function HasItemInfoCached(itemID)
     local itemName, link, quality, _, _, itemType, itemSubType, _, equipLoc
-    
+
     -- Use GetItemInfoCustom if available, fallback to GetItemInfo
     if _G.GetItemInfoCustom then
         itemName, link, quality, _, _, itemType, itemSubType, _, equipLoc = _G.GetItemInfoCustom(itemID)
     else
         itemName, link, quality, _, _, itemType, itemSubType, _, equipLoc = GetItemInfo(itemID)
     end
-    
+
     return itemName ~= nil
 end
 
@@ -368,13 +377,13 @@ local function GetDynamicDungeonItems(dungeon)
     if not dungeon then
         return {}
     end
-    
+
     -- Check if ItemLoc integration is enabled in settings
     local useItemLoc = Journal_charDB.useItemLocData
     if useItemLoc == nil then
         useItemLoc = true -- Default to enabled
     end
-    
+
     -- If ItemLoc is available and enabled, try to get dynamic items
     if useItemLoc and _G.ItemLocAPI and _G.ItemLocAPI:IsLoaded() then
         local dynamicItems = _G.ItemLocAPI:GetDungeonItems(dungeon)
@@ -383,13 +392,13 @@ local function GetDynamicDungeonItems(dungeon)
             return dynamicItems
         end
     end
-    
+
     -- Fallback to static item list
     if dungeon.items then
         --debugPrint("Using static item list for", dungeon.name, "- found", #dungeon.items, "items")
         return dungeon.items
     end
-    
+
     return {}
 end
 
@@ -398,7 +407,7 @@ local function HasItemLocSources(itemID)
     if not _G.ItemLocAPI or not _G.ItemLocAPI:IsLoaded() then
         return false
     end
-    
+
     local count = _G.ItemLocAPI:GetSourceCount(itemID)
     return count and count > 0
 end
@@ -408,7 +417,7 @@ local function GetItemLocationSummary(itemID, maxSources)
     if not _G.ItemLocAPI or not _G.ItemLocAPI:IsLoaded() then
         return "ItemLoc not loaded"
     end
-    
+
     return _G.ItemLocAPI:GetSourceSummary(itemID, maxSources)
 end
 
@@ -417,15 +426,16 @@ local function IsItemInCurrentZone(itemID)
     if not _G.ItemLocAPI or not _G.ItemLocAPI:IsLoaded() then
         return false
     end
-    
+
     return _G.ItemLocAPI:HasSourceInCurrentZone(itemID)
 end
 
 -- Export new functions to global namespace
 _G.GetDynamicDungeonItems = GetDynamicDungeonItems
-_G.HasItemLocSources = HasItemLocSources 
+_G.HasItemLocSources = HasItemLocSources
 _G.GetItemLocationSummary = GetItemLocationSummary
 _G.IsItemInCurrentZone = IsItemInCurrentZone
+_G.SetTextureColor = SetTextureColor
 
 -- ʕ •ᴥ•ʔ✿ COLOR UTILITY FUNCTIONS ✿ ʕ •ᴥ•ʔ
 -- Provides lightweight, muted color accents for spell tooltips. Accents are only applied when the string contains no pre-existing WoW color codes.
