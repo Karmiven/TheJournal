@@ -2,7 +2,7 @@
 ## Title: |cffFFFF00The|r |cffFF4500Journal|r
 ## Notes: This journal will bring many attunes along its path, hold it safe.
 ## Author: Qt
-## Version: 1.1
+## Version: 1.2.0
 ## SavedVariables: Journal_FriendCache
 ## SavedVariablesPerCharacter: Journal_charDB
 
@@ -10,12 +10,16 @@
 DJ_HordeAlliance.lua
 Constants.lua
 DJ_Dataset.lua
+
 DungeonCache.lua
 ItemLocAPI.lua
 Core.lua
+
 DJ_Settings.lua
 Utility.lua
 BossNavigation.lua
+
+
 UICore.lua
 UIItems.lua
 UIFriends.lua
@@ -33,6 +37,9 @@ UIPerformance.lua
 UIBountySystem.lua
 UIFriendsFrame.lua
 UITooltipEnhancement.lua
+UIBOETooltipEnhancement.lua
+UICtrlAltHover.lua
 UIBagScanner.lua
 UIFrames.lua
+
 Bindings.xml

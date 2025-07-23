@@ -100,13 +100,17 @@ function FriendAttunements.HookBOETooltip()
     end
 end
 
--- ʕ ◕ᴥ◕ ʔ✿ Hook GameTooltip to show friend status on all item tooltips ✿ʕ ◕ᴥ◕ ʔ
+-- ʕ ◕ᴥ◕ ʔ✿ REMOVED: Direct GameTooltip.Show hook to avoid taint ✿ʕ ◕ᴥ◕ ʔ
+-- ʕ •ᴥ•ʔ✿ Use safe HookScript instead ✿ʕ •ᴥ•ʔ
 function FriendAttunements.HookGameTooltip()
-    local originalGameTooltipShow = GameTooltip.Show
-    GameTooltip.Show = function(self)
+    -- ʕ ◕ᴥ◕ ʔ✿ Use HookScript for safe tooltip enhancement ✿ʕ ◕ᴥ◕ ʔ
+    GameTooltip:HookScript("OnTooltipSetItem", function(self)
         FriendAttunements.EnhanceTooltipWithFriendStatus(self)
-        return originalGameTooltipShow(self)
-    end
+    end)
+    
+    GameTooltip:HookScript("OnShow", function(self)
+        FriendAttunements.EnhanceTooltipWithFriendStatus(self)
+    end)
 end
 
 -- ʕ ● ᴥ ●ʔ✿ Initialize friend attunement tracking ✿ʕ ● ᴥ ●ʔ

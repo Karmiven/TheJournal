@@ -12,6 +12,10 @@ local BOUNTY_ICON = {
     TEXTURE = 'Interface/MoneyFrame/UI-GoldIcon',
 }
 
+-- ʕ •ᴥ•ʔ✿ Bounty frame registry to handle anonymous buttons ✿ʕ •ᴥ•ʔ
+local bountyFrameRegistry = {}
+local bountyFrameCounter = 0
+
 -- ʕ ● ᴥ ●ʔ✿ Helper function to extract item ID from item link ✿ʕ ● ᴥ ●ʔ
 local function GetItemIDFromLink(itemLink)
     if not itemLink then return nil end
@@ -21,31 +25,61 @@ end
 
 -- ʕノ•ᴥ•ʔノ✿ Check if an item is bountied ✿ʕノ•ᴥ•ʔノ
 local function IsItemBountied(itemId)
-    if not itemId or not _G.GetCustomGameData then return false end
+    if not itemId then 
+        return false 
+    end
+    
+    if not _G.GetCustomGameData then 
+        return false 
+    end
+    
     local bountiedValue = _G.GetCustomGameData(31, itemId)
     return (bountiedValue or 0) > 0
 end
 
 -- ＼ʕ •ᴥ•ʔ／✿ Set bounty icon on a frame ✿＼ʕ •ᴥ•ʔ／
 function BountySystem.SetFrameBounty(frame, itemLink, iconFrame)
-    local bountyFrameName = (frame:GetName() or "UnnamedFrame") .. '_Bounty'
-    local bountyFrame = _G[bountyFrameName]
-    local itemId = GetItemIDFromLink(itemLink)
+    -- ʕ •ᴥ•ʔ✿ Only run bounty system when journal is open ✿ʕ •ᴥ•ʔ
+    if not _G.DungeonJournalFrame or not _G.DungeonJournalFrame:IsShown() then
+        return
+    end
 
-    if itemId and IsItemBountied(itemId) then
+    -- ʕ •ᴥ•ʔ✿ Validate inputs ✿ʕ •ᴥ•ʔ
+    if not frame or not itemLink then 
+        return 
+    end
+
+    local itemId = GetItemIDFromLink(itemLink)
+    if not itemId then
+        return
+    end
+
+    -- ʕ •ᴥ•ʔ✿ Get or create bounty frame using registry ✿ʕ •ᴥ•ʔ
+    local bountyFrame = bountyFrameRegistry[frame]
+    local isBountied = IsItemBountied(itemId)
+
+    if itemId and isBountied then
         if not bountyFrame then
+            bountyFrameCounter = bountyFrameCounter + 1
+            local bountyFrameName = "DJ_BountyFrame_" .. bountyFrameCounter
             bountyFrame = CreateFrame('Frame', bountyFrameName, frame)
             bountyFrame:SetWidth(BOUNTY_ICON.SIZE)
             bountyFrame:SetHeight(BOUNTY_ICON.SIZE)
-            bountyFrame:SetFrameLevel(frame:GetFrameLevel() + 1)
+            bountyFrame:SetFrameLevel((frame:GetFrameLevel() or 200) + 2)
             bountyFrame.texture = bountyFrame:CreateTexture(nil, 'OVERLAY')
             bountyFrame.texture:SetAllPoints()
             bountyFrame.texture:SetTexture(BOUNTY_ICON.TEXTURE)
+            
+            -- ʕ •ᴥ•ʔ✿ Store in registry ✿ʕ •ᴥ•ʔ
+            bountyFrameRegistry[frame] = bountyFrame
         end
+        
         bountyFrame:SetParent(frame)
         local targetFrame = iconFrame or frame
+        bountyFrame:ClearAllPoints()
         bountyFrame:SetPoint('TOPRIGHT', targetFrame, 'TOPRIGHT', -2, -2)
         bountyFrame:Show()
+        
     elseif bountyFrame then
         bountyFrame:Hide()
     end
@@ -87,9 +121,73 @@ local DUNGEON_AFFIX_NAMES = {
     ["Trial of the Champion"] = "Battle Scars"
 }
 
+-- ʕ •ᴥ•ʔ✿ Debug function to list all bountied items ✿ʕ •ᴥ•ʔ
+function BountySystem.ListBountiedItems()
+    if not _G.GetCustomGameData then
+        print("BountySystem: GetCustomGameData function not available")
+        return
+    end
+    
+    local foundItems = {}
+    
+    -- ʕ •ᴥ•ʔ✿ Check items from current dungeon instead of scanning all items ✿ʕ •ᴥ•ʔ
+    if _G.currentDungeon and _G.currentDungeon.items then
+        for _, item in ipairs(_G.currentDungeon.items) do
+            local itemId = item.itemID or item.baseID
+            if itemId then
+                local bountiedValue = _G.GetCustomGameData(31, itemId)
+                if (bountiedValue or 0) > 0 then
+                    table.insert(foundItems, itemId)
+                    local itemName = GetItemInfo(itemId) or "Unknown Item"
+                end
+            end
+        end
+    end
+    
+    return foundItems
+end
+
+-- ʕ •ᴥ•ʔ✿ Debug function to test bounty on specific item ✿ʕ •ᴥ•ʔ
+function BountySystem.TestBounty(itemId)
+    local isBountied = IsItemBountied(itemId)
+    local itemName = GetItemInfo(itemId) or "Unknown Item"
+    return isBountied
+end
+
+-- ʕ •ᴥ•ʔ✿ Clean up bounty frame when button is released ✿ʕ •ᴥ•ʔ
+function BountySystem.CleanupBountyFrame(frame)
+    if bountyFrameRegistry[frame] then
+        bountyFrameRegistry[frame]:Hide()
+        bountyFrameRegistry[frame] = nil
+    end
+end
+
+-- ʕ •ᴥ•ʔ✿ Clean up all bounty frames when journal closes ✿ʕ •ᴥ•ʔ
+function BountySystem.CleanupAllBountyFrames()
+    for frame, bountyFrame in pairs(bountyFrameRegistry) do
+        if bountyFrame then
+            bountyFrame:Hide()
+        end
+    end
+    -- ʕ •ᴥ•ʔ✿ Keep frames in registry for reuse but hide them ✿ʕ •ᴥ•ʔ
+end
+
+-- ʕ •ᴥ•ʔ✿ Refresh all bounty frames when journal opens ✿ʕ •ᴥ•ʔ
+function BountySystem.RefreshAllBountyFrames()
+    if not _G.DungeonJournalFrame or not _G.DungeonJournalFrame:IsShown() then
+        return
+    end
+    
+    for frame, bountyFrame in pairs(bountyFrameRegistry) do
+        if bountyFrame and frame.itemLink then
+            -- ʕ •ᴥ•ʔ✿ Re-check bounty status and show if appropriate ✿ʕ •ᴥ•ʔ
+            BountySystem.SetFrameBounty(frame, frame.itemLink, frame.iconTex)
+        end
+    end
+end
 -- ＼ʕ •ᴥ•ʔ／✿ Export global functions ✿＼ʕ •ᴥ•ʔ／
 _G.BountySystem = BountySystem
 
--- ʕノ•ᴥ•ʔノ✿ Auto-initialize ✿ʕノ•ᴥ•ʔノ
--- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
+-- ʕᴥ•ʔ Auto-initialize ✿ʕᴥ•ʔ
+
 

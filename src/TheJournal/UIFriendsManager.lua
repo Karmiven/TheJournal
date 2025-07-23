@@ -8,22 +8,14 @@ local UIFriendsManager = {}
 -- ʕ •ᴥ•ʔ✿ Friends entry frames storage ✿ʕ•ᴥ•ʔ
 local friendEntries = {}
 
-local function VectorToColorString(r, g, b)
-    r = math.max(0, math.min(1, r or 1))
-    g = math.max(0, math.min(1, g or 1))
-    b = math.max(0, math.min(1, b or 1))
-    return "|cFF" .. string.format("%02x", math.floor(r * 255)) .. string.format("%02x", math.floor(g * 255)) .. string.format("%02x", math.floor(b * 255))
-end
-
 local function GetClassColor(classId)
-    if not classId or type(classId) ~= "number" then 
-        return "|cFFFFFFFF" 
+    if not classId or type(classId) ~= "number" then
+        return "|cFFFFFFFF"
     end
+
     if _G.CustomGetClassColor then
-        local r, g, b = _G.CustomGetClassColor(classId)
-        if r and g and b then
-            return VectorToColorString(r, g, b)
-        end
+        local r, g, b, string = _G.CustomGetClassColor(classId)
+        return string
     end
     return "|cFFFFFFFF"
 end
@@ -39,7 +31,7 @@ local function CreateFriendEntry(index)
             return nil
         end
     end
-    
+
     local entry = CreateFrame("Frame", nil, scrollChild)
     entry:SetSize(210, 50)
     entry.rankText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -151,7 +143,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay()
     if _G.UpdateAttunementFriendsDisplay then
         return _G.UpdateAttunementFriendsDisplay()
     end
-    
+
     print("|cFFFF0000[DJ Friends Manager]|r Global UpdateAttunementFriendsDisplay not available!")
 end
 
@@ -161,7 +153,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
     if _G.AddSelfToFriendsData then
         _G.AddSelfToFriendsData()
     end
-    
+
     -- ʕ •ᴥ•ʔ✿ Get scroll child reference ✿ʕ•ᴥ•ʔ
     local scrollChild = _G.FriendsAttunementScrollFrame and _G.FriendsAttunementScrollFrame:GetScrollChild()
     if not scrollChild then
@@ -171,13 +163,13 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
             return
         end
     end
-    
+
     -- ʕ •ᴥ•ʔ✿ Debug: Check if we have any friends data ✿ʕ•ᴥ•ʔ
     local totalFriends = 0
     for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
         totalFriends = totalFriends + 1
     end
-    
+
     if totalFriends == 0 then
         -- ʕ •ᴥ•ʔ✿ No friends data available. Adding self silently ✿ʕ •ᴥ•ʔ
         if _G.AddSelfToFriendsData then
@@ -190,7 +182,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
         end
         -- ʕ •ᴥ•ʔ✿ After adding self, total friends: " .. totalFriends .. " silently ✿ʕ •ᴥ•ʔ
     end
-    
+
     -- ʕ •ᴥ•ʔ✿ Ensure player data is in global friends data ✿ʕ•ᴥ•ʔ
     local playerName = UnitName("player")
     if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
@@ -199,7 +191,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
             _G.FRIENDS_JOURNAL_POINTS[playerName] = Journal_charDB.journalPoints
         end
     end
-    
+
     -- ʕ •ᴥ•ʔ✿ Build sorted friends list ✿ʕ•ᴥ•ʔ
     local sortedFriends = {}
     for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
@@ -220,7 +212,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
             questItemID = data.questItemID
         })
     end
-    
+
     -- ʕ •ᴥ•ʔ✿ Sort by percentage descending ✿ʕ•ᴥ•ʔ
     table.sort(sortedFriends, function(a, b)
         if a.percentage ~= b.percentage then
@@ -228,9 +220,9 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
         end
         return a.playerName < b.playerName
     end)
-    
+
     print("|cFFFFD700[DJ Friends]|r Displaying " .. #sortedFriends .. " friends in leaderboard")
-    
+
     -- ʕ •ᴥ•ʔ✿ Create/update friend entries ✿ʕ•ᴥ•ʔ
     local currentYOffset = 0
     for i = 1, math.max(#sortedFriends, #friendEntries) do
@@ -242,35 +234,35 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
                     return
                 end
             end
-            
+
             local entry = friendEntries[i]
             local friendData = sortedFriends[i]
-            
+
             entry:ClearAllPoints()
             entry:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -currentYOffset)
-            
+
             entry.playerData = friendData
-            
+
             local rankColor = "|cFF888888"
             if i == 1 then rankColor = "|cFFFFD700"
             elseif i == 2 then rankColor = "|cFFC0C0C0"
             elseif i == 3 then rankColor = "|cFFCD7F32"
             end
             entry.rankText:SetText(rankColor .. "#" .. i .. "|r")
-            
+
             local classColor = GetClassColor(friendData.classId)
             local nameText = friendData.playerName
             if friendData.isPlayer then
                 nameText = nameText .. " (You)"
             end
-            
+
             if i == 1 and #sortedFriends > 1 then
                 entry.crownIcon:Show()
             else
                 entry.crownIcon:Hide()
             end
             entry.nameText:SetText(classColor .. nameText .. "|r")
-            
+
             local percentageColor = "|cFFFF4500"
             if i == 1 and #sortedFriends > 1 then
                 percentageColor = "|cFFFFD700"
@@ -284,17 +276,17 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
                 percentageColor = "|cFFFF8000"
             end
             entry.percentageText:SetText(percentageColor .. friendData.percentage .. "%|r")
-            
+
             entry.progressText:SetText("|cFF888888" .. friendData.attuned .. "/" .. friendData.total .. " items attuned|r")
-            
+
             local journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[friendData.playerName] or 0
             entry.dungeonsText:SetText("|cFFFFD700Journal Points: " .. journalPoints .. "|r")
-            
+
             local hasQuestItem = (friendData.questItemID and friendData.questItemID > 0)
             entry:UpdateHeight(hasQuestItem, journalPoints > 0)
-            
+
             currentYOffset = currentYOffset + entry:GetHeight() + 3
-            
+
             entry:Show()
         else
             if friendEntries[i] then
@@ -302,7 +294,7 @@ function UIFriendsManager.UpdateAttunementFriendsDisplay_DISABLED()
             end
         end
     end
-    
+
     local contentHeight = math.max(1, currentYOffset)
     scrollChild:SetHeight(contentHeight)
 end
@@ -314,5 +306,4 @@ end
 -- ʕ •ᴥ•ʔ✿ Export UIFriendsManager to global scope ✿ʕ•ᴥ•ʔ
 _G.TheJournal_UIFriendsManager = UIFriendsManager
 
-return UIFriendsManager 
-
+return UIFriendsManager

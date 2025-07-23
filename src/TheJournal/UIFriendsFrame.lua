@@ -75,31 +75,15 @@ scrollFrame:SetScrollChild(scrollChild)
 -- ʕ ◕ᴥ◕ ʔ✿ Table to store friend entry frames ✿ʕ ◕ᴥ◕ ʔ
 local friendEntries = {}
 
--- ʕ ● ᴥ ●ʔ✿ Function to convert vector color to WoW color string format ✿ʕ ● ᴥ ●ʔ
-local function VectorToColorString(r, g, b)
-    r = math.max(0, math.min(1, r or 1))
-    g = math.max(0, math.min(1, g or 1))
-    b = math.max(0, math.min(1, b or 1))
-    
-    local rHex = string.format("%02x", math.floor(r * 255))
-    local gHex = string.format("%02x", math.floor(g * 255))
-    local bHex = string.format("%02x", math.floor(b * 255))
-    return "|cFF" .. rHex .. gHex .. bHex
-end
-
--- ʕノ•ᴥ•ʔノ✿ Dynamic class color function ✿ʕノ•ᴥ•ʔノ
 local function GetClassColor(classId)
-    if not classId or type(classId) ~= "number" then 
-        return "|cFFFFFFFF" 
+    if not classId or type(classId) ~= "number" then
+        return "|cFFFFFFFF"
     end
-    
+
     if _G.CustomGetClassColor then
-        local r, g, b = _G.CustomGetClassColor(classId)
-        if r and g and b then
-            return VectorToColorString(r, g, b)
-        end
+        local r, g, b, string = _G.CustomGetClassColor(classId)
+        return string
     end
-    
     return "|cFFFFFFFF"
 end
 
@@ -107,38 +91,38 @@ end
 local function CreateFriendEntry(index)
     local entry = CreateFrame("Frame", nil, scrollChild)
     entry:SetSize(210, 50)
-    
+
     entry.rankText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     entry.rankText:SetPoint("TOPLEFT", entry, "TOPLEFT", 2, -2)
     entry.rankText:SetWidth(20)
     entry.rankText:SetJustifyH("LEFT")
-    
+
     entry.nameText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     entry.nameText:SetPoint("TOPLEFT", entry, "TOPLEFT", 25, -5)
     entry.nameText:SetWidth(120)
     entry.nameText:SetJustifyH("LEFT")
-    
+
     entry.percentageText = entry:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     entry.percentageText:SetPoint("TOPRIGHT", entry, "TOPRIGHT", -5, -5)
     entry.percentageText:SetWidth(60)
     entry.percentageText:SetJustifyH("RIGHT")
-    
+
     entry.progressText = entry:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     entry.progressText:SetPoint("TOPLEFT", entry.nameText, "BOTTOMLEFT", 0, -2)
     entry.progressText:SetWidth(180)
     entry.progressText:SetJustifyH("LEFT")
-    
+
     entry.dungeonsText = entry:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     entry.dungeonsText:SetPoint("TOPLEFT", entry.progressText, "BOTTOMLEFT", 0, -2)
     entry.dungeonsText:SetWidth(200)
     entry.dungeonsText:SetJustifyH("LEFT")
-    
+
     entry.timeText = entry:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     entry.timeText:SetPoint("BOTTOMRIGHT", entry, "BOTTOMRIGHT", -5, 2)
     entry.timeText:SetWidth(60)
     entry.timeText:SetJustifyH("RIGHT")
     entry.timeText:Hide()
-    
+
     entry.crownIcon = entry:CreateTexture(nil, "OVERLAY")
     entry.crownIcon:SetSize(24, 24)
     entry.crownIcon:SetPoint("RIGHT", entry.nameText, "RIGHT", 64, -24)
@@ -150,25 +134,25 @@ local function CreateFriendEntry(index)
     entry.questItemButton:SetPoint("TOPLEFT", entry.nameText, "BOTTOMLEFT", -22, 0)
     entry.questItemButton:RegisterForClicks("LeftButtonUp")
     entry.questItemButton:Hide()
-    
+
     entry.questItemIcon = entry.questItemButton:CreateTexture(nil, "ARTWORK")
     entry.questItemIcon:SetSize(16, 16)
     entry.questItemIcon:SetPoint("CENTER", entry.questItemButton, "CENTER")
     entry.questItemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-    
+
     FriendsFrame.SetupEntryTooltips(entry)
-    
+
     entry.UpdateHeight = function(self, hasQuestItem, hasJournalPoints)
         local baseHeight = 45
         local extraHeight = 0
-        
+
         if hasQuestItem or hasJournalPoints then
             extraHeight = extraHeight + 18
         end
-        
+
         self:SetHeight(baseHeight + extraHeight)
     end
-    
+
     return entry
 end
 
@@ -181,47 +165,47 @@ function FriendsFrame.SetupEntryTooltips(entry)
             GameTooltip:Show()
         end
     end)
-    
+
     entry.questItemButton:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
-    
+
     entry.questItemButton:SetScript("OnClick", function(self, button)
         if button == "LeftButton" and IsShiftKeyDown() and self.itemLink then
             ChatEdit_InsertLink(self.itemLink)
         end
     end)
-    
+
     entry:EnableMouse(true)
     entry:SetScript("OnEnter", function(self)
         if not self.playerData then return end
-        
+
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:SetText("|cFFFFD700" .. self.playerData.playerName .. "|r")
-        
+
         if self.playerData.isPlayer then
             GameTooltip:AddLine("|cFF00FF00You|r", 1, 1, 1)
         elseif self.playerData.lastSeen then
             GameTooltip:AddLine("|cFF888888Last seen: " .. self.playerData.lastSeen .. "|r", 1, 1, 1)
         end
-        
+
         GameTooltip:AddLine(" ")
         GameTooltip:AddLine("Progress: " .. self.playerData.attuned .. "/" .. self.playerData.total .. " (" .. self.playerData.percentage .. "%)", 1, 1, 1)
-        
+
         local journalPoints = 0
         if self.playerData.isPlayer then
             journalPoints = Journal_charDB.journalPoints or 0
         else
             journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[self.playerData.playerName] or 0
         end
-        
+
         if journalPoints > 0 then
             GameTooltip:AddLine("Journal Points: " .. journalPoints, 1, 1, 0)
         end
-        
+
         GameTooltip:Show()
     end)
-    
+
     entry:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
@@ -241,7 +225,7 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
     if _G.AddSelfToFriendsData then
         _G.AddSelfToFriendsData()
     end
-    
+
     local playerName = UnitName("player")
     if _G.FRIENDS_DATA and _G.FRIENDS_DATA[playerName] then
         _G.FRIENDS_ATTUNEMENT_DATA[playerName] = _G.FRIENDS_DATA[playerName]
@@ -249,7 +233,7 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
             _G.FRIENDS_JOURNAL_POINTS[playerName] = Journal_charDB.journalPoints
         end
     end
-    
+
     local sortedFriends = {}
     for playerName, data in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
         local journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[playerName] or 0
@@ -269,42 +253,42 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
             questItemID = data.questItemID
         })
     end
-    
+
     table.sort(sortedFriends, function(a, b)
         if a.percentage ~= b.percentage then
             return a.percentage > b.percentage
         end
         return a.playerName < b.playerName
     end)
-    
+
     local currentYOffset = 0
     for i = 1, math.max(#sortedFriends, #friendEntries) do
         if i <= #sortedFriends then
             if not friendEntries[i] then
                 friendEntries[i] = CreateFriendEntry(i)
             end
-            
+
             local entry = friendEntries[i]
             local friendData = sortedFriends[i]
-            
+
             entry:ClearAllPoints()
             entry:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, -currentYOffset)
-            
+
             entry.playerData = friendData
-            
+
             local rankColor = "|cFF888888"
             if i == 1 then rankColor = "|cFFFFD700"
             elseif i == 2 then rankColor = "|cFFC0C0C0"
             elseif i == 3 then rankColor = "|cFFCD7F32"
             end
             entry.rankText:SetText(rankColor .. "#" .. i .. "|r")
-            
+
             local classColor = GetClassColor(friendData.classId)
             local nameText = friendData.playerName
             if friendData.isPlayer then
                 nameText = nameText .. " (You)"
             end
-            
+
             if i == 1 and #sortedFriends > 1 then
                 entry.crownIcon:Show()
             else
@@ -324,13 +308,13 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
             elseif friendData.percentage >= 25 then
                 percentageColor = "|cFFFF8000"
             end
-            
+
             entry.percentageText:SetText(percentageColor .. friendData.percentage .. "%|r")
             entry.progressText:SetText("|cFF888888" .. friendData.attuned .. "/" .. friendData.total .. " items attuned|r")
-            
+
             local journalPoints = _G.FRIENDS_JOURNAL_POINTS and _G.FRIENDS_JOURNAL_POINTS[friendData.playerName] or 0
             local questText = ""
-            
+
             if friendData.questItemID and friendData.questItemID > 0 then
                 local itemName, itemLink, quality, _, _, _, _, _, _, iTexture
                 if _G.GetItemInfoCustom then
@@ -338,11 +322,11 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
                 else
                     itemName, itemLink, quality, _, _, _, _, _, _, iTexture = GetItemInfo(friendData.questItemID)
                 end
-                
+
                 if itemName then
                     local qualityColor = ITEM_QUALITY_COLORS[quality or 1] or ITEM_QUALITY_COLORS[1]
                     questText = qualityColor.hex .. itemName .. "|r"
-                    
+
                     entry.questItemIcon:SetTexture(iTexture or "Interface\\Icons\\INV_Misc_QuestionMark")
                     entry.questItemButton.itemLink = itemLink
                     entry.questItemButton:Show()
@@ -352,29 +336,29 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
                     entry.questItemButton.itemLink = "item:" .. friendData.questItemID
                     entry.questItemButton:Show()
                 end
-                
+
                 if journalPoints > 0 then
                     questText = questText .. " \\n|cFFFFD700Journal Points: " .. journalPoints .. "|r"
                 end
             else
                 entry.questItemButton:Hide()
                 entry.questItemButton.itemLink = nil
-                
+
                 if journalPoints > 0 then
                     questText = "|cFFFFD700Journal Points: " .. journalPoints .. "|r"
                 else
                     questText = "|cFF888888No active quest|r"
                 end
             end
-            
+
             entry.dungeonsText:SetText(questText)
-            
+
             local hasQuestItem = (friendData.questItemID and friendData.questItemID > 0)
             local hasJournalPoints = (journalPoints > 0)
             entry:UpdateHeight(hasQuestItem, hasJournalPoints)
-            
+
             currentYOffset = currentYOffset + entry:GetHeight() + 3
-            
+
             entry:Show()
         else
             if friendEntries[i] then
@@ -382,7 +366,7 @@ function FriendsFrame.UpdateAttunementFriendsDisplay_DISABLED()
             end
         end
     end
-    
+
     local contentHeight = math.max(1, currentYOffset)
     scrollChild:SetHeight(contentHeight)
 end
@@ -393,7 +377,7 @@ function FriendsFrame.SetupEventHandlers()
     -- Get the friends toggle button created in UIFrames.lua
     local friendsToggleButton = _G.DJ_FriendsToggleButton
     local toggleIcon = friendsToggleButton and friendsToggleButton.toggleIcon
-    
+
     if friendsToggleButton then
         friendsToggleButton:SetScript("OnClick", function()
             if friendsFrame:IsShown() then
@@ -447,14 +431,14 @@ end
 -- ʕノ•ᴥ•ʔノ✿ Initialize the friends frame ✿ʕノ•ᴥ•ʔノ
 function FriendsFrame.Initialize()
     FriendsFrame.SetupEventHandlers()
-    
+
     -- Initialize display immediately with cached data
     if _G.AddSelfToFriendsData then
         _G.AddSelfToFriendsData()
     end
-    
+
     FriendsFrame.UpdateAttunementFriendsDisplay()
-    
+
     if _G.RequestAttunementData then
         _G.RequestAttunementData()
     end
