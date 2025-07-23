@@ -93,9 +93,37 @@ showFactionTooltipsCheckbox:SetScript("OnClick", function(self)
     print("Faction tooltips are now", status)
 end)
 
--- Recache instructions and button (placed below the faction tooltips option)
+-- ʕ •ᴥ•ʔ✿ "Auto BOE Test" Option ✿ʕ •ᴥ•ʔ
+local autoTestBoeLabel = configPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+autoTestBoeLabel:SetPoint("TOPLEFT", showFactionTooltipsLabel, "BOTTOMLEFT", 0, -30)
+-- Initialize setting if not set
+if settings.autoTestBoe == nil then
+    settings.autoTestBoe = false -- Default to disabled
+end
+autoTestBoeLabel:SetText("Auto BOE Test on Hover: " .. (settings.autoTestBoe and "Enabled" or "Disabled"))
+
+local autoTestBoeCheckbox = CreateFrame("CheckButton", "Journal_charDB_AutoTestBoe_CheckButton", configPanel,
+    "InterfaceOptionsCheckButtonTemplate")
+autoTestBoeCheckbox:SetPoint("LEFT", autoTestBoeLabel, "RIGHT", 10, 0)
+autoTestBoeCheckbox:SetText("")
+autoTestBoeCheckbox:SetChecked(settings.autoTestBoe)
+autoTestBoeCheckbox:SetScript("OnClick", function(self)
+    settings.autoTestBoe = self:GetChecked()
+    local status = settings.autoTestBoe and "Enabled" or "Disabled"
+    autoTestBoeLabel:SetText("Auto BOE Test on Hover: " .. status)
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Also update the global DJ_Settings ✿ʕ ◕ᴥ◕ ʔ
+    if _G.DJ_Settings then
+        _G.DJ_Settings.autoTestBoe = settings.autoTestBoe
+    end
+    
+    print("Auto BOE testing on tooltip hover is now", status)
+    print("This will automatically check if friends need BOE items when you hover over them")
+end)
+
+-- Recache instructions and button (placed below the auto testboe option)
 local recacheLabel = configPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-recacheLabel:SetPoint("TOPLEFT", showFactionTooltipsLabel, "BOTTOMLEFT", 0, -30)
+recacheLabel:SetPoint("TOPLEFT", autoTestBoeLabel, "BOTTOMLEFT", 0, -30)
 recacheLabel:SetText("Re-cache Data: Press the button below to reset cached data.")
 
 local recacheButton = CreateFrame("Button", "Journal_charDB_RecacheButton", configPanel, "UIPanelButtonTemplate")

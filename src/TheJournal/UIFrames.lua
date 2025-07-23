@@ -319,9 +319,9 @@ end
 -- Check if an item is bountied
 local function IsItemBountied(itemId)
     if not itemId or not _G.GetCustomGameData then
-        return false 
+        return false
     end
-    
+
     local bountiedValue = _G.GetCustomGameData(31, itemId)
     -- ʕ •ᴥ•ʔ✿ Only print debug for bounties that are found ✿ʕ •ᴥ•ʔ
     if (bountiedValue or 0) > 0 then
@@ -338,8 +338,8 @@ local function SetFrameBounty(frame, itemLink, iconFrame)
     end
 
     -- ʕ •ᴥ•ʔ✿ Validate inputs ✿ʕ •ᴥ•ʔ
-    if not frame or not itemLink then 
-        return 
+    if not frame or not itemLink then
+        return
     end
 
     local bountyFrameName = (frame:GetName() or "UnnamedFrame") .. '_Bounty'
@@ -2087,13 +2087,36 @@ local function CategoryDropdown_OnClick(self)
     Journal_charDB.selectedCategory = self.value
     UIDropDownMenu_SetSelectedID(categoryDropdown, self:GetID())
 
-    -- Reset difficulty filter to "all" when changing categories
-    Journal_charDB.dungeonListDifficultyFilter = "all"
-    currentDungeonListDifficultyIndex = 1
+    -- Store current difficulty filter before switching categories
+    local currentDifficultyFilter = Journal_charDB.dungeonListDifficultyFilter or "all"
 
     -- Update difficulty filter options for new category (only if dungeons are loaded)
     if dungeonButtons and #dungeonButtons > 0 and GetDungeonListDifficultyOptions then
         dungeonListDifficultyOptions = GetDungeonListDifficultyOptions()
+
+        -- Check if current difficulty exists in new category
+        local difficultyExistsInCategory = false
+        for _, option in ipairs(dungeonListDifficultyOptions) do
+            if option.state == currentDifficultyFilter then
+                difficultyExistsInCategory = true
+                break
+            end
+        end
+
+        -- Reset to "all" if current difficulty doesn't exist in new category
+        if not difficultyExistsInCategory then
+            Journal_charDB.dungeonListDifficultyFilter = "all"
+            currentDungeonListDifficultyIndex = 1
+        else
+            -- Keep current difficulty and find its index
+            for i, option in ipairs(dungeonListDifficultyOptions) do
+                if option.state == currentDifficultyFilter then
+                    currentDungeonListDifficultyIndex = i
+                    break
+                end
+            end
+        end
+
         if UpdateDungeonListDifficultyFilterButton then
             UpdateDungeonListDifficultyFilterButton()
         end
@@ -3626,6 +3649,11 @@ function ShowJournal()
             _G.TheJournal_UIBagScanner.RefreshBagScan()
         end
 
+        -- ʕ •ᴥ•ʔ✿ Invalidate attunement cache when opening journal ✿ʕ •ᴥ•ʔ
+        if _G.TheJournal_UIBagScanner and _G.TheJournal_UIBagScanner.InvalidateAttunementCache then
+            _G.TheJournal_UIBagScanner.InvalidateAttunementCache()
+        end
+
         -- ʕ •ᴥ•ʔ✿ Refresh bounty frames when opening journal ✿ʕ •ᴥ•ʔ
         if _G.BountySystem and _G.BountySystem.RefreshAllBountyFrames then
             _G.BountySystem.RefreshAllBountyFrames()
@@ -3645,7 +3673,7 @@ end
 function HideJournal()
     if DungeonJournalFrame then
         DungeonJournalFrame:Hide()
-        
+
         -- ʕ •ᴥ•ʔ✿ Clean up bounty frames when journal closes ✿ʕ •ᴥ•ʔ
         if _G.BountySystem and _G.BountySystem.CleanupAllBountyFrames then
             _G.BountySystem.CleanupAllBountyFrames()
@@ -4556,6 +4584,7 @@ categoryDropdown:SetPoint("CENTER", previewFrame, "CENTER", 80, 185)
 local dungeonDifficultyFilterButton = CreateFrame("Button", "DJ_DungeonDifficultyFilter", previewFrame, "UIPanelButtonTemplate")
 dungeonDifficultyFilterButton:SetSize(24, 24)
 dungeonDifficultyFilterButton:SetPoint("TOPRIGHT", previewFrame, "TOPRIGHT", -50, -20)
+dungeonDifficultyFilterButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 
 
 
@@ -4633,7 +4662,17 @@ end
 
 -- ʕ •ᴥ•ʔ✿ Dungeon List Difficulty Filter Click Handler ✿ʕ•ᴥ•ʔ
 -- ʕ •ᴥ•ʔ✿ Handle difficulty filter button click ✿ʕ•ᴥ•ʔ
-function OnDungeonListDifficultyFilterClick()
+function OnDungeonListDifficultyFilterClick(button)
+    -- Robust button detection with fallback
+    if not button then
+        -- Check if we can detect the current mouse button state
+        if IsMouseButtonDown("RightButton") then
+            button = "RightButton"
+        else
+            button = "LeftButton"  -- Default fallback
+        end
+    end
+
     -- Store tooltip state before making changes
     local tooltipWasShown = GameTooltip:IsShown() and GameTooltip:GetOwner() == dungeonDifficultyFilterButton
 
@@ -4646,14 +4685,22 @@ function OnDungeonListDifficultyFilterClick()
         currentDungeonListDifficultyIndex = 1
     end
 
-    -- Bounds check before incrementing
+    -- Bounds check before changing index
     if currentDungeonListDifficultyIndex > #dungeonListDifficultyOptions or currentDungeonListDifficultyIndex < 1 then
         currentDungeonListDifficultyIndex = 1
     end
 
-    currentDungeonListDifficultyIndex = currentDungeonListDifficultyIndex + 1
-    if currentDungeonListDifficultyIndex > #dungeonListDifficultyOptions then
-        currentDungeonListDifficultyIndex = 1
+    -- Handle right-click to go backwards, left-click (or default) to go forwards
+    if button == "RightButton" then
+        currentDungeonListDifficultyIndex = currentDungeonListDifficultyIndex - 1
+        if currentDungeonListDifficultyIndex < 1 then
+            currentDungeonListDifficultyIndex = #dungeonListDifficultyOptions
+        end
+    else
+        currentDungeonListDifficultyIndex = currentDungeonListDifficultyIndex + 1
+        if currentDungeonListDifficultyIndex > #dungeonListDifficultyOptions then
+            currentDungeonListDifficultyIndex = 1
+        end
     end
 
     UpdateDungeonListDifficultyFilterButton()
@@ -4701,10 +4748,17 @@ function ShowDungeonListDifficultyFilterTooltip(button)
         GameTooltip:AddLine(color .. marker .. option.text .. "|r")
     end
 
+    -- Add hint about right-click functionality
+    GameTooltip:AddLine(" ")
+    GameTooltip:AddLine("|cFFFFD700Left-click: Next filter|r")
+    GameTooltip:AddLine("|cFFFFD700Right-click: Previous filter|r")
+
     GameTooltip:Show()
 end
 
-dungeonDifficultyFilterButton:SetScript("OnClick", OnDungeonListDifficultyFilterClick)
+dungeonDifficultyFilterButton:SetScript("OnClick", function(self, mouseButton)
+    OnDungeonListDifficultyFilterClick(mouseButton)
+end)
 dungeonDifficultyFilterButton:SetScript("OnEnter", function(self) ShowDungeonListDifficultyFilterTooltip(self) end)
 dungeonDifficultyFilterButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
