@@ -10,11 +10,6 @@
                 _G.TheJournal_UIBagScanner.RefreshBagScan()
             end
             
-            -- ʕ •ᴥ•ʔ✿ Invalidate attunement cache when opening journal ✿ʕ •ᴥ•ʔ
-            if _G.TheJournal_UIBagScanner and _G.TheJournal_UIBagScanner.InvalidateAttunementCache then
-                _G.TheJournal_UIBagScanner.InvalidateAttunementCache()
-            end
-            
             if _G.RefreshAllAttunableText then
                 _G.RefreshAllAttunableText()
             end

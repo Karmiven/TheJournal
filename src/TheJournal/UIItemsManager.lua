@@ -16,9 +16,20 @@ local table_remove = table.remove
 local string_match = string.match
 local string_find = string.find
 
--- ʕ •ᴥ•ʔ✿ Aggressive Tooltip Repositioning (MoveAnything override) ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Coordinated Tooltip Positioning (respects TooltipCoordinator) ✿ʕ•ᴥ•ʔ
 function UIItemsManager.ForceTooltipPosition(anchorFrame)
     if not anchorFrame or not GameTooltip:IsShown() then return end
+
+    -- ʕ ◕ᴥ◕ ʔ✿ Check if we can control tooltip positioning ✿ʕ ◕ᴥ◕ ʔ
+    local TooltipCoordinator = _G.TooltipCoordinator
+    if TooltipCoordinator and not TooltipCoordinator.CanControl("UIItemsManager") then
+        return -- Another system has higher priority control
+    end
+
+    -- ʕ ● ᴥ ●ʔ✿ Request control before repositioning ✿ʕ ● ᴥ ●ʔ
+    if TooltipCoordinator then
+        TooltipCoordinator.RequestControl("UIItemsManager", 1)
+    end
 
     -- ʕ ◕ᴥ◕ ʔ✿ Create persistent repositioning frame ✿ʕ ◕ᴥ◕ ʔ
     if not _G.DJ_TooltipForcer then
@@ -32,9 +43,14 @@ function UIItemsManager.ForceTooltipPosition(anchorFrame)
     forcer.anchorFrame = anchorFrame
     forcer.isActive = true
 
-    -- ʕ ● ᴥ ●ʔ✿ Aggressive repositioning function ✿ʕ ● ᴥ ●ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Gentle repositioning function ✿ʕ ● ᴥ ●ʔ
     local function RepositionTooltip()
         if forcer.isActive and forcer.anchorFrame and GameTooltip:IsShown() then
+            -- ʕ ◕ᴥ◕ ʔ✿ Don't reposition if another system is controlling ✿ʕ ◕ᴥ◕ ʔ
+            if TooltipCoordinator and not TooltipCoordinator.CanControl("UIItemsManager") then
+                return
+            end
+            
             GameTooltip:ClearAllPoints()
             GameTooltip:SetPoint("BOTTOMLEFT", forcer.anchorFrame, "BOTTOMRIGHT", 3, 3)
         end
@@ -43,15 +59,20 @@ function UIItemsManager.ForceTooltipPosition(anchorFrame)
     -- ʕ ◕ᴥ◕ ʔ✿ Initial positioning ✿ʕ ◕ᴥ◕ ʔ
     RepositionTooltip()
 
-    -- ʕ ● ᴥ ●ʔ✿ Continuous aggressive repositioning to fight MoveAnything ✿ʕ ● ᴥ ●ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Less aggressive repositioning that respects coordination ✿ʕ ● ᴥ ●ʔ
     forcer:SetScript("OnUpdate", function(self, elapsed)
         self.elapsed = (self.elapsed or 0) + elapsed
-        if self.elapsed >= 0.05 then -- Check every 50ms
+        if self.elapsed >= 0.1 then -- Check every 100ms (less frequent)
             self.elapsed = 0
             if self.isActive and self.anchorFrame and GameTooltip:IsShown() then
-                -- ʕ ◕ᴥ◕ ʔ✿ Force position if it's been moved ✿ʕ ◕ᴥ◕ ʔ
+                -- ʕ ◕ᴥ◕ ʔ✿ Only reposition if we still have control ✿ʕ ◕ᴥ◕ ʔ
+                if TooltipCoordinator and not TooltipCoordinator.CanControl("UIItemsManager") then
+                    return -- Another system has control now
+                end
+                
+                -- ʕ ● ᴥ ●ʔ✿ Force position if it's been moved ✿ʕ ● ᴥ ●ʔ
                 local point, relativeTo, relativePoint, xOfs, yOfs = GameTooltip:GetPoint(1)
-                if not (point == "BOTTOMLEFT" and relativeTo == self.anchorFrame and relativePoint == "BOTTOMRIGHT" and xOfs == 0 and yOfs == 0) then
+                if not (point == "BOTTOMLEFT" and relativeTo == self.anchorFrame and relativePoint == "BOTTOMRIGHT" and xOfs == 3 and yOfs == 3) then
                     RepositionTooltip()
                 end
             else
@@ -140,10 +161,16 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
     end)
     btn:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
-        -- ʕ •ᴥ•ʔ✿ Stop aggressive tooltip repositioning ✿ʕ•ᴥ•ʔ
+        -- ʕ •ᴥ•ʔ✿ Stop coordinated tooltip repositioning ✿ʕ•ᴥ•ʔ
         if _G.DJ_TooltipForcer then
             _G.DJ_TooltipForcer.isActive = false
             _G.DJ_TooltipForcer:SetScript("OnUpdate", nil)
+        end
+        
+        -- ʕ ◕ᴥ◕ ʔ✿ Release tooltip control ✿ʕ ◕ᴥ◕ ʔ
+        local TooltipCoordinator = _G.TooltipCoordinator
+        if TooltipCoordinator then
+            TooltipCoordinator.ReleaseControl("UIItemsManager")
         end
     end)
 
