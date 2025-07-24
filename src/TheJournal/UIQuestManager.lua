@@ -297,7 +297,10 @@ function UIQuestManager.InitializeUI()
     end)
 
     questRefreshButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
+        -- ʕ ◕ᴥ◕ ʔ✿ Only hide tooltip if it belongs to this button ✿ʕ ◕ᴥ◕ ʔ
+        if GameTooltip:GetOwner() == self then
+            GameTooltip:Hide()
+        end
     end)
 
     UIQuestManager.CreateQuestItemButton()
@@ -516,8 +519,18 @@ function UIQuestManager.SetupEventHandlers()
     randomQuestIcon:SetScript("OnEnter", ShowQuestIconTooltip)
     previewQuestIcon:SetScript("OnEnter", ShowQuestIconTooltip)
 
-    randomQuestIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    previewQuestIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    randomQuestIcon:SetScript("OnLeave", function(self) 
+        -- ʕ ◕ᴥ◕ ʔ✿ Only hide tooltip if it belongs to this icon ✿ʕ ◕ᴥ◕ ʔ
+        if GameTooltip:GetOwner() == self then
+            GameTooltip:Hide() 
+        end
+    end)
+    previewQuestIcon:SetScript("OnLeave", function(self) 
+        -- ʕ ◕ᴥ◕ ʔ✿ Only hide tooltip if it belongs to this icon ✿ʕ ◕ᴥ◕ ʔ
+        if GameTooltip:GetOwner() == self then
+            GameTooltip:Hide() 
+        end
+    end)
 
     -- ʕ •ᴥ•ʔ✿ Visibility control based on UI state ✿ʕ•ᴥ•ʔ
     local function UpdateQuestIconVisibility()

@@ -1404,13 +1404,22 @@ local function OnAddonMessage(prefix, message, channel, sender)
                 ITEM_QUERY_RESPONSES[itemID] = {}
             end
 
-            ITEM_QUERY_RESPONSES[itemID][responder] = {
+            local responseData = {
                 needsItem = needsItem == 1,
                 canUpgrade = canUpgrade == 1,
                 needsAffixesOnly = needsAffixesOnly == 1,
                 currentForge = currentForge,
                 timestamp = GetTime()
             }
+            
+            ITEM_QUERY_RESPONSES[itemID][responder] = responseData
+            
+            -- ʕ •ᴥ•ʔ✿ Save to persistent cache ✿ʕ•ᴥ•ʔ
+            if _G.TheJournal_UIBOETooltipEnhancement and _G.TheJournal_UIBOETooltipEnhancement.SaveBOEResponse then
+                pcall(function()
+                    _G.TheJournal_UIBOETooltipEnhancement.SaveBOEResponse(itemID, responder, responseData)
+                end)
+            end
 
             -- Show the response in chat immediately with detailed forge/affix info
             local itemName = GetItemInfo(itemID) or ("Item " .. itemID)
@@ -1434,18 +1443,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
                     print("|cFF00FF00[BOE DEBUG]|r Received response from " .. responder .. ": " .. statusText)
                 end
             end
-
-            -- Clear old responses after 30 seconds (use simple timer for WotLK compatibility)
-            local cleanupFrame = CreateFrame("Frame")
-            cleanupFrame:SetScript("OnUpdate", function(self, elapsed)
-                self.elapsed = (self.elapsed or 0) + elapsed
-                if self.elapsed >= 30 then
-                    if ITEM_QUERY_RESPONSES[itemID] and ITEM_QUERY_RESPONSES[itemID][responder] then
-                        ITEM_QUERY_RESPONSES[itemID][responder] = nil
-                    end
-                    self:SetScript("OnUpdate", nil)
-                end
-            end)
+            -- ʕ •ᴥ•ʔ✿ Removed 30-second cleanup - now handled by persistent cache system ✿ʕ•ᴥ•ʔ
         end
     end
 end
@@ -1776,8 +1774,15 @@ local function PerformBOETest(itemID, itemLink, isAutomatic)
 
     _G.QueryItemFromFriends(itemID, itemLink)
 
-    -- Clear old responses for this item
-    if ITEM_QUERY_RESPONSES[itemID] then
+    -- ʕ •ᴥ•ʔ✿ Mark item as queried in persistent cache ✿ʕ•ᴥ•ʔ
+    if _G.TheJournal_UIBOETooltipEnhancement and _G.TheJournal_UIBOETooltipEnhancement.MarkItemQueried then
+        pcall(function()
+            _G.TheJournal_UIBOETooltipEnhancement.MarkItemQueried(itemID)
+        end)
+    end
+
+    -- ʕ ◕ᴥ◕ ʔ✿ Initialize responses table if needed (don't clear existing responses) ✿ʕ ◕ᴥ◕ ʔ
+    if not ITEM_QUERY_RESPONSES[itemID] then
         ITEM_QUERY_RESPONSES[itemID] = {}
     end
 

@@ -111,9 +111,31 @@ end
 
 -- ʕ •ᴥ•ʔ✿ Update journal display with bag indicators ✿ʕ •ᴥ•ʔ
 function UIBagScanner.UpdateJournalDisplay()
-    C_Timer.After(0.1, function()
-        if _G.currentDungeon and _G.LoadDungeonDetail then
-            _G.LoadDungeonDetail(_G.currentDungeon)
+    -- ʕ ◕ᴥ◕ ʔ✿ Only update bag indicators, don't reload entire dungeon to prevent quest popout hiding ✿ʕ ◕ᴥ◕ ʔ
+    if not _G.currentDungeon then return end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Update only the bag indicators on existing item buttons ✿ʕ ● ᴥ ●ʔ
+    C_Timer.After(0.05, function()
+        if _G.itemButtons then
+            for i = 1, #_G.itemButtons do
+                local button = _G.itemButtons[i]
+                if button and button:IsShown() and button.itemID then
+                    UIBagScanner.AddBagIndicatorToButton(button, button.itemID)
+                end
+            end
+        end
+        
+        -- ʕ ◕ᴥ◕ ʔ✿ Also update any visible item list frames ✿ʕ ◕ᴥ◕ ʔ
+        if _G.itemsListContainer and _G.itemsListContainer:IsShown() then
+            local children = {_G.itemsListContainer:GetChildren()}
+            for _, child in pairs(children) do
+                if child and child:IsShown() and child.itemID and child.AddBagIndicatorToButton then
+                    UIBagScanner.AddBagIndicatorToButton(child, child.itemID)
+                elseif child and child:IsShown() and child.itemID then
+                    -- ʕ ● ᴥ ●ʔ✿ Fallback for buttons without the method ✿ʕ ● ᴥ ●ʔ
+                    UIBagScanner.AddBagIndicatorToButton(child, child.itemID)
+                end
+            end
         end
     end)
 end

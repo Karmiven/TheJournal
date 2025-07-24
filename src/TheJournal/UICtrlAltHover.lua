@@ -110,8 +110,8 @@ function CtrlAltHover.ShouldQueryItem(itemID)
     if not itemID then return false end
 
     local lastQuery = _G.CTRL_ALT_QUERY_CACHE[itemID]
-    if lastQuery and (GetTime() - lastQuery) < 30 then
-        return false  -- Don't spam queries
+    if lastQuery and (GetTime() - lastQuery) < 1800 then
+        return false  -- Don't spam queries (30 minutes cache)
     end
 
     return true
@@ -404,21 +404,33 @@ eventFrame:SetScript("OnEvent", function(self, event, key, down)
     end
 end)
 
--- ʕ ◕ᴥ◕ ʔ✿ Integration with existing tooltip system ʕ ◕ᴥ◕ ʔ
+-- ʕ ◕ᴥ◕ ʔ✿ Use safer HookScript instead of replacing GameTooltip.Show ✿ʕ ◕ᴥ◕ ʔ
 local function EnhanceExistingTooltips()
-    -- ʕ ◕ᴥ◕ ʔ✿ Hook GameTooltip:Show to trigger processing ✿ʕ ◕ᴥ◕ ʔ
-    if not CtrlAltHover.originalTooltipShow then
-        CtrlAltHover.originalTooltipShow = GameTooltip.Show
-        GameTooltip.Show = function(self)
-            local result = CtrlAltHover.originalTooltipShow(self)
-
-            -- ʕ ● ᴥ ●ʔ✿ Process Ctrl+Alt if keys are pressed ✿ʕ ● ᴥ ●ʔ
-            C_Timer.After(0.1, function()
-                CtrlAltHover.ProcessTooltipWithCtrlAlt()
-            end)
-
-            return result
-        end
+    -- ʕ ● ᴥ ●ʔ✿ Use HookScript for safe tooltip integration instead of replacing Show ✿ʕ ● ᴥ ●ʔ
+    if not CtrlAltHover.hooked then
+        GameTooltip:HookScript("OnShow", function(self)
+            -- ʕ ◕ᴥ◕ ʔ✿ Only process if Ctrl+Alt are pressed ✿ʕ ◕ᴥ◕ ʔ
+            if CtrlAltHover.IsCtrlAltPressed() then
+                C_Timer.After(0.1, function()
+                    if GameTooltip:IsVisible() then
+                        CtrlAltHover.ProcessTooltipWithCtrlAlt()
+                    end
+                end)
+            end
+        end)
+        
+        GameTooltip:HookScript("OnTooltipSetItem", function(self)
+            -- ʕ ● ᴥ ●ʔ✿ Only process if Ctrl+Alt are pressed ✿ʕ ● ᴥ ●ʔ
+            if CtrlAltHover.IsCtrlAltPressed() then
+                C_Timer.After(0.1, function()
+                    if GameTooltip:IsVisible() then
+                        CtrlAltHover.ProcessTooltipWithCtrlAlt()
+                    end
+                end)
+            end
+        end)
+        
+        CtrlAltHover.hooked = true
     end
 end
 

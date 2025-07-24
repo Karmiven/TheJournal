@@ -20,11 +20,7 @@ Utility.lua
 BossNavigation.lua
 
 
-UICore.lua
-UIItems.lua
 UIFriends.lua
-UIQuests.lua
-UITooltips.lua
 UILayoutManager.lua
 UIInitializationManager.lua
 UIItemsManager.lua
@@ -38,6 +34,7 @@ UIBountySystem.lua
 UIFriendsFrame.lua
 UITooltipEnhancement.lua
 UIBOETooltipEnhancement.lua
+UIManualBOEClick.lua
 UICtrlAltHover.lua
 UIBagScanner.lua
 UIFrames.lua
