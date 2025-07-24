@@ -38,7 +38,7 @@ local function CreateTransformEditor()
     frame:SetSize(300, 400)
     frame:SetPoint("CENTER", UIParent, "CENTER", 400, 0)
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
-    frame:SetFrameLevel(100)
+    frame:SetFrameLevel(10) -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Reasonable level instead of 100 which blocks mouse events ✿ʕ•ᴥ•ʔ
     
     -- Background
     local bg = frame:CreateTexture(nil, "BACKGROUND")
@@ -478,7 +478,10 @@ local function SetupBossNameLabel(bossData)
                 GameTooltip:Show()
             end)
             dungeonDetailFrame.rareIcon:SetScript("OnLeave", function(self)
-                GameTooltip:Hide()
+                -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this icon ✿ʕ•ᴥ•ʔ
+                if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+                    GameTooltip:Hide()
+                end`
             end)
         end
         
@@ -609,7 +612,10 @@ local function SetupSpellIcons(bossData)
             end)
             
             spellFrame:SetScript("OnLeave", function(self)
-                GameTooltip:Hide()
+                -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this spell frame ✿ʕ•ᴥ•ʔ
+                if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+                    GameTooltip:Hide()
+                end
             end)
             
             spellIndex = spellIndex + 1
@@ -841,7 +847,9 @@ local function CreateBossNavigation(dungeonDetailFrame, dungeon)
     bossNav.leftButton:SetPoint("BOTTOMRIGHT", bossNav.bossNameFontString, "TOP", -10, 10)
     bossNav.rightButton:SetPoint("BOTTOMLEFT", bossNav.bossNameFontString, "TOP", 10, 10)
 
-    bossNav:EnableMouse(true)
+    -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Disable mouse to prevent intercepting bag right-clicks ✿ʕ•ᴥ•ʔ
+    -- The navigation buttons handle their own mouse events, the container doesn't need mouse
+    bossNav:EnableMouse(false)
     dungeon.currentBossIndex = dungeon.currentBossIndex or 1
 
     local function showCurrentBoss()

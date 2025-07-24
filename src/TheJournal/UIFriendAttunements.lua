@@ -99,4 +99,64 @@ function FriendAttunements.EnhanceTooltipWithFriendStatus(tooltip)
     end
 end
 
+<<<<<<< Updated upstream
 -- ʕ •ᴥ•ʔ✿ Module loaded successfully ✿ʕ •ᴥ•ʔ
+=======
+-- ʕノ•ᴥ•ʔノ✿ Hook existing ProcessBOETooltip function ✿ʕノ•ᴥ•ʔノ
+function FriendAttunements.HookBOETooltip()
+    local originalProcessBOETooltip = ProcessBOETooltip
+    ProcessBOETooltip = function(tooltip, link)
+        -- ＼ʕ •ᴥ•ʔ／✿ Call the original function first ✿＼ʕ •ᴥ•ʔ／
+        if originalProcessBOETooltip then
+            originalProcessBOETooltip(tooltip, link)
+        end
+        
+        -- ʕ •ᴥ•ʔ✿ Add friend attunement check ✿ʕ •ᴥ•ʔ
+        FriendAttunements.ProcessBOETooltip(tooltip, link)
+    end
+end
+
+-- ʕ ◕ᴥ◕ ʔ✿ REMOVED: Direct GameTooltip.Show hook to avoid taint ✿ʕ ◕ᴥ◕ ʔ
+-- ʕ •ᴥ•ʔ✿ Use safe HookScript instead ✿ʕ •ᴥ•ʔ
+function FriendAttunements.HookGameTooltip()
+    -- ʕ ◕ᴥ◕ ʔ✿ Use HookScript for safe tooltip enhancement ✿ʕ ◕ᴥ◕ ʔ
+    GameTooltip:HookScript("OnTooltipSetItem", function(self)
+        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only process if tooltip is actually visible and stable ✿ʕ•ᴥ•ʔ
+        if not self:IsVisible() then return end
+        
+        -- ʕ •ᴥ•ʔ✿ Don't interfere with right-click menus or unstable tooltip states ✿ʕ•ᴥ•ʔ
+        local name, link = self:GetItem()
+        if not name or not link then return end
+        
+        -- ʕ •ᴥ•ʔ✿ Use a small delay to ensure tooltip is stable ✿ʕ•ᴥ•ʔ
+        C_Timer.After(0.05, function()
+            if self:IsVisible() then
+                FriendAttunements.EnhanceTooltipWithFriendStatus(self)
+            end
+        end)
+    end)
+    
+    -- ʕ •ᴥ•ʔ✿ Remove OnShow hook as it's too aggressive and conflicts with OnTooltipSetItem ✿ʕ•ᴥ•ʔ
+    -- GameTooltip:HookScript("OnShow", function(self)
+    --     FriendAttunements.EnhanceTooltipWithFriendStatus(self)
+    -- end)
+end
+
+-- ʕ ● ᴥ ●ʔ✿ Initialize friend attunement tracking ✿ʕ ● ᴥ ●ʔ
+function FriendAttunements.Initialize()
+    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable friend attunement tooltip system to test right-click tooltips ✿ʕ•ᴥ•ʔ
+    return
+    
+    FriendAttunements.HookBOETooltip()
+    FriendAttunements.HookGameTooltip()
+end
+
+-- ʕノ•ᴥ•ʔノ✿ Export global functions ✿ʕノ•ᴥ•ʔノ
+_G.FriendAttunements = FriendAttunements
+_G.GetFriendsWhoNeedItem = FriendAttunements.GetFriendsWhoNeedItem
+
+-- ＼ʕ •ᴥ•ʔ／✿ Auto-initialize ✿＼ʕ •ᴥ•ʔ／
+FriendAttunements.Initialize()
+
+-- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
+>>>>>>> Stashed changes

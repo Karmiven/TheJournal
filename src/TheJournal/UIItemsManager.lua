@@ -18,6 +18,9 @@ local string_find = string.find
 
 -- ʕ •ᴥ•ʔ✿ Aggressive Tooltip Repositioning (MoveAnything override) ✿ʕ•ᴥ•ʔ
 function UIItemsManager.ForceTooltipPosition(anchorFrame)
+    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable tooltip forcer to fix right-click tooltips ✿ʕ•ᴥ•ʔ
+    return
+    
     if not anchorFrame or not GameTooltip:IsShown() then return end
 
     -- ʕ ◕ᴥ◕ ʔ✿ Create persistent repositioning frame ✿ʕ ◕ᴥ◕ ʔ
@@ -25,6 +28,7 @@ function UIItemsManager.ForceTooltipPosition(anchorFrame)
         local forcer = CreateFrame("Frame")
         forcer.anchorFrame = nil
         forcer.isActive = false
+        forcer.lastTooltipOwner = nil
         _G.DJ_TooltipForcer = forcer
     end
 
@@ -35,24 +39,73 @@ function UIItemsManager.ForceTooltipPosition(anchorFrame)
     -- ʕ ● ᴥ ●ʔ✿ Aggressive repositioning function ✿ʕ ● ᴥ ●ʔ
     local function RepositionTooltip()
         if forcer.isActive and forcer.anchorFrame and GameTooltip:IsShown() then
-            GameTooltip:ClearAllPoints()
-            GameTooltip:SetPoint("BOTTOMLEFT", forcer.anchorFrame, "BOTTOMRIGHT", 3, 3)
+            -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only reposition if tooltip is from our addon UI elements ✿ʕ•ᴥ•ʔ
+            local tooltipOwner = GameTooltip:GetOwner()
+            local shouldReposition = false
+            
+            if tooltipOwner then
+                local ownerName = tooltipOwner:GetName() or ""
+                -- Only reposition tooltips from our addon's UI elements
+                if ownerName:match("^DJ_") or 
+                   ownerName:match("ItemButton") or 
+                   ownerName:match("RandomQuestIcon") or
+                   ownerName:match("PreviewQuestIcon") or
+                   (tooltipOwner.isJournalUIElement == true) then
+                    shouldReposition = true
+                end
+                
+                -- ʕ •ᴥ•ʔ✿ ADDITIONAL SAFETY: Never interfere with bag/bank frame tooltips ✿ʕ•ᴥ•ʔ
+                if ownerName:match("ContainerFrame") or 
+                   ownerName:match("BankFrame") or
+                   ownerName:match("Bag%d+Slot") or
+                   tooltipOwner:GetParent() and tooltipOwner:GetParent():GetName() and 
+                   tooltipOwner:GetParent():GetName():match("ContainerFrame") then
+                    shouldReposition = false
+                end
+            end
+            
+            if shouldReposition then
+                GameTooltip:ClearAllPoints()
+                GameTooltip:SetPoint("BOTTOMLEFT", forcer.anchorFrame, "BOTTOMRIGHT", 3, 3)
+            end
         end
     end
 
     -- ʕ ◕ᴥ◕ ʔ✿ Initial positioning ✿ʕ ◕ᴥ◕ ʔ
     RepositionTooltip()
 
-    -- ʕ ● ᴥ ●ʔ✿ Continuous aggressive repositioning to fight MoveAnything ✿ʕ ● ᴥ ●ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Much less aggressive repositioning - only for addon tooltips ✿ʕ ● ᴥ ●ʔ
     forcer:SetScript("OnUpdate", function(self, elapsed)
         self.elapsed = (self.elapsed or 0) + elapsed
-        if self.elapsed >= 0.05 then -- Check every 50ms
+        if self.elapsed >= 0.1 then -- Reduced frequency: Check every 100ms instead of 50ms
             self.elapsed = 0
             if self.isActive and self.anchorFrame and GameTooltip:IsShown() then
-                -- ʕ ◕ᴥ◕ ʔ✿ Force position if it's been moved ✿ʕ ◕ᴥ◕ ʔ
-                local point, relativeTo, relativePoint, xOfs, yOfs = GameTooltip:GetPoint(1)
-                if not (point == "BOTTOMLEFT" and relativeTo == self.anchorFrame and relativePoint == "BOTTOMRIGHT" and xOfs == 0 and yOfs == 0) then
-                    RepositionTooltip()
+                local tooltipOwner = GameTooltip:GetOwner()
+                
+                -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only force position for our addon tooltips ✿ʕ•ᴥ•ʔ
+                if tooltipOwner then
+                    local ownerName = tooltipOwner:GetName() or ""
+                    local isAddonTooltip = ownerName:match("^DJ_") or 
+                                         ownerName:match("ItemButton") or 
+                                         ownerName:match("RandomQuestIcon") or
+                                         ownerName:match("PreviewQuestIcon") or
+                                         (tooltipOwner.isJournalUIElement == true)
+                    
+                    -- ʕ •ᴥ•ʔ✿ ADDITIONAL SAFETY: Never interfere with bag/bank frame tooltips ✿ʕ•ᴥ•ʔ
+                    if ownerName:match("ContainerFrame") or 
+                       ownerName:match("BankFrame") or
+                       ownerName:match("Bag%d+Slot") or
+                       tooltipOwner:GetParent() and tooltipOwner:GetParent():GetName() and 
+                       tooltipOwner:GetParent():GetName():match("ContainerFrame") then
+                        isAddonTooltip = false
+                    end
+                    
+                    if isAddonTooltip then
+                        local point, relativeTo, relativePoint, xOfs, yOfs = GameTooltip:GetPoint(1)
+                        if not (point == "BOTTOMLEFT" and relativeTo == self.anchorFrame and relativePoint == "BOTTOMRIGHT" and xOfs == 3 and yOfs == 3) then
+                            RepositionTooltip()
+                        end
+                    end
                 end
             else
                 -- ʕ ● ᴥ ●ʔ✿ Stop forcing when conditions not met ✿ʕ ● ᴥ ●ʔ
@@ -81,7 +134,11 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
 
     -- ʕ •ᴥ•ʔ✿ Ensure button appears above all other UI elements ✿ʕ•ᴥ•ʔ
     btn:SetFrameStrata("FULLSCREEN_DIALOG")
-    btn:SetFrameLevel(200) -- Very high level to ensure visibility
+    -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Use reasonable frame level instead of blocking mouse events ✿ʕ•ᴥ•ʔ
+    btn:SetFrameLevel(10) -- Reasonable level instead of 200 which blocks mouse events
+
+    -- ʕ •ᴥ•ʔ✿ Mark as journal UI element for tooltip forcer identification ✿ʕ•ᴥ•ʔ
+    btn.isJournalUIElement = true
 
     -- Store the button in our index-based cache for easy retrieval
     _G.itemButtonCache[dIndex] = _G.itemButtonCache[dIndex] or {}
@@ -139,12 +196,15 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
         end
     end)
     btn:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
-        -- ʕ •ᴥ•ʔ✿ Stop aggressive tooltip repositioning ✿ʕ•ᴥ•ʔ
-        if _G.DJ_TooltipForcer then
-            _G.DJ_TooltipForcer.isActive = false
-            _G.DJ_TooltipForcer:SetScript("OnUpdate", nil)
+        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this button ✿ʕ•ᴥ•ʔ
+        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+            GameTooltip:Hide()
         end
+        -- ʕ •ᴥ•ʔ✿ DISABLED: Stop aggressive tooltip repositioning to fix right-click tooltips ✿ʕ•ᴥ•ʔ
+        -- if _G.DJ_TooltipForcer then
+        --     _G.DJ_TooltipForcer.isActive = false
+        --     _G.DJ_TooltipForcer:SetScript("OnUpdate", nil)
+        -- end
     end)
 
     btn:SetScript("OnClick", function(self, button)

@@ -339,6 +339,7 @@ local function ProcessTooltip(tooltip)
     tooltip:Show()
 end
 
+<<<<<<< Updated upstream
 -- ʕ •ᴥ•ʔ✿ Safe hook functions (IdTip-style) ✿ʕ•ᴥ•ʔ
 local function InitializeSafeTooltipHooks()
     -- Hook tooltip set item events
@@ -346,6 +347,34 @@ local function InitializeSafeTooltipHooks()
         if link and link:match("^item:") then
             ProcessTooltip(self)
         end
+=======
+-- ʕ •ᴥ•ʔ✿ Initialize tooltip hooks safely ✿ʕ•ᴥ•ʔ
+local function InitializeFactionTooltipHooks()
+    GameTooltip:HookScript("OnTooltipSetItem", function()
+        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only process if tooltip is actually visible and stable ✿ʕ•ᴥ•ʔ
+        if not GameTooltip:IsVisible() then return end
+        
+        -- ʕ •ᴥ•ʔ✿ Don't interfere with right-click menus or unstable tooltip states ✿ʕ•ᴥ•ʔ
+        local name, link = GameTooltip:GetItem()
+        if not name or not link then return end
+        
+        -- ʕ •ᴥ•ʔ✿ Use a small delay to ensure tooltip is stable ✿ʕ•ᴥ•ʔ
+        C_Timer.After(0.05, function()
+            if GameTooltip:IsVisible() then
+                SafeEnhanceAllTooltips()
+            end
+        end)
+    end)
+    
+    -- ʕ •ᴥ•ʔ✿ Remove OnShow hook as it's too aggressive and conflicts with OnTooltipSetItem ✿ʕ•ᴥ•ʔ
+    -- GameTooltip:HookScript("OnShow", SafeEnhanceAllTooltips)
+
+    -- ʕ ● ᴥ ●ʔ✿ Reset processed state when tooltip hides ✿ʕ ● ᴥ ●ʔ
+    GameTooltip:HookScript("OnHide", function()
+        lastProcessedTooltip.itemLink = nil
+        lastProcessedTooltip.boeProcessed = false
+        lastProcessedTooltip.factionProcessed = false
+>>>>>>> Stashed changes
     end)
 
     hooksecurefunc(GameTooltip, "SetBagItem", function(self, bag, slot)
@@ -424,7 +453,14 @@ end
 
 -- ʕ •ᴥ•ʔ✿ Initialize tooltip system safely ✿ʕ•ᴥ•ʔ
 function TooltipEnhancement.Initialize()
+<<<<<<< Updated upstream
     -- Wait for addon to be fully loaded before hooking
+=======
+    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable faction tooltip system to test right-click tooltips ✿ʕ•ᴥ•ʔ
+    return
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Wait for addon to be fully loaded before hooking ✿ʕ ◕ᴥ◕ ʔ
+>>>>>>> Stashed changes
     if IsAddOnLoaded("TheJournal") then
         InitializeSafeTooltipHooks()
     else

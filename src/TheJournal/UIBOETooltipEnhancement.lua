@@ -105,10 +105,68 @@ local function CleanupOldData()
     end
 end
 
+<<<<<<< Updated upstream
 -- ʕ •ᴥ•ʔ✿ Initialize BOE tooltip system ✿ʕ•ᴥ•ʔ
 function UIBOETooltipEnhancement.Initialize()
     -- ʕ ◕ᴥ◕ ʔ✿ This module is now simplified - main tooltip processing handled by UITooltipEnhancement.lua ✿ʕ ◕ᴥ◕ ʔ
     print("|cFF00FF00[BOE Enhancement]|r Initialized (integrated with main tooltip system)")
+=======
+-- ʕ •ᴥ•ʔ✿ Use GameTooltip events instead of direct hooks ✿ʕ•ᴥ•ʔ
+local function InitializeTooltipHooks()
+    GameTooltip:HookScript("OnTooltipSetItem", function()
+        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only process if tooltip is actually visible and stable ✿ʕ•ᴥ•ʔ
+        if not GameTooltip:IsVisible() then return end
+        
+        -- ʕ •ᴥ•ʔ✿ Don't interfere with right-click menus or unstable tooltip states ✿ʕ•ᴥ•ʔ
+        local name, link = GameTooltip:GetItem()
+        if not name or not link then return end
+        
+        -- ʕ •ᴥ•ʔ✿ Use a small delay to ensure tooltip is stable ✿ʕ•ᴥ•ʔ
+        C_Timer.After(0.05, function()
+            if GameTooltip:IsVisible() then
+                GameTooltip.hasBOEInfo = false -- Clear duplicate flag
+                SafeEnhanceTooltip()
+            end
+        end)
+    end)
+
+    -- ʕ ● ᴥ ●ʔ✿ Reset processing state when tooltip hides (with delay) ✿ʕ ● ᴥ ●ʔ
+    GameTooltip:HookScript("OnHide", function()
+        -- Use a timer to reset state after a delay to prevent immediate reset
+        if C_Timer and C_Timer.After then
+            C_Timer.After(2, function()
+                lastProcessedItem.itemID = nil
+                lastProcessedItem.processed = false
+                lastProcessedItem.timestamp = 0
+            end)
+        else
+            -- Fallback: reset immediately if no timer available
+            lastProcessedItem.itemID = nil
+            lastProcessedItem.processed = false
+            lastProcessedItem.timestamp = 0
+        end
+    end)
+end
+
+-- ʕ •ᴥ•ʔ✿ Initialize tooltip system safely ✿ʕ•ᴥ•ʔ
+function UIBOETooltipEnhancement.Initialize()
+    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable BOE tooltip system to test right-click tooltips ✿ʕ•ᴥ•ʔ
+    return
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Wait for addon to be fully loaded before hooking ✿ʕ ◕ᴥ◕ ʔ
+    if IsAddOnLoaded("TheJournal") then
+        InitializeTooltipHooks()
+    else
+        local initFrame = CreateFrame("Frame")
+        initFrame:RegisterEvent("ADDON_LOADED")
+        initFrame:SetScript("OnEvent", function(self, event, addonName)
+            if event == "ADDON_LOADED" and addonName == "TheJournal" then
+                InitializeTooltipHooks()
+                self:UnregisterEvent("ADDON_LOADED")
+            end
+        end)
+    end
+>>>>>>> Stashed changes
 end
 
 -- ʕ •ᴥ•ʔ✿ Auto-initialize when this module loads ✿ʕ•ᴥ•ʔ

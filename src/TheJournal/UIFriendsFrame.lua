@@ -167,7 +167,10 @@ function FriendsFrame.SetupEntryTooltips(entry)
     end)
 
     entry.questItemButton:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
+        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this button ✿ʕ•ᴥ•ʔ
+        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+            GameTooltip:Hide()
+        end
     end)
 
     entry.questItemButton:SetScript("OnClick", function(self, button)
@@ -207,7 +210,10 @@ function FriendsFrame.SetupEntryTooltips(entry)
     end)
 
     entry:SetScript("OnLeave", function(self)
-        GameTooltip:Hide()
+        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this entry ✿ʕ•ᴥ•ʔ
+        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+            GameTooltip:Hide()
+        end
     end)
 end
 
@@ -403,7 +409,10 @@ function FriendsFrame.SetupEventHandlers()
         end)
 
         friendsToggleButton:SetScript("OnLeave", function(self)
-            GameTooltip:Hide()
+            -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this button ✿ʕ•ᴥ•ʔ
+            if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
+                GameTooltip:Hide()
+            end
         end)
     end
 
