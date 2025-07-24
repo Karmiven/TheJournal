@@ -6,15 +6,6 @@
 
 local TooltipEnhancement = {}
 
--- ʕ ◕ᴥ◕ ʔ✿ Missing function: Extract item ID from item link ✿ʕ ◕ᴥ◕ ʔ
-local function CustomExtractItemId(itemLink)
-    if not itemLink or type(itemLink) ~= "string" then
-        return nil
-    end
-    local itemID = tonumber(itemLink:match("item:(%d+)"))
-    return itemID
-end
-
 -- ʕ ◕ᴥ◕ ʔ✿ Faction Tooltip System - idTip Style ✿ʕ ◕ᴥ◕ ʔ
 local hooksecurefunc = hooksecurefunc
 
