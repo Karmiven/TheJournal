@@ -226,9 +226,6 @@ function UIQuestManager.InitializeUI()
     randomQuestIcon:SetFrameStrata("FULLSCREEN")
     randomQuestIcon:SetFrameLevel(_G.DungeonJournalFrame:GetFrameLevel() + 20)
     randomQuestIcon:Hide() -- Hidden by default, only show in dungeon detail
-    
-    -- ʕ •ᴥ•ʔ✿ Mark as journal UI element for tooltip forcer identification ✿ʕ•ᴥ•ʔ
-    randomQuestIcon.isJournalUIElement = true
 
     local questIconTexture = randomQuestIcon:CreateTexture(nil, "ARTWORK")
     questIconTexture:SetSize(24, 24)
@@ -255,7 +252,7 @@ function UIQuestManager.InitializeUI()
     questPopoutFrame:SetSize(220, 90)
     questPopoutFrame:SetPoint("TOPLEFT", _G.DungeonJournalFrame, "TOPRIGHT", -220, -425)
     questPopoutFrame:SetFrameStrata("FULLSCREEN")
-    questPopoutFrame:SetFrameLevel(15) -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Reasonable level instead of potentially high level ✿ʕ•ᴥ•ʔ
+    questPopoutFrame:SetFrameLevel(_G.DungeonJournalFrame:GetFrameLevel() + 30)
     questPopoutFrame:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -519,18 +516,8 @@ function UIQuestManager.SetupEventHandlers()
     randomQuestIcon:SetScript("OnEnter", ShowQuestIconTooltip)
     previewQuestIcon:SetScript("OnEnter", ShowQuestIconTooltip)
 
-    randomQuestIcon:SetScript("OnLeave", function(self) 
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this icon ✿ʕ•ᴥ•ʔ
-        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
-            GameTooltip:Hide() 
-        end
-    end)
-    previewQuestIcon:SetScript("OnLeave", function(self) 
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this icon ✿ʕ•ᴥ•ʔ
-        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
-            GameTooltip:Hide() 
-        end
-    end)
+    randomQuestIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    previewQuestIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- ʕ •ᴥ•ʔ✿ Visibility control based on UI state ✿ʕ•ᴥ•ʔ
     local function UpdateQuestIconVisibility()
@@ -598,9 +585,6 @@ end
 
 -- ʕ •ᴥ•ʔ✿ Hook Functions ✿ʕ•ᴥ•ʔ
 function UIQuestManager.HookExistingFunctions()
-    -- ʕ •ᴥ•ʔ✿ DISABLED: Prevent double-hooking LoadDungeonDetail (already hooked in UIFrames.lua) ✿ʕ•ᴥ•ʔ
-    -- This was causing tooltip interference due to chained hooks with timers
-    --[[
     local originalLoadDungeonDetail = _G.LoadDungeonDetail
     if originalLoadDungeonDetail then
         _G.LoadDungeonDetail = function(dungeon, isPagination)
@@ -622,7 +606,6 @@ function UIQuestManager.HookExistingFunctions()
             return result
         end
     end
-    --]]
 
     -- ʕ •ᴥ•ʔ✿ Hook back button to hide quest icons when leaving dungeon detail ✿ʕ•ᴥ•ʔ
     local originalHideDungeonInteriorUI = _G.HideDungeonInteriorUI
@@ -735,9 +718,6 @@ function UIQuestManager.CreatePreviewQuestIcon(parentFrame)
     previewQuestIcon:SetFrameStrata("FULLSCREEN")
     previewQuestIcon:SetFrameLevel((parentFrame:GetFrameLevel() or 0) + 20)
     previewQuestIcon:Hide() -- Hidden by default, only show in dungeon detail
-    
-    -- ʕ •ᴥ•ʔ✿ Mark as journal UI element for tooltip forcer identification ✿ʕ•ᴥ•ʔ
-    previewQuestIcon.isJournalUIElement = true
 
     local previewIconTexture = previewQuestIcon:CreateTexture(nil, "ARTWORK")
     previewIconTexture:SetSize(24, 24)

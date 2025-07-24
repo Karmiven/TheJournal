@@ -236,22 +236,29 @@ end
 
 -- ʕ •ᴥ•ʔ✿ Safe tooltip enhancement without taint ✿ʕ•ᴥ•ʔ
 local function SafeEnhanceTooltip()
-    local autoTestEnabled = _G.DJ_Settings and _G.DJ_Settings.autoTestBoe
-
-    -- ʕ •ᴥ•ʔ✿ Check if we should show tooltip enhancement ✿ʕ •ᴥ•ʔ
-    if not GameTooltip:IsVisible() then
+    -- ʕ ◕ᴥ◕ ʔ✿ Multiple safety checks to prevent breaking tooltip functionality ✿ʕ ◕ᴥ◕ ʔ
+    if not GameTooltip or not GameTooltip:IsVisible() or not GameTooltip.GetOwner or not GameTooltip:GetOwner() then
         return
     end
+    
+    local autoTestEnabled = _G.DJ_Settings and _G.DJ_Settings.autoTestBoe
 
-    local name, link = GameTooltip:GetItem()
-    if not name then return end
+    -- ʕ ● ᴥ ●ʔ✿ Safely get item information with error protection ✿ʕ ● ᴥ ●ʔ
+    local name, link
+    local success = pcall(function()
+        name, link = GameTooltip:GetItem()
+    end)
+    
+    if not success or not name then 
+        return 
+    end
 
     local itemID = nil
     if link and link:find("|Hitem:") then
         itemID = tonumber(link:match("item:(%d+)"))
     else
-        local _, fullLink = GetItemInfo(name)
-        if fullLink then
+        local success2, fullLink = pcall(GetItemInfo, name)
+        if success2 and fullLink then
             link = fullLink
             itemID = tonumber(fullLink:match("item:(%d+)"))
         end
@@ -264,7 +271,9 @@ local function SafeEnhanceTooltip()
 
     -- Show enhancement if auto is enabled OR item was manually queried
     if autoTestEnabled or wasManuallyQueried then
-        UIBOETooltipEnhancement.ProcessBOETooltip(GameTooltip, link)
+        pcall(function()
+            UIBOETooltipEnhancement.ProcessBOETooltip(GameTooltip, link)
+        end)
     end
 
     -- Only run auto testing if enabled
@@ -272,8 +281,7 @@ local function SafeEnhanceTooltip()
         return
     end
 
-
-    -- ʕ ● ᴥ ●ʔ✿ More robust duplicate prevention ✿ʕ ● ᴥ ●ʔ
+    -- ʕ ◕ᴥ◕ ʔ✿ More robust duplicate prevention ✿ʕ ◕ᴥ◕ ʔ
     local currentTime = GetTime()
 
     -- Check if we recently processed this exact item (within 2 seconds to prevent spam)
@@ -283,7 +291,7 @@ local function SafeEnhanceTooltip()
         return -- Already processed this item very recently (spam prevention)
     end
 
-    -- ʕ ◕ᴥ◕ ʔ✿ Perform BOE test since auto testing is enabled ✿ʕ ◕ᴥ◕ ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Perform BOE test since auto testing is enabled - with error protection ✿ʕ ● ᴥ ●ʔ
     if _G.PerformBOETest then
         local lastQueryTime = _G.LAST_BOE_QUERY_TIME[itemID]
         -- Test immediately if never tested, or after 10 minutes (600 seconds)
@@ -293,58 +301,62 @@ local function SafeEnhanceTooltip()
             lastProcessedItem.processed = true
             lastProcessedItem.timestamp = currentTime
 
-            -- Store the link and perform the test
+            -- Store the link and perform the test with error protection
             if link then
-                _G.ORIGINAL_ITEM_LINKS[itemID] = link
-                _G.PerformBOETest(itemID, link, true) -- true = automatic mode
-                _G.LAST_BOE_QUERY_TIME[itemID] = currentTime
+                pcall(function()
+                    _G.ORIGINAL_ITEM_LINKS[itemID] = link
+                    _G.PerformBOETest(itemID, link, true) -- true = automatic mode
+                    _G.LAST_BOE_QUERY_TIME[itemID] = currentTime
+                end)
             end
         end
     end
 end
 
--- ʕ •ᴥ•ʔ✿ Use GameTooltip events instead of direct hooks ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Use GameTooltip events instead of direct hooks with safety checks ✿ʕ•ᴥ•ʔ
 local function InitializeTooltipHooks()
-    GameTooltip:HookScript("OnTooltipSetItem", function()
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only process if tooltip is actually visible and stable ✿ʕ•ᴥ•ʔ
-        if not GameTooltip:IsVisible() then return end
-        
-        -- ʕ •ᴥ•ʔ✿ Don't interfere with right-click menus or unstable tooltip states ✿ʕ•ᴥ•ʔ
-        local name, link = GameTooltip:GetItem()
-        if not name or not link then return end
-        
-        -- ʕ •ᴥ•ʔ✿ Use a small delay to ensure tooltip is stable ✿ʕ•ᴥ•ʔ
-        C_Timer.After(0.05, function()
-            if GameTooltip:IsVisible() then
+    -- ʕ ◕ᴥ◕ ʔ✿ Prevent multiple initializations ✿ʕ ◕ᴥ◕ ʔ
+    if UIBOETooltipEnhancement.hooksInitialized then
+        return
+    end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Use pcall to safely hook without breaking existing functionality ✿ʕ ● ᴥ ●ʔ
+    local success1 = pcall(function()
+        GameTooltip:HookScript("OnTooltipSetItem", function()
+            -- ʕ ◕ᴥ◕ ʔ✿ Only enhance if tooltip is still visible and valid ✿ʕ ◕ᴥ◕ ʔ
+            if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
                 GameTooltip.hasBOEInfo = false -- Clear duplicate flag
                 SafeEnhanceTooltip()
             end
         end)
     end)
 
-    -- ʕ ● ᴥ ●ʔ✿ Reset processing state when tooltip hides (with delay) ✿ʕ ● ᴥ ●ʔ
-    GameTooltip:HookScript("OnHide", function()
-        -- Use a timer to reset state after a delay to prevent immediate reset
-        if C_Timer and C_Timer.After then
-            C_Timer.After(2, function()
+    -- ʕ ◕ᴥ◕ ʔ✿ Reset processing state when tooltip hides with error protection ✿ʕ ◕ᴥ◕ ʔ
+    local success2 = pcall(function()
+        GameTooltip:HookScript("OnHide", function()
+            -- Use a timer to reset state after a delay to prevent immediate reset
+            if C_Timer and C_Timer.After then
+                C_Timer.After(2, function()
+                    lastProcessedItem.itemID = nil
+                    lastProcessedItem.processed = false
+                    lastProcessedItem.timestamp = 0
+                end)
+            else
+                -- Fallback: reset immediately if no timer available
                 lastProcessedItem.itemID = nil
                 lastProcessedItem.processed = false
                 lastProcessedItem.timestamp = 0
-            end)
-        else
-            -- Fallback: reset immediately if no timer available
-            lastProcessedItem.itemID = nil
-            lastProcessedItem.processed = false
-            lastProcessedItem.timestamp = 0
-        end
+            end
+        end)
     end)
+    
+    if success1 and success2 then
+        UIBOETooltipEnhancement.hooksInitialized = true
+    end
 end
 
 -- ʕ •ᴥ•ʔ✿ Initialize tooltip system safely ✿ʕ•ᴥ•ʔ
 function UIBOETooltipEnhancement.Initialize()
-    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable BOE tooltip system to test right-click tooltips ✿ʕ•ᴥ•ʔ
-    return
-    
     -- ʕ ◕ᴥ◕ ʔ✿ Wait for addon to be fully loaded before hooking ✿ʕ ◕ᴥ◕ ʔ
     if IsAddOnLoaded("TheJournal") then
         InitializeTooltipHooks()

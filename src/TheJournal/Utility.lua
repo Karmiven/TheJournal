@@ -331,22 +331,9 @@ local function ClearSpellFrames()
         end
     end
     
-    -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it's showing spell information ✿ʕ•ᴥ•ʔ
+    -- Hide tooltip if it's still showing
     if GameTooltip:IsShown() then
-        local tooltipOwner = GameTooltip:GetOwner()
-        local shouldHide = false
-        
-        if tooltipOwner then
-            local ownerName = tooltipOwner:GetName() or ""
-            -- Only hide if tooltip belongs to spell frames we're clearing
-            if ownerName:match("DJ_SpellIcon") or ownerName:match("SpellFrame") then
-                shouldHide = true
-            end
-        end
-        
-        if shouldHide then
-            GameTooltip:Hide()
-        end
+        GameTooltip:Hide()
     end
 end
 

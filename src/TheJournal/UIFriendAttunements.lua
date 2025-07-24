@@ -63,26 +63,49 @@ end
 
 -- ʕ •ᴥ•ʔ✿ Enhanced ProcessBOETooltip function ✿ʕ •ᴥ•ʔ
 function FriendAttunements.ProcessBOETooltip(tooltip, link)
-    if not link or not link:match("^item:") then return end
+    -- ʕ ◕ᴥ◕ ʔ✿ Add safety checks to prevent errors ✿ʕ ◕ᴥ◕ ʔ
+    if not tooltip or not link or not link:match("^item:") then 
+        return 
+    end
     
-    local itemID = tonumber(link:match("item:(%d+)"))
-    if not itemID then return end
+    local success, itemID = pcall(function()
+        return tonumber(link:match("item:(%d+)"))
+    end)
     
-    -- ʕ ◕ᴥ◕ ʔ✿ Check if any friends need this item for attunement ✿ʕ ◕ᴥ◕ ʔ
-    local friendsWhoNeed = FriendAttunements.GetFriendsWhoNeedItem(itemID)
+    if not success or not itemID then 
+        return 
+    end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Check if any friends need this item for attunement with error protection ✿ʕ ● ᴥ ●ʔ
+    local friendsWhoNeed = {}
+    pcall(function()
+        friendsWhoNeed = FriendAttunements.GetFriendsWhoNeedItem(itemID)
+    end)
     
     if #friendsWhoNeed > 0 then
-        tooltip:AddLine(" ")
-        tooltip:AddLine("|cFFFFD700Friend Attunement Status:|r")
-        tooltip:AddLine("|cFFFF6600Unattuned: " .. table.concat(friendsWhoNeed, ", ") .. "|r", 1, 1, 1, true)
+        pcall(function()
+            tooltip:AddLine(" ")
+            tooltip:AddLine("|cFFFFD700Friend Attunement Status:|r")
+            tooltip:AddLine("|cFFFF6600Unattuned: " .. table.concat(friendsWhoNeed, ", ") .. "|r", 1, 1, 1, true)
+        end)
     end
 end
 
--- ʕ ● ᴥ ●ʔ✿ Enhance tooltip with friend status ✿ʕ ● ᴥ ●ʔ
+-- ʕ ● ᴥ ●ʔ✿ Enhance tooltip with friend status with error protection ✿ʕ ● ᴥ ●ʔ
 function FriendAttunements.EnhanceTooltipWithFriendStatus(tooltip)
-    local name, link = tooltip:GetItem()
-    if link then
-        FriendAttunements.ProcessBOETooltip(tooltip, link)
+    -- ʕ ◕ᴥ◕ ʔ✿ Add safety checks to prevent errors ✿ʕ ◕ᴥ◕ ʔ
+    if not tooltip or not tooltip.GetItem then
+        return
+    end
+    
+    local success, name, link = pcall(function()
+        return tooltip:GetItem()
+    end)
+    
+    if success and link then
+        pcall(function()
+            FriendAttunements.ProcessBOETooltip(tooltip, link)
+        end)
     end
 end
 
@@ -103,34 +126,41 @@ end
 -- ʕ ◕ᴥ◕ ʔ✿ REMOVED: Direct GameTooltip.Show hook to avoid taint ✿ʕ ◕ᴥ◕ ʔ
 -- ʕ •ᴥ•ʔ✿ Use safe HookScript instead ✿ʕ •ᴥ•ʔ
 function FriendAttunements.HookGameTooltip()
-    -- ʕ ◕ᴥ◕ ʔ✿ Use HookScript for safe tooltip enhancement ✿ʕ ◕ᴥ◕ ʔ
-    GameTooltip:HookScript("OnTooltipSetItem", function(self)
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only process if tooltip is actually visible and stable ✿ʕ•ᴥ•ʔ
-        if not self:IsVisible() then return end
-        
-        -- ʕ •ᴥ•ʔ✿ Don't interfere with right-click menus or unstable tooltip states ✿ʕ•ᴥ•ʔ
-        local name, link = self:GetItem()
-        if not name or not link then return end
-        
-        -- ʕ •ᴥ•ʔ✿ Use a small delay to ensure tooltip is stable ✿ʕ•ᴥ•ʔ
-        C_Timer.After(0.05, function()
-            if self:IsVisible() then
-                FriendAttunements.EnhanceTooltipWithFriendStatus(self)
+    -- ʕ ● ᴥ ●ʔ✿ Prevent multiple hook initializations ✿ʕ ● ᴥ ●ʔ
+    if FriendAttunements.hooksInitialized then
+        return
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Use pcall to safely hook without breaking existing functionality ✿ʕ ◕ᴥ◕ ʔ
+    local success1 = pcall(function()
+        GameTooltip:HookScript("OnTooltipSetItem", function(self)
+            -- ʕ ● ᴥ ●ʔ✿ Only enhance if tooltip is still visible and valid ✿ʕ ● ᴥ ●ʔ
+            if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
+                pcall(function()
+                    FriendAttunements.EnhanceTooltipWithFriendStatus(self)
+                end)
             end
         end)
     end)
     
-    -- ʕ •ᴥ•ʔ✿ Remove OnShow hook as it's too aggressive and conflicts with OnTooltipSetItem ✿ʕ•ᴥ•ʔ
-    -- GameTooltip:HookScript("OnShow", function(self)
-    --     FriendAttunements.EnhanceTooltipWithFriendStatus(self)
-    -- end)
+    local success2 = pcall(function()
+        GameTooltip:HookScript("OnShow", function(self)
+            -- ʕ ◕ᴥ◕ ʔ✿ Only enhance if tooltip has valid content ✿ʕ ◕ᴥ◕ ʔ
+            if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
+                pcall(function()
+                    FriendAttunements.EnhanceTooltipWithFriendStatus(self)
+                end)
+            end
+        end)
+    end)
+    
+    if success1 and success2 then
+        FriendAttunements.hooksInitialized = true
+    end
 end
 
 -- ʕ ● ᴥ ●ʔ✿ Initialize friend attunement tracking ✿ʕ ● ᴥ ●ʔ
 function FriendAttunements.Initialize()
-    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable friend attunement tooltip system to test right-click tooltips ✿ʕ•ᴥ•ʔ
-    return
-    
     FriendAttunements.HookBOETooltip()
     FriendAttunements.HookGameTooltip()
 end

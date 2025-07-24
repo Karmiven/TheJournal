@@ -65,7 +65,7 @@ function BountySystem.SetFrameBounty(frame, itemLink, iconFrame)
             bountyFrame = CreateFrame('Frame', bountyFrameName, frame)
             bountyFrame:SetWidth(BOUNTY_ICON.SIZE)
             bountyFrame:SetHeight(BOUNTY_ICON.SIZE)
-            bountyFrame:SetFrameLevel((frame:GetFrameLevel() or 10) + 2) -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Reasonable base level instead of 200+ ✿ʕ•ᴥ•ʔ
+            bountyFrame:SetFrameLevel((frame:GetFrameLevel() or 200) + 2)
             bountyFrame.texture = bountyFrame:CreateTexture(nil, 'OVERLAY')
             bountyFrame.texture:SetAllPoints()
             bountyFrame.texture:SetTexture(BOUNTY_ICON.TEXTURE)

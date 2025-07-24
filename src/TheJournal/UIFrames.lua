@@ -657,9 +657,6 @@ filterTypeButton:SetPoint("RIGHT", mainCloseButton, "LEFT", 5, -25)
 filterTypeButton:SetFrameStrata("FULLSCREEN")
 filterTypeButton:SetFrameLevel((DungeonJournalFrame:GetFrameLevel() or 0) + 20)
 
--- ʕ •ᴥ•ʔ✿ Mark as journal UI element for tooltip forcer identification ✿ʕ•ᴥ•ʔ
-filterTypeButton.isJournalUIElement = true
-
 -- ʕ •ᴥ•ʔ✿ Filter tooltip handling delegated to UILayoutManager ✿ʕ•ᴥ•ʔ
 
 filterTypeButton:SetScript("OnEnter", function(self)
@@ -672,10 +669,7 @@ end)
 
 
 filterTypeButton:SetScript("OnLeave", function(self)
-    -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this button ✿ʕ•ᴥ•ʔ
-    if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
-        GameTooltip:Hide()
-    end
+    GameTooltip:Hide()
 end)
 
 -- Show/hide functions will be defined after all buttons are created
@@ -828,7 +822,7 @@ if itemsListContainer then
         error("itemsListContainer does not have SetFrameLevel method")
         return
     end
-    itemsListContainer:SetFrameLevel(10) -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Reasonable level instead of 100 which blocks mouse events ✿ʕ•ᴥ•ʔ
+    itemsListContainer:SetFrameLevel(100) -- High level to ensure visibility
 
     if itemsListContainer.SetClipsChildren then
         itemsListContainer:SetClipsChildren(true) -- stop children from spilling out
@@ -1206,7 +1200,7 @@ backButton:SetScript("OnClick", function()
         _G.currentDungeon = nil
 
         if randomQuestIcon then randomQuestIcon:Hide() end
-        if previewQuestIcon then previewQuestIcon:Hide() -- Hide on preview
+        if previewQuestIcon then previewQuestIcon:Hide() end -- Hide on preview
         if questPopoutFrame then questPopoutFrame:Hide() end
 
         C_Timer.After(0.1, function()
@@ -2045,7 +2039,6 @@ function LoadDungeonDetail(dungeon)
             if dungeonDetailFrame.bookHighlight then
                 dungeonDetailFrame.bookHighlight:Hide()
             end
-            -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide AffixTooltip, don't interfere with other tooltips ✿ʕ•ᴥ•ʔ
             AffixTooltip:Hide()
         end)
     elseif dungeonDetailFrame.bookIcon then
@@ -4493,12 +4486,7 @@ _G.LoadDungeonDetail = function(dungeon, isPagination)
                 _G.randomQuestIcon:Show()
             end
             if _G.previewQuestIcon then
-                _G.previewQuestIcon:Hide() -- Hide preview icon in dungeon detail
-            end
-            
-            -- ʕ •ᴥ•ʔ✿ Update quest display (consolidated from UIQuestManager hook) ✿ʕ•ᴥ•ʔ
-            if _G.TheJournal_UIQuestManager and _G.TheJournal_UIQuestManager.UpdateCurrentQuestDisplay then
-                _G.TheJournal_UIQuestManager.UpdateCurrentQuestDisplay()
+                _G.previewQuestIcon:Show()
             end
         else
             -- ʕノ•ᴥ•ʔノ✿ Hide quest icons if not in dungeon detail ✿ʕノ•ᴥ•ʔノ
@@ -4506,7 +4494,7 @@ _G.LoadDungeonDetail = function(dungeon, isPagination)
                 _G.randomQuestIcon:Hide()
             end
             if _G.previewQuestIcon then
-                _G.previewQuestIcon:Show() -- Show preview icon when not in detail
+                _G.previewQuestIcon:Hide()
             end
         end
     end)
@@ -4772,12 +4760,7 @@ dungeonDifficultyFilterButton:SetScript("OnClick", function(self, mouseButton)
     OnDungeonListDifficultyFilterClick(mouseButton)
 end)
 dungeonDifficultyFilterButton:SetScript("OnEnter", function(self) ShowDungeonListDifficultyFilterTooltip(self) end)
-    dungeonDifficultyFilterButton:SetScript("OnLeave", function(self) 
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this button ✿ʕ•ᴥ•ʔ
-        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
-            GameTooltip:Hide() 
-        end
-    end)
+dungeonDifficultyFilterButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- ʕ •ᴥ•ʔ✿ Dungeon List Refresh Button ✿ʕ•ᴥ•ʔ
 local dungeonListRefreshButton = CreateFrame("Button", "DJ_DungeonListRefresh", previewFrame, "UIPanelButtonTemplate")
@@ -4849,12 +4832,7 @@ end
 
 dungeonListRefreshButton:SetScript("OnClick", OnDungeonListRefreshClick)
 dungeonListRefreshButton:SetScript("OnEnter", function(self) ShowDungeonListRefreshTooltip(self) end)
-    dungeonListRefreshButton:SetScript("OnLeave", function(self) 
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only hide tooltip if it belongs to this button ✿ʕ•ᴥ•ʔ
-        if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then
-            GameTooltip:Hide() 
-        end
-    end)
+dungeonListRefreshButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- ʕ •ᴥ•ʔ✿ Check if dungeon has specific difficulty ✿ʕ•ᴥ•ʔ
 function DungeonHasDifficulty(dungeon, difficulty)

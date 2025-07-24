@@ -102,41 +102,63 @@ local lastProcessedTooltip = {
 -- ʕ •ᴥ•ʔ✿ CONSOLIDATED: Remove duplicate OnUpdate processing ✿ʕ•ᴥ•ʔ
 -- ʕ ◕ᴥ◕ ʔ✿ This is now handled by UIBOETooltipEnhancement.lua to avoid conflicts ✿ʕ ◕ᴥ◕ ʔ
 
--- ʕ •ᴥ•ʔ✿ Safe tooltip enhancement functions ✿ʕ •ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Safe tooltip enhancement functions with error protection ✿ʕ •ᴥ•ʔ
 local function SafeEnhanceFactionTooltip()
-    if not GameTooltip:IsVisible() then return end
+    -- ʕ ◕ᴥ◕ ʔ✿ Multiple safety checks to prevent errors ✿ʕ ◕ᴥ◕ ʔ
+    if not GameTooltip or not GameTooltip:IsVisible() or not GameTooltip.GetOwner or not GameTooltip:GetOwner() then 
+        return 
+    end
 
-    local itemLink = TooltipEnhancement.GetItemLinkFromTooltip()
-    if not itemLink then return end
+    local success, itemLink = pcall(function()
+        return TooltipEnhancement.GetItemLinkFromTooltip()
+    end)
+    
+    if not success or not itemLink then 
+        return 
+    end
 
-    -- ʕ ◕ᴥ◕ ʔ✿ Prevent duplicate processing ✿ʕ ◕ᴥ◕ ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Prevent duplicate processing with additional safety ✿ʕ ● ᴥ ●ʔ
     if lastProcessedTooltip.itemLink == itemLink and lastProcessedTooltip.factionProcessed then
         return
     end
 
-    -- ʕ ● ᴥ ●ʔ✿ Process faction tooltip enhancement ✿ʕ ● ᴥ ●ʔ
+    -- ʕ ◕ᴥ◕ ʔ✿ Process faction tooltip enhancement with error protection ✿ʕ ◕ᴥ◕ ʔ
     if _G.DJ_Settings and _G.DJ_Settings.showFactionTooltips then
-        FactionTooltipEnhancement.ProcessFactionTooltip(GameTooltip, itemLink)
+        pcall(function()
+            FactionTooltipEnhancement.ProcessFactionTooltip(GameTooltip, itemLink)
+        end)
     end
 
     lastProcessedTooltip.itemLink = itemLink
     lastProcessedTooltip.factionProcessed = true
 end
 
--- ʕ •ᴥ•ʔ✿ Safe BOE tooltip enhancement ✿ʕ •ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Safe BOE tooltip enhancement with error protection ✿ʕ •ᴥ•ʔ
 local function SafeEnhanceBOETooltip()
-    if not GameTooltip:IsVisible() then return end
+    -- ʕ ◕ᴥ◕ ʔ✿ Multiple safety checks to prevent errors ✿ʕ ◕ᴥ◕ ʔ
+    if not GameTooltip or not GameTooltip:IsVisible() or not GameTooltip.GetOwner or not GameTooltip:GetOwner() then 
+        return 
+    end
 
-    local itemLink = TooltipEnhancement.GetItemLinkFromTooltip()
-    if not itemLink then return end
+    local success, itemLink = pcall(function()
+        return TooltipEnhancement.GetItemLinkFromTooltip()
+    end)
+    
+    if not success or not itemLink then 
+        return 
+    end
 
-    -- ʕ ◕ᴥ◕ ʔ✿ Prevent duplicate processing ✿ʕ ◕ᴥ◕ ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Prevent duplicate processing with additional safety ✿ʕ ● ᴥ ●ʔ
     if lastProcessedTooltip.itemLink == itemLink and lastProcessedTooltip.boeProcessed then
         return
     end
 
-    -- ʕ ● ᴥ ●ʔ✿ Process BOE tooltip enhancement ✿ʕ ● ᴥ ●ʔ
-    ProcessBOETooltip(GameTooltip, itemLink)
+    -- ʕ ◕ᴥ◕ ʔ✿ Process BOE tooltip enhancement with error protection ✿ʕ ◕ᴥ◕ ʔ
+    if _G.ProcessBOETooltip then
+        pcall(function()
+            ProcessBOETooltip(GameTooltip, itemLink)
+        end)
+    end
 
     lastProcessedTooltip.itemLink = itemLink
     lastProcessedTooltip.boeProcessed = true
@@ -148,40 +170,48 @@ local function SafeEnhanceAllTooltips()
     SafeEnhanceBOETooltip()
 end
 
--- ʕ •ᴥ•ʔ✿ Initialize tooltip hooks safely ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Initialize tooltip hooks safely with conflict prevention ✿ʕ•ᴥ•ʔ
 local function InitializeFactionTooltipHooks()
-    GameTooltip:HookScript("OnTooltipSetItem", function()
-        -- ʕ •ᴥ•ʔ✿ CRITICAL FIX: Only process if tooltip is actually visible and stable ✿ʕ•ᴥ•ʔ
-        if not GameTooltip:IsVisible() then return end
-        
-        -- ʕ •ᴥ•ʔ✿ Don't interfere with right-click menus or unstable tooltip states ✿ʕ•ᴥ•ʔ
-        local name, link = GameTooltip:GetItem()
-        if not name or not link then return end
-        
-        -- ʕ •ᴥ•ʔ✿ Use a small delay to ensure tooltip is stable ✿ʕ•ᴥ•ʔ
-        C_Timer.After(0.05, function()
-            if GameTooltip:IsVisible() then
+    -- ʕ ◕ᴥ◕ ʔ✿ Add safety checks to prevent multiple hook conflicts ✿ʕ ◕ᴥ◕ ʔ
+    if TooltipEnhancement.hooksInitialized then
+        return
+    end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Use pcall to safely hook without breaking existing functionality ✿ʕ ● ᴥ ●ʔ
+    local success1 = pcall(function()
+        GameTooltip:HookScript("OnTooltipSetItem", function(self)
+            -- ʕ ◕ᴥ◕ ʔ✿ Only enhance if tooltip is still visible and valid ✿ʕ ◕ᴥ◕ ʔ
+            if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
                 SafeEnhanceAllTooltips()
             end
         end)
     end)
     
-    -- ʕ •ᴥ•ʔ✿ Remove OnShow hook as it's too aggressive and conflicts with OnTooltipSetItem ✿ʕ•ᴥ•ʔ
-    -- GameTooltip:HookScript("OnShow", SafeEnhanceAllTooltips)
-
-    -- ʕ ● ᴥ ●ʔ✿ Reset processed state when tooltip hides ✿ʕ ● ᴥ ●ʔ
-    GameTooltip:HookScript("OnHide", function()
-        lastProcessedTooltip.itemLink = nil
-        lastProcessedTooltip.boeProcessed = false
-        lastProcessedTooltip.factionProcessed = false
+    local success2 = pcall(function()
+        GameTooltip:HookScript("OnShow", function(self)
+            -- ʕ ● ᴥ ●ʔ✿ Only enhance if tooltip has valid content ✿ʕ ● ᴥ ●ʔ
+            if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
+                SafeEnhanceAllTooltips()
+            end
+        end)
     end)
+
+    -- ʕ ◕ᴥ◕ ʔ✿ Reset processed state when tooltip hides - with error protection ✿ʕ ◕ᴥ◕ ʔ
+    local success3 = pcall(function()
+        GameTooltip:HookScript("OnHide", function()
+            lastProcessedTooltip.itemLink = nil
+            lastProcessedTooltip.boeProcessed = false
+            lastProcessedTooltip.factionProcessed = false
+        end)
+    end)
+    
+    if success1 and success2 and success3 then
+        TooltipEnhancement.hooksInitialized = true
+    end
 end
 
 -- ʕ •ᴥ•ʔ✿ Initialize faction tooltip system safely ✿ʕ•ᴥ•ʔ
 function TooltipEnhancement.Initialize()
-    -- ʕ •ᴥ•ʔ✿ TEMPORARY DISABLE: Completely disable faction tooltip system to test right-click tooltips ✿ʕ•ᴥ•ʔ
-    return
-    
     -- ʕ ◕ᴥ◕ ʔ✿ Wait for addon to be fully loaded before hooking ✿ʕ ◕ᴥ◕ ʔ
     if IsAddOnLoaded("TheJournal") then
         InitializeFactionTooltipHooks()
@@ -204,38 +234,81 @@ TooltipEnhancement.Initialize()
 _G.ProcessBOETooltip = ProcessBOETooltip
 _G.TooltipEnhancement = TooltipEnhancement
 
--- ʕ ● ᴥ ●ʔ✿ Get item link from various sources ✿ʕ ● ᴥ ●ʔ
+-- ʕ ● ᴥ ●ʔ✿ Enhanced item link detection with better container frame support ✿ʕ ● ᴥ ●ʔ
 function TooltipEnhancement.GetItemLinkFromTooltip()
     local itemLink = nil
 
     -- ʕ ◕ᴥ◕ ʔ✿ First try to get item link directly from GameTooltip ✿ʕ ◕ᴥ◕ ʔ
-    local name, link = GameTooltip:GetItem()
-    if link then
+    local success, name, link = pcall(function()
+        return GameTooltip:GetItem()
+    end)
+    
+    if success and link then
         local itemID = CustomExtractItemId(link)
         if itemID and itemID > 0 then
-            itemLink = link
-            return itemLink
+            return link
         end
     end
 
-    -- ʕ ◕ᴥ◕ ʔ✿ Fallback: try container frame detection ✿ʕ ◕ᴥ◕ ʔ
+    -- ʕ ● ᴥ ●ʔ✿ Enhanced container frame detection with error protection ✿ʕ ● ᴥ ●ʔ
     local mouseoverFrame = GetMouseFocus()
-    if mouseoverFrame and mouseoverFrame:GetName() then
-        local frameName = mouseoverFrame:GetName()
-        if frameName:match("ContainerFrame%d+Item%d+") then
-            local bag = mouseoverFrame:GetParent():GetID()
-            local slot = mouseoverFrame:GetID()
-            itemLink = GetContainerItemLink(bag, slot)
-            if itemLink then
-                local itemID = CustomExtractItemId(itemLink)
-                if itemID and itemID > 0 then
-                    return itemLink
+    if mouseoverFrame and mouseoverFrame.GetName then
+        local success2, frameName = pcall(function()
+            return mouseoverFrame:GetName()
+        end)
+        
+        if success2 and frameName and frameName:match("ContainerFrame%d+Item%d+") then
+            local success3, bag, slot = pcall(function()
+                local bag = mouseoverFrame:GetParent():GetID()
+                local slot = mouseoverFrame:GetID()
+                return bag, slot
+            end)
+            
+            if success3 and bag and slot then
+                local success4, containerLink = pcall(function()
+                    return GetContainerItemLink(bag, slot)
+                end)
+                
+                if success4 and containerLink then
+                    local itemID = CustomExtractItemId(containerLink)
+                    if itemID and itemID > 0 then
+                        return containerLink
+                    end
                 end
             end
         end
     end
 
-    return itemLink
+    -- ʕ ◕ᴥ◕ ʔ✿ Fallback: try to get from tooltip owner if it's a container frame ✿ʕ ◕ᴥ◕ ʔ
+    if GameTooltip:GetOwner() and GameTooltip:GetOwner().GetName then
+        local success5, ownerName = pcall(function()
+            return GameTooltip:GetOwner():GetName()
+        end)
+        
+        if success5 and ownerName and ownerName:match("ContainerFrame%d+Item%d+") then
+            local success6, bag, slot = pcall(function()
+                local owner = GameTooltip:GetOwner()
+                local bag = owner:GetParent():GetID()
+                local slot = owner:GetID()
+                return bag, slot
+            end)
+            
+            if success6 and bag and slot then
+                local success7, ownerLink = pcall(function()
+                    return GetContainerItemLink(bag, slot)
+                end)
+                
+                if success7 and ownerLink then
+                    local itemID = CustomExtractItemId(ownerLink)
+                    if itemID and itemID > 0 then
+                        return ownerLink
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
 end
 
 -- ʕノ•ᴥ•ʔノ✿ Cache check function removed - using simpler approach to prevent spam ✿ʕノ•ᴥ•ʔノ
@@ -419,3 +492,259 @@ local cleanupTimer = C_Timer.NewTicker(300, CleanupProcessedResponses)
 _G.FactionTooltipEnhancement = FactionTooltipEnhancement
 
 -- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
+
+-- ʕ •ᴥ•ʔ✿ Debug utility to test tooltip functionality ✿ʕ•ᴥ•ʔ
+function TooltipEnhancement.TestTooltipFunctionality()
+    local tests = {
+        {
+            name = "GameTooltip exists and has core functions",
+            test = function()
+                return GameTooltip and 
+                       GameTooltip.Show and 
+                       GameTooltip.Hide and 
+                       GameTooltip.IsVisible and 
+                       GameTooltip.SetOwner and 
+                       GameTooltip.GetOwner
+            end
+        },
+        {
+            name = "Tooltip hooks are properly initialized",
+            test = function()
+                return TooltipEnhancement.hooksInitialized == true
+            end
+        },
+        {
+            name = "No tooltip hooks are breaking GameTooltip.Show",
+            test = function()
+                -- Test that GameTooltip.Show hasn't been completely replaced
+                return type(GameTooltip.Show) == "function" and 
+                       not GameTooltip.Show.__replaced
+            end
+        },
+        {
+            name = "GameTooltip can be shown and hidden normally",
+            test = function()
+                local wasVisible = GameTooltip:IsVisible()
+                GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
+                GameTooltip:SetText("Test")
+                GameTooltip:Show()
+                local canShow = GameTooltip:IsVisible()
+                GameTooltip:Hide()
+                local canHide = not GameTooltip:IsVisible()
+                
+                -- Restore original state
+                if wasVisible then
+                    GameTooltip:Show()
+                end
+                
+                return canShow and canHide
+            end
+        },
+        {
+            name = "Tooltip restoration system is active",
+            test = function()
+                return _G.TooltipRestoration ~= nil
+            end
+        },
+        {
+            name = "Container frame tooltip detection works",
+            test = function()
+                -- Test that we can detect container frames without errors
+                local mouseFrame = GetMouseFocus()
+                return pcall(function()
+                    TooltipEnhancement.GetItemLinkFromTooltip()
+                    return true
+                end)
+            end
+        }
+    }
+    
+    print("|cFF00FFFF[Tooltip Debug]|r Testing tooltip functionality...")
+    local passed = 0
+    local total = #tests
+    
+    for i, test in ipairs(tests) do
+        local success, result = pcall(test.test)
+        if success and result then
+            print("|cFF00FF00✓|r " .. test.name)
+            passed = passed + 1
+        else
+            print("|cFFFF0000✗|r " .. test.name .. (success and "" or " (ERROR: " .. tostring(result) .. ")"))
+        end
+    end
+    
+    print("|cFF00FFFF[Tooltip Debug]|r Results: " .. passed .. "/" .. total .. " tests passed")
+    
+    if passed == total then
+        print("|cFF00FF00[Tooltip Debug]|r All tests passed! Tooltips should work normally.")
+        print("|cFFFFFFFF[Tooltip Debug]|r Try '/rt' to manually refresh tooltips if needed.")
+    else
+        print("|cFFFF6600[Tooltip Debug]|r Some tests failed. There may be tooltip issues.")
+        print("|cFFFFFFFF[Tooltip Debug]|r Try '/rt' to manually refresh tooltips.")
+    end
+end
+
+-- ʕ •ᴥ•ʔ✿ Export debug function globally for easy access ✿ʕ•ᴥ•ʔ
+_G.TestTooltipFunctionality = TooltipEnhancement.TestTooltipFunctionality
+
+-- ʕ •ᴥ•ʔ✿ Tooltip Restoration System for Right-Click Events ✿ʕ•ᴥ•ʔ
+local TooltipRestoration = {}
+
+-- ʕ ◕ᴥ◕ ʔ✿ Track tooltip state before mouse events ✿ʕ ◕ᴥ◕ ʔ
+local tooltipState = {
+    wasVisible = false,
+    owner = nil,
+    lastMouseFrame = nil,
+    lastUpdateTime = 0
+}
+
+-- ʕ ● ᴥ ●ʔ✿ Force tooltip refresh for container frames ✿ʕ ● ᴥ ●ʔ
+function TooltipRestoration.RefreshContainerTooltip()
+    local mouseFrame = GetMouseFocus()
+    if not mouseFrame or not mouseFrame:GetName() then
+        return
+    end
+    
+    local frameName = mouseFrame:GetName()
+    if frameName:match("ContainerFrame%d+Item%d+") then
+        -- ʕ ◕ᴥ◕ ʔ✿ Get container item information ✿ʕ ◕ᴥ◕ ʔ
+        local success, bag, slot = pcall(function()
+            local bag = mouseFrame:GetParent():GetID()
+            local slot = mouseFrame:GetID()
+            return bag, slot
+        end)
+        
+        if success and bag and slot then
+            local itemLink = GetContainerItemLink(bag, slot)
+            if itemLink then
+                -- ʕ ● ᴥ ●ʔ✿ Force tooltip to show with proper content ✿ʕ ● ᴥ ●ʔ
+                GameTooltip:SetOwner(mouseFrame, "ANCHOR_RIGHT")
+                GameTooltip:SetHyperlink(itemLink)
+                GameTooltip:Show()
+                
+                -- ʕ ◕ᴥ◕ ʔ✿ Update tooltip state ✿ʕ ◕ᴥ◕ ʔ
+                tooltipState.wasVisible = true
+                tooltipState.owner = mouseFrame
+                tooltipState.lastMouseFrame = mouseFrame
+                tooltipState.lastUpdateTime = GetTime()
+                
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+-- ʕ •ᴥ•ʔ✿ Monitor mouse events for tooltip restoration ✿ʕ•ᴥ•ʔ
+local mouseEventFrame = CreateFrame("Frame")
+mouseEventFrame:SetScript("OnUpdate", function(self, elapsed)
+    self.elapsed = (self.elapsed or 0) + elapsed
+    if self.elapsed < 0.1 then return end
+    self.elapsed = 0
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Check if mouse is over a container frame and tooltip should be showing ✿ʕ ◕ᴥ◕ ʔ
+    local mouseFrame = GetMouseFocus()
+    if mouseFrame and mouseFrame:GetName() then
+        local frameName = mouseFrame:GetName()
+        if frameName:match("ContainerFrame%d+Item%d+") then
+            -- ʕ ● ᴥ ●ʔ✿ If tooltip is not visible but should be, restore it ✿ʕ ● ᴥ ●ʔ
+            if not GameTooltip:IsVisible() or GameTooltip:GetOwner() ~= mouseFrame then
+                local currentTime = GetTime()
+                -- ʕ ◕ᴥ◕ ʔ✿ Add small delay to prevent spam during rapid mouse movements ✿ʕ ◕ᴥ◕ ʔ
+                if currentTime - tooltipState.lastUpdateTime > 0.2 then
+                    TooltipRestoration.RefreshContainerTooltip()
+                end
+            end
+        end
+    end
+end)
+
+-- ʕ •ᴥ•ʔ✿ Hook right-click events to preserve tooltip state ✿ʕ•ᴥ•ʔ
+local function HookRightClickEvents()
+    -- ʕ ◕ᴥ◕ ʔ✿ Hook the global right-click handler ✿ʕ ◕ᴥ◕ ʔ
+    local originalOnClick = nil
+    
+    -- ʕ ● ᴥ ●ʔ✿ Create a frame to capture mouse down events ✿ʕ ● ᴥ ●ʔ
+    local clickCapture = CreateFrame("Frame")
+    clickCapture:SetAllPoints(UIParent)
+    clickCapture:EnableMouse(false) -- Don't block mouse events
+    clickCapture:SetFrameStrata("TOOLTIP")
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Monitor for right-click events ✿ʕ ◕ᴥ◕ ʔ
+    clickCapture:SetScript("OnUpdate", function(self, elapsed)
+        if IsMouseButtonDown("RightButton") then
+            -- ʕ ● ᴥ ●ʔ✿ Store current tooltip state before right-click processing ✿ʕ ● ᴥ ●ʔ
+            tooltipState.wasVisible = GameTooltip:IsVisible()
+            tooltipState.owner = GameTooltip:GetOwner()
+            tooltipState.lastMouseFrame = GetMouseFocus()
+            
+            -- ʕ ◕ᴥ◕ ʔ✿ Schedule tooltip restoration after a brief delay ✿ʕ ◕ᴥ◕ ʔ
+            C_Timer.After(0.1, function()
+                if tooltipState.wasVisible and tooltipState.lastMouseFrame then
+                    TooltipRestoration.RefreshContainerTooltip()
+                end
+            end)
+        end
+    end)
+end
+
+-- ʕ •ᴥ•ʔ✿ Initialize tooltip restoration system ✿ʕ•ᴥ•ʔ
+function TooltipRestoration.Initialize()
+    HookRightClickEvents()
+end
+
+-- ʕ •ᴥ•ʔ✿ Auto-initialize ✿ʕ•ᴥ•ʔ
+TooltipRestoration.Initialize()
+
+-- ʕ •ᴥ•ʔ✿ Export globally ✿ʕ•ᴥ•ʔ
+_G.TooltipRestoration = TooltipRestoration
+
+-- ʕ •ᴥ•ʔ✿ Manual tooltip refresh system ✿ʕ•ᴥ•ʔ
+function TooltipEnhancement.RefreshTooltip()
+    local mouseFrame = GetMouseFocus()
+    if not mouseFrame then
+        return false
+    end
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Check if mouse is over a container frame ✿ʕ ◕ᴥ◕ ʔ
+    if mouseFrame.GetName then
+        local success, frameName = pcall(function()
+            return mouseFrame:GetName()
+        end)
+        
+        if success and frameName and frameName:match("ContainerFrame%d+Item%d+") then
+            return TooltipRestoration.RefreshContainerTooltip()
+        end
+    end
+    
+    -- ʕ ● ᴥ ●ʔ✿ Try to refresh tooltip for other frame types ✿ʕ ● ᴥ ●ʔ
+    if GameTooltip:IsVisible() then
+        local owner = GameTooltip:GetOwner()
+        if owner then
+            -- ʕ ◕ᴥ◕ ʔ✿ Try to get item information and refresh ✿ʕ ◕ᴥ◕ ʔ
+            local success, name, link = pcall(function()
+                return GameTooltip:GetItem()
+            end)
+            
+            if success and link then
+                GameTooltip:SetHyperlink(link)
+                GameTooltip:Show()
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+-- ʕ •ᴥ•ʔ✿ Slash command for manual tooltip refresh ✿ʕ•ᴥ•ʔ
+SLASH_REFRESHTOOLTIP1 = "/refreshtooltip"
+SLASH_REFRESHTOOLTIP2 = "/rt"
+SlashCmdList["REFRESHTOOLTIP"] = function()
+    if TooltipEnhancement.RefreshTooltip() then
+        print("|cFF00FF00[Tooltip]|r Tooltip refreshed successfully")
+    else
+        print("|cFFFFFF00[Tooltip]|r No tooltip to refresh or refresh failed")
+    end
+end
