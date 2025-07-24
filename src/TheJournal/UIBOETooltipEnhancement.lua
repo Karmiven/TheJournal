@@ -1,12 +1,11 @@
 -- ##################################################################
--- # UIBOETooltipEnhancement.lua - Simplified BOE Enhancement
+-- # UIBOETooltipEnhancement.lua
+-- # ʕ •ᴥ•ʔ✿ BOE Tooltip Enhancement System ✿ʕ•ᴥ•ʔ
 -- ##################################################################
-
--- ʕ •ᴥ•ʔ✿ Simplified BOE Enhancement Module ✿ʕ•ᴥ•ʔ
 
 local UIBOETooltipEnhancement = {}
 
--- ʕ •ᴥ•ʔ✿ Initialize tracking tables securely ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Initialize tracking tables ✿ʕ•ᴥ•ʔ
 if not _G.ITEM_QUERY_RESPONSES then
     _G.ITEM_QUERY_RESPONSES = {}
 end
@@ -23,18 +22,142 @@ if not _G.PROCESSED_BOE_RESPONSES then
     _G.PROCESSED_BOE_RESPONSES = {}
 end
 
-if not _G.ORIGINAL_ITEM_LINKS then
-    _G.ORIGINAL_ITEM_LINKS = {}
-end
+-- ʕ •ᴥ•ʔ✿ Global storage for original item links ✿ʕ•ᴥ•ʔ
+_G.ORIGINAL_ITEM_LINKS = _G.ORIGINAL_ITEM_LINKS or {}
 
--- ʕ •ᴥ•ʔ✿ Cache to prevent duplicate processing ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Cache the last processed tooltip ✿ʕ•ᴥ•ʔ
+local lastTooltipCache = {
+    itemLink = nil,
+    timestamp = 0,
+    processed = false
+}
+
+-- ʕ •ᴥ•ʔ✿ Prevent duplicate processing and infinite loops ✿ʕ •ᴥ•ʔ
 local lastProcessedItem = {
     itemID = nil,
     timestamp = 0,
     processed = false
 }
 
--- ʕ •ᴥ•ʔ✿ Function to get friends who need an item (for compatibility) ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Clean up old processed responses ✿ʕ•ᴥ•ʔ
+local function CleanupProcessedResponses()
+    local currentTime = GetTime()
+    local cutoffTime = 300 -- 5 minutes
+    local cleaned = 0
+
+    for key, _ in pairs(_G.PROCESSED_BOE_RESPONSES) do
+        local timestamp = tonumber(key:match("_(%d+%.?%d*)$"))
+        if timestamp and (currentTime - timestamp) > cutoffTime then
+            _G.PROCESSED_BOE_RESPONSES[key] = nil
+            cleaned = cleaned + 1
+        end
+    end
+
+    if cleaned > 0 and _G.debug then
+        print("|cFF00FF00[DJ DEBUG]|r Cleaned up " .. cleaned .. " old BOE response records")
+    end
+end
+
+-- ʕ •ᴥ•ʔ✿ Schedule cleanup every 5 minutes ✿ʕ•ᴥ•ʔ
+local cleanupTimer = C_Timer.NewTicker(300, CleanupProcessedResponses)
+
+-- ʕ •ᴥ•ʔ✿ Enhanced BOE processing function ✿ʕ•ᴥ•ʔ
+function UIBOETooltipEnhancement.ProcessBOETooltip(tooltip, link)
+    if not link or type(link) ~= "string" or not link:find("|Hitem:") then
+        return
+    end
+
+    local itemID = tonumber(link:match("item:(%d+)"))
+    if not itemID then return end
+
+    -- Check if we should show BOE info (auto enabled OR manually queried)
+    local autoTestEnabled = _G.DJ_Settings and _G.DJ_Settings.autoTestBoe
+    local wasManuallyQueried = _G.TheJournal_UIManualBOEClick and _G.TheJournal_UIManualBOEClick.WasManuallyQueried(itemID)
+
+    if not (autoTestEnabled or wasManuallyQueried) then
+        return -- Don't add tooltip text if auto BOE is disabled and item wasn't manually queried
+    end
+
+    -- Check if we already added BOE info to this tooltip
+    if tooltip.hasBOEInfo then
+        return
+    end
+    tooltip.hasBOEInfo = true
+
+    -- ʕ •ᴥ•ʔ✿ Get item name for display purposes ✿ʕ •ᴥ•ʔ
+    local itemName = GetItemInfoCustom(itemID) or ("Item " .. itemID)
+
+    -- ʕ •ᴥ•ʔ✿ Add BOE status line to tooltip ✿ʕ •ᴥ•ʔ
+    tooltip:AddLine(" ")
+    if wasManuallyQueried and not autoTestEnabled then
+        tooltip:AddLine("|cFF87CEEB[Manual Query] BOE Item - Friend Status:|r")
+    else
+        tooltip:AddLine("|cFFFFD700BOE Item - Friend Status:|r")
+    end
+
+    local hasResponses = false
+    if _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
+        local responses = _G.ITEM_QUERY_RESPONSES[itemID]
+        local friendsWhoNeed = {}
+        local friendsWhoNeedAffixes = {}
+        local friendsWhoCanUpgrade = {}
+
+        local fullItemLink = _G.QUERIED_ITEM_LINKS and _G.QUERIED_ITEM_LINKS[itemID]
+        if not fullItemLink then
+            fullItemLink = link
+        end
+
+        for friendName, response in pairs(responses) do
+            if GetTime() - response.timestamp < 30 then
+                if response.needsItem then
+                    table.insert(friendsWhoNeed, friendName)
+                    local responseKey = itemID .. "_" .. friendName .. "_" .. response.timestamp
+                    if not _G.PROCESSED_BOE_RESPONSES[responseKey] then
+                        _G.PROCESSED_BOE_RESPONSES[responseKey] = true
+                    end
+                elseif response.needsAffixesOnly then
+                    table.insert(friendsWhoNeedAffixes, friendName)
+                elseif response.canUpgrade then
+                    local forgeText = ""
+                    if response.currentForge == 1 then forgeText = " (Titanforged)"
+                    elseif response.currentForge == 2 then forgeText = " (Warforged)"
+                    elseif response.currentForge == 3 then forgeText = " (Lightforged)"
+                    end
+                    table.insert(friendsWhoCanUpgrade, friendName .. forgeText)
+                    local upgradeResponseKey = itemID .. "_" .. friendName .. "_upgrade_" .. response.timestamp
+                    if not _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] then
+                        print("|cFFFFFF00[BOE Upgrade]|r Whispered " .. friendName .. " about upgrade opportunity")
+                        _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] = true
+                    end
+                end
+            end
+        end
+
+        if #friendsWhoNeed > 0 or #friendsWhoNeedAffixes > 0 or #friendsWhoCanUpgrade > 0 then
+            hasResponses = true
+
+            if #friendsWhoNeed > 0 then
+                tooltip:AddLine("|cFF00FF00Needs:|r " .. table.concat(friendsWhoNeed, ", "), 1, 1, 1, true)
+            end
+
+            if #friendsWhoNeedAffixes > 0 then
+                tooltip:AddLine("|cFFFFFF00Affixes Only:|r " .. table.concat(friendsWhoNeedAffixes, ", "), 1, 1, 1, true)
+            end
+
+            if #friendsWhoCanUpgrade > 0 then
+                tooltip:AddLine("|cFFFFFF00Can Upgrade:|r " .. table.concat(friendsWhoCanUpgrade, ", "), 1, 1, 1, true)
+            end
+
+            tooltip:AddLine("|cFF888888(Responses from last 30s)|r")
+        end
+    end
+
+    if not hasResponses then
+        tooltip:AddLine("|cFF888888Querying friends... (or no responses yet)|r")
+    end
+end
+
+-- ʕ •ᴥ•ʔ✿ Function to check if friends need an item ✿ʕ•ᴥ•ʔ
 function UIBOETooltipEnhancement.GetFriendsWhoNeedItem(itemID)
     local friendsWhoNeed = {}
 
@@ -42,14 +165,12 @@ function UIBOETooltipEnhancement.GetFriendsWhoNeedItem(itemID)
         return friendsWhoNeed
     end
 
-    -- ʕ ● ᴥ ●ʔ✿ Check each friend's attunement status for this item ✿ʕ ● ᴥ ●ʔ
     for playerName, friendData in pairs(_G.FRIENDS_ATTUNEMENT_DATA) do
         if not friendData.isPlayer then
             local canAttune = _G.CanAttuneItemHelper and _G.CanAttuneItemHelper(itemID) or 0
             if canAttune == 1 then
                 local needsItem = false
 
-                -- ʕ ◕ᴥ◕ ʔ✿ Check missing BOE items ✿ʕ ◕ᴥ◕ ʔ
                 if friendData.missingBOE and #friendData.missingBOE > 0 then
                     for _, missingItemID in ipairs(friendData.missingBOE) do
                         if missingItemID == itemID then
@@ -59,7 +180,6 @@ function UIBOETooltipEnhancement.GetFriendsWhoNeedItem(itemID)
                     end
                 end
 
-                -- ʕ ● ᴥ ●ʔ✿ Check dungeon items for incomplete friends ✿ʕ ● ᴥ ●ʔ
                 if not needsItem and friendData.percentage and friendData.percentage < 90 then
                     if friendData.dungeonDetails then
                         for _, dungeonInfo in ipairs(friendData.dungeonDetails) do
@@ -89,28 +209,100 @@ function UIBOETooltipEnhancement.GetFriendsWhoNeedItem(itemID)
     return friendsWhoNeed
 end
 
--- ʕ •ᴥ•ʔ✿ Clean up old processed data ✿ʕ•ᴥ•ʔ
-local function CleanupOldData()
-    local currentTime = GetTime()
-    local cutoffTime = 300 -- 5 minutes
+-- ʕ •ᴥ•ʔ✿ Enhanced tooltip processing ✿ʕ•ᴥ•ʔ
+function UIBOETooltipEnhancement.EnhanceTooltipWithFriendStatus(tooltip, link)
+    UIBOETooltipEnhancement.ProcessBOETooltip(tooltip, link)
 
-    -- ʕ ● ᴥ ●ʔ✿ Clean up processed responses ✿ʕ ● ᴥ ●ʔ
-    if _G.PROCESSED_BOE_RESPONSES then
-        for key, _ in pairs(_G.PROCESSED_BOE_RESPONSES) do
-            local timestamp = tonumber(key:match("_(%d+%.?%d*)$"))
-            if timestamp and (currentTime - timestamp) > cutoffTime then
-                _G.PROCESSED_BOE_RESPONSES[key] = nil
+    if not link or not link:match("^item:") then
+        return
+    end
+
+    local itemID = tonumber(link:match("item:(%d+)"))
+    if not itemID then
+        return
+    end
+
+    local friendsWhoNeed = UIBOETooltipEnhancement.GetFriendsWhoNeedItem(itemID)
+
+    if #friendsWhoNeed > 0 then
+        tooltip:AddLine(" ")
+        tooltip:AddLine("|cFFFFD700Friend Attunement Status:|r")
+        tooltip:AddLine("|cFFFF6600Unattuned: " .. table.concat(friendsWhoNeed, ", ") .. "|r", 1, 1, 1, true)
+    end
+end
+
+-- ʕ •ᴥ•ʔ✿ REMOVED: OnUpdate frame that causes unnecessary polling ✿ʕ•ᴥ•ʔ
+-- ʕ ◕ᴥ◕ ʔ✿ Now using event-driven approach for better performance and safety ✿ʕ ◕ᴥ◕ ʔ
+
+-- ʕ •ᴥ•ʔ✿ Safe tooltip enhancement without taint ✿ʕ•ᴥ•ʔ
+local function SafeEnhanceTooltip()
+    local autoTestEnabled = _G.DJ_Settings and _G.DJ_Settings.autoTestBoe
+
+    -- ʕ •ᴥ•ʔ✿ Check if we should show tooltip enhancement ✿ʕ •ᴥ•ʔ
+    if not GameTooltip:IsVisible() then
+        return
+    end
+
+    local name, link = GameTooltip:GetItem()
+    if not name then return end
+
+    local itemID = nil
+    if link and link:find("|Hitem:") then
+        itemID = tonumber(link:match("item:(%d+)"))
+    else
+        local _, fullLink = GetItemInfo(name)
+        if fullLink then
+            link = fullLink
+            itemID = tonumber(fullLink:match("item:(%d+)"))
+        end
+    end
+
+    if not itemID then return end
+
+    -- Check if manually queried
+    local wasManuallyQueried = _G.TheJournal_UIManualBOEClick and _G.TheJournal_UIManualBOEClick.WasManuallyQueried(itemID)
+
+    -- Show enhancement if auto is enabled OR item was manually queried
+    if autoTestEnabled or wasManuallyQueried then
+        UIBOETooltipEnhancement.ProcessBOETooltip(GameTooltip, link)
+    end
+
+    -- Only run auto testing if enabled
+    if not autoTestEnabled then
+        return
+    end
+
+
+    -- ʕ ● ᴥ ●ʔ✿ More robust duplicate prevention ✿ʕ ● ᴥ ●ʔ
+    local currentTime = GetTime()
+
+    -- Check if we recently processed this exact item (within 2 seconds to prevent spam)
+    if lastProcessedItem.itemID == itemID and
+       lastProcessedItem.processed and
+       (currentTime - lastProcessedItem.timestamp) < 2 then
+        return -- Already processed this item very recently (spam prevention)
+    end
+
+    -- ʕ ◕ᴥ◕ ʔ✿ Perform BOE test since auto testing is enabled ✿ʕ ◕ᴥ◕ ʔ
+    if _G.PerformBOETest then
+        local lastQueryTime = _G.LAST_BOE_QUERY_TIME[itemID]
+        -- Test immediately if never tested, or after 10 minutes (600 seconds)
+        if not lastQueryTime or (currentTime - lastQueryTime) > 600 then
+            -- Mark as processed BEFORE calling PerformBOETest to prevent loops
+            lastProcessedItem.itemID = itemID
+            lastProcessedItem.processed = true
+            lastProcessedItem.timestamp = currentTime
+
+            -- Store the link and perform the test
+            if link then
+                _G.ORIGINAL_ITEM_LINKS[itemID] = link
+                _G.PerformBOETest(itemID, link, true) -- true = automatic mode
+                _G.LAST_BOE_QUERY_TIME[itemID] = currentTime
             end
         end
     end
 end
 
-<<<<<<< Updated upstream
--- ʕ •ᴥ•ʔ✿ Initialize BOE tooltip system ✿ʕ•ᴥ•ʔ
-function UIBOETooltipEnhancement.Initialize()
-    -- ʕ ◕ᴥ◕ ʔ✿ This module is now simplified - main tooltip processing handled by UITooltipEnhancement.lua ✿ʕ ◕ᴥ◕ ʔ
-    print("|cFF00FF00[BOE Enhancement]|r Initialized (integrated with main tooltip system)")
-=======
 -- ʕ •ᴥ•ʔ✿ Use GameTooltip events instead of direct hooks ✿ʕ•ᴥ•ʔ
 local function InitializeTooltipHooks()
     GameTooltip:HookScript("OnTooltipSetItem", function()
@@ -166,18 +358,12 @@ function UIBOETooltipEnhancement.Initialize()
             end
         end)
     end
->>>>>>> Stashed changes
 end
 
 -- ʕ •ᴥ•ʔ✿ Auto-initialize when this module loads ✿ʕ•ᴥ•ʔ
 UIBOETooltipEnhancement.Initialize()
 
--- ʕ •ᴥ•ʔ✿ Schedule cleanup every 5 minutes ✿ʕ•ᴥ•ʔ
-if C_Timer and C_Timer.NewTicker then
-    local cleanupTimer = C_Timer.NewTicker(300, CleanupOldData)
-end
-
--- ʕ •ᴥ•ʔ✿ Secure slash command hooks ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Slash command hooks ✿ʕ•ᴥ•ʔ
 local originalSlashCmdList = SlashCmdList["DJ"]
 if originalSlashCmdList then
     SlashCmdList["DJ"] = function(msg)
@@ -194,24 +380,9 @@ if originalSlashCmdList then
     end
 end
 
--- ʕ •ᴥ•ʔ✿ Global access for compatibility ✿ʕ•ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Global access ✿ʕ•ᴥ•ʔ
 _G.TheJournal_UIBOETooltipEnhancement = UIBOETooltipEnhancement
-_G.GetFriendsWhoNeedItem = UIBOETooltipEnhancement.GetFriendsWhoNeedItem
-
--- ʕ •ᴥ•ʔ✿ Backward compatibility functions ✿ʕ•ᴥ•ʔ
-function UIBOETooltipEnhancement.ProcessBOETooltip(tooltip, link)
-    -- ʕ ◕ᴥ◕ ʔ✿ Redirect to main tooltip system ✿ʕ ◕ᴥ◕ ʔ
-    if _G.TooltipEnhancement and _G.TooltipEnhancement.ProcessBOETooltip then
-        return _G.TooltipEnhancement.ProcessBOETooltip(tooltip, link)
-    end
-end
-
-function UIBOETooltipEnhancement.EnhanceTooltipWithFriendStatus(tooltip, link)
-    -- ʕ ◕ᴥ◕ ʔ✿ Redirect to main tooltip system ✿ʕ ◕ᴥ◕ ʔ
-    return UIBOETooltipEnhancement.ProcessBOETooltip(tooltip, link)
-end
-
--- ʕ •ᴥ•ʔ✿ Export for backward compatibility ✿ʕ•ᴥ•ʔ
 _G.ProcessBOETooltip = UIBOETooltipEnhancement.ProcessBOETooltip
+_G.GetFriendsWhoNeedItem = UIBOETooltipEnhancement.GetFriendsWhoNeedItem
 
 return UIBOETooltipEnhancement
