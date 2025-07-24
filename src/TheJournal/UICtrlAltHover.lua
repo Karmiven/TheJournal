@@ -110,8 +110,8 @@ function CtrlAltHover.ShouldQueryItem(itemID)
     if not itemID then return false end
 
     local lastQuery = _G.CTRL_ALT_QUERY_CACHE[itemID]
-    if lastQuery and (GetTime() - lastQuery) < 30 then
-        return false  -- Don't spam queries
+    if lastQuery and (GetTime() - lastQuery) < 1800 then
+        return false  -- Don't spam queries (30 minutes cache)
     end
 
     return true

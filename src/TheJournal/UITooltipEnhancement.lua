@@ -40,7 +40,7 @@ local function addFactionLine(tooltip, factionType)
         
         -- ʕ ◕ᴥ◕ ʔ✿ Add faction line in idTip style ✿ʕ ◕ᴥ◕ ʔ
         tooltip:AddDoubleLine("Faction:", factionColor .. factionIcon .. " " .. factionText .. "|r")
-        tooltip:Show()
+        -- ʕ ◕ᴥ◕ ʔ✿ Removed tooltip:Show() to prevent double tooltips ✿ʕ ◕ᴥ◕ ʔ
     end
 end
 
@@ -205,6 +205,9 @@ local function SafeEnhanceFactionTooltip()
         return 
     end
 
+    -- ʕ ◕ᴥ◕ ʔ✿ Don't process if manual processing is active ✿ʕ ◕ᴥ◕ ʔ
+    if _G.MANUAL_PROCESSING_ACTIVE then return end
+
     local success, itemLink = pcall(function()
         return TooltipEnhancement.GetItemLinkFromTooltip()
     end)
@@ -229,41 +232,10 @@ local function SafeEnhanceFactionTooltip()
     lastProcessedTooltip.factionProcessed = true
 end
 
--- ʕ •ᴥ•ʔ✿ Safe BOE tooltip enhancement with error protection ✿ʕ •ᴥ•ʔ
-local function SafeEnhanceBOETooltip()
-    -- ʕ ◕ᴥ◕ ʔ✿ Multiple safety checks to prevent errors ✿ʕ ◕ᴥ◕ ʔ
-    if not GameTooltip or not GameTooltip:IsVisible() or not GameTooltip.GetOwner or not GameTooltip:GetOwner() then 
-        return 
-    end
-
-    local success, itemLink = pcall(function()
-        return TooltipEnhancement.GetItemLinkFromTooltip()
-    end)
-    
-    if not success or not itemLink then 
-        return 
-    end
-
-    -- ʕ ● ᴥ ●ʔ✿ Prevent duplicate processing with additional safety ✿ʕ ● ᴥ ●ʔ
-    if lastProcessedTooltip.itemLink == itemLink and lastProcessedTooltip.boeProcessed then
-        return
-    end
-
-    -- ʕ ◕ᴥ◕ ʔ✿ Process BOE tooltip enhancement with error protection ✿ʕ ◕ᴥ◕ ʔ
-    if _G.ProcessBOETooltip then
-        pcall(function()
-            ProcessBOETooltip(GameTooltip, itemLink)
-        end)
-    end
-
-    lastProcessedTooltip.itemLink = itemLink
-    lastProcessedTooltip.boeProcessed = true
-end
-
--- ʕ •ᴥ•ʔ✿ Combined safe tooltip enhancement ✿ʕ •ᴥ•ʔ
+-- ʕ •ᴥ•ʔ✿ Combined safe tooltip enhancement - FACTION ONLY ✿ʕ •ᴥ•ʔ
 local function SafeEnhanceAllTooltips()
     SafeEnhanceFactionTooltip()
-    SafeEnhanceBOETooltip()
+    -- ʕ ● ᴥ ●ʔ✿ BOE processing now handled by UIBOETooltipEnhancement.lua ✿ʕ ● ᴥ ●ʔ
 end
 
 -- ʕ •ᴥ•ʔ✿ Initialize tooltip hooks safely with conflict prevention ✿ʕ•ᴥ•ʔ
@@ -276,18 +248,18 @@ local function InitializeFactionTooltipHooks()
     -- ʕ ● ᴥ ●ʔ✿ Use pcall to safely hook without breaking existing functionality ✿ʕ ● ᴥ ●ʔ
     local success1 = pcall(function()
         GameTooltip:HookScript("OnTooltipSetItem", function(self)
-            -- ʕ ◕ᴥ◕ ʔ✿ Only enhance if tooltip is still visible and valid ✿ʕ ◕ᴥ◕ ʔ
+            -- ʕ ◕ᴥ◕ ʔ✿ Only enhance faction tooltips here ✿ʕ ◕ᴥ◕ ʔ
             if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
-                SafeEnhanceAllTooltips()
+                SafeEnhanceFactionTooltip()
             end
         end)
     end)
     
     local success2 = pcall(function()
         GameTooltip:HookScript("OnShow", function(self)
-            -- ʕ ● ᴥ ●ʔ✿ Only enhance if tooltip has valid content ✿ʕ ● ᴥ ●ʔ
+            -- ʕ ● ᴥ ●ʔ✿ Only enhance faction tooltips here ✿ʕ ● ᴥ ●ʔ
             if GameTooltip:IsVisible() and GameTooltip:GetOwner() then
-                SafeEnhanceAllTooltips()
+                SafeEnhanceFactionTooltip()
             end
         end)
     end)
@@ -296,10 +268,8 @@ local function InitializeFactionTooltipHooks()
     local success3 = pcall(function()
         GameTooltip:HookScript("OnHide", function()
             lastProcessedTooltip.itemLink = nil
-            lastProcessedTooltip.boeProcessed = false
             lastProcessedTooltip.factionProcessed = false
-            -- ʕ ◕ᴥ◕ ʔ✿ Reset BOE info flag when tooltip hides ✿ʕ ◕ᴥ◕ ʔ
-            GameTooltip.hasBOEInfo = false
+            -- ʕ ◕ᴥ◕ ʔ✿ BOE processing now handled elsewhere ✿ʕ ◕ᴥ◕ ʔ
         end)
     end)
     
@@ -329,9 +299,8 @@ end
 TooltipEnhancement.Initialize()
 
 -- ʕ •ᴥ•ʔ✿ Export global functions ✿ʕ •ᴥ•ʔ
-_G.ProcessBOETooltip = ProcessBOETooltip
+-- ʕ ● ᴥ ●ʔ✿ ProcessBOETooltip now handled by UIBOETooltipEnhancement.lua ✿ʕ ● ᴥ ●ʔ
 _G.TooltipEnhancement = TooltipEnhancement
-_G.CustomExtractItemId = CustomExtractItemId
 
 -- ʕ ● ᴥ ●ʔ✿ Enhanced item link detection with better container frame support ✿ʕ ● ᴥ ●ʔ
 function TooltipEnhancement.GetItemLinkFromTooltip()
@@ -467,121 +436,8 @@ SlashCmdList["DJ"] = function(msg)
     return originalSlashCmdList(msg)
 end
 
--- ʕ ◕ᴥ◕ ʔ✿ Enhanced BOE Processing ✿ʕ ◕ᴥ◕ ʔ
-function ProcessBOETooltip(tooltip, link, isManual)
-    if not link or not CustomExtractItemId(link) then return end
-    local itemID = CustomExtractItemId(link)
-    if not itemID then return end
-
-    if _G.debug then
-        print("|cFF00FF00[DJ DEBUG]|r Processing item ID: " .. itemID)
-    end
-
-    local itemName, _, _, _, _, _, _, _, _, _ = GetItemInfo(itemID)
-
-    -- ʕ ◕ᴥ◕ ʔ✿ For manual queries, check if item was manually queried ✿ʕ ◕ᴥ◕ ʔ
-    local wasManuallyQueried = false
-    if isManual and _G.MANUAL_BOE_QUERIES and _G.MANUAL_BOE_QUERIES[itemID] then
-        local queryTime = _G.MANUAL_BOE_QUERIES[itemID]
-        wasManuallyQueried = (GetTime() - queryTime) < 1800 -- 30 minutes
-    end
-
-    local isAttunable = false
-    if _G.IsAttunableBySomeone then
-        isAttunable = _G.IsAttunableBySomeone(itemID)
-    elseif _G.CanAttuneItemHelper then
-        local canAttune = _G.CanAttuneItemHelper(itemID) or 0
-        isAttunable = canAttune > 0
-    end
-
-    -- ʕ ● ᴥ ●ʔ✿ Only show BOE info if item is attunable OR was manually queried ✿ʕ ● ᴥ ●ʔ
-    if not isAttunable and not wasManuallyQueried then return end
-
-    -- ʕ ◕ᴥ◕ ʔ✿ Check if BOE info is already present to prevent duplicates ✿ʕ ◕ᴥ◕ ʔ
-    if tooltip.hasBOEInfo then return end
-    tooltip.hasBOEInfo = true
-
-    -- ʕ •ᴥ•ʔ✿ Check if auto testboe is enabled and use the new system ✿ʕ •ᴥ•ʔ
-    if _G.DJ_Settings and _G.DJ_Settings.autoTestBoe and _G.PerformBOETest then
-        local lastQueryTime = _G.LAST_BOE_QUERY_TIME[itemID]
-        if not lastQueryTime or (GetTime() - lastQueryTime) > 10 then
-            _G.PerformBOETest(itemID, link, true) -- true = automatic mode
-            _G.LAST_BOE_QUERY_TIME[itemID] = GetTime()
-        end
-        -- ʕ ◕ᴥ◕ ʔ✿ Return here when auto mode is enabled - don't run fallback ✿ʕ ◕ᴥ◕ ʔ
-    else
-        -- ʕ ◕ᴥ◕ ʔ✿ Fallback to old system if auto mode disabled ✿ʕ ◕ᴥ◕ ʔ
-        local lastQueryTime = _G.LAST_BOE_QUERY_TIME[itemID]
-        if not lastQueryTime or (GetTime() - lastQueryTime) > 10 then
-            if _G.QueryItemFromFriends then
-                _G.QueryItemFromFriends(itemID, link)
-                _G.LAST_BOE_QUERY_TIME[itemID] = GetTime()
-                local lastChatTime = _G.LAST_BOE_CHAT_TIME[itemID]
-                if not lastChatTime or (GetTime() - lastChatTime) > 30 then
-                    print("|cFFFFD700[Auto BOE]|r Checking if friends need " .. (itemName or ("Item " .. itemID)))
-                    _G.LAST_BOE_CHAT_TIME[itemID] = GetTime()
-                end
-            end
-        end
-    end
-
-    tooltip:AddLine(" ")
-    if wasManuallyQueried then
-        tooltip:AddLine("|cFF87CEEB[Manual Query] BOE Item - Friend Status:|r")
-    else
-        tooltip:AddLine("|cFFFFD700BOE Item - Friend Status:|r")
-    end
-
-    if _G.ITEM_QUERY_RESPONSES and _G.ITEM_QUERY_RESPONSES[itemID] then
-        local responses = _G.ITEM_QUERY_RESPONSES[itemID]
-        local friendsWhoNeed = {}
-        local friendsWhoNeedAffixes = {}
-        local friendsWhoCanUpgrade = {}
-
-        local fullItemLink = _G.QUERIED_ITEM_LINKS and _G.QUERIED_ITEM_LINKS[itemID] or link
-        for friendName, response in pairs(responses) do
-            if GetTime() - response.timestamp < 30 then
-                if response.needsItem then
-                    table.insert(friendsWhoNeed, friendName)
-                    local responseKey = itemID .. "_" .. friendName .. "_" .. response.timestamp
-                    if not _G.PROCESSED_BOE_RESPONSES[responseKey] then
-                        _G.PROCESSED_BOE_RESPONSES[responseKey] = true
-                    end
-                elseif response.needsAffixesOnly then
-                    table.insert(friendsWhoNeedAffixes, friendName)
-                elseif response.canUpgrade then
-                    local forgeText = ""
-                    if response.currentForge == 1 then forgeText = " (Titanforged)"
-                    elseif response.currentForge == 2 then forgeText = " (Warforged)"
-                    elseif response.currentForge == 3 then forgeText = " (Lightforged)"
-                    end
-                    table.insert(friendsWhoCanUpgrade, friendName .. forgeText)
-                    local upgradeResponseKey = itemID .. "_" .. friendName .. "_upgrade_" .. response.timestamp
-                    if not _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] then
-                        print("|cFFFFFF00[BOE Upgrade]|r Whispered " .. friendName .. " about upgrade opportunity")
-                        _G.PROCESSED_BOE_RESPONSES[upgradeResponseKey] = true
-                    end
-                end
-            end
-        end
-
-        if #friendsWhoNeed > 0 then
-            tooltip:AddLine("|cFF00FF00NEED: " .. table.concat(friendsWhoNeed, ", ") .. "|r")
-        end
-        if #friendsWhoNeedAffixes > 0 then
-            tooltip:AddLine("|cFFFFFF00AFFIXES: " .. table.concat(friendsWhoNeedAffixes, ", ") .. "|r")
-        end
-        if #friendsWhoCanUpgrade > 0 then
-            tooltip:AddLine("|cFFFFFF00UPGRADE: " .. table.concat(friendsWhoCanUpgrade, ", ") .. "|r")
-        end
-
-        if #friendsWhoNeed == 0 and #friendsWhoNeedAffixes == 0 and #friendsWhoCanUpgrade == 0 then
-            tooltip:AddLine("|cFF888888No friends need this item|r")
-        end
-    else
-        tooltip:AddLine("|cFF888888Checking friends...|r")
-    end
-end
+-- ʕ ● ᴥ ●ʔ✿ BOE Processing now handled by UIBOETooltipEnhancement.lua ✿ʕ ● ᴥ ●ʔ
+-- ʕ ◕ᴥ◕ ʔ✿ This prevents duplicate tooltip processing conflicts ✿ʕ ◕ᴥ◕ ʔ
 
 -- ʕ ◕ᴥ◕ ʔ✿ Cleanup old processed responses ✿ʕ ◕ᴥ◕ ʔ
 local function CleanupProcessedResponses()
@@ -606,12 +462,6 @@ local cleanupTimer = C_Timer.NewTicker(300, CleanupProcessedResponses)
 _G.FactionTooltipEnhancement = FactionTooltipEnhancement
 
 -- ʕ •ᴥ•ʔ✿ Module loaded silently ✿ʕ •ᴥ•ʔ
-
-
-
-
-
-
 
 -- ʕ •ᴥ•ʔ✿ Tooltip Coordination System to prevent anchor conflicts ✿ʕ•ᴥ•ʔ
 local TooltipCoordinator = {}
@@ -733,6 +583,9 @@ mouseEventFrame:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = (self.elapsed or 0) + elapsed
     if self.elapsed < 0.2 then return end -- Reduced frequency to prevent spam
     self.elapsed = 0
+    
+    -- ʕ ◕ᴥ◕ ʔ✿ Don't interfere if manual tooltip is active ✿ʕ ◕ᴥ◕ ʔ
+    if _G.MANUAL_TOOLTIP_ACTIVE then return end
     
     -- ʕ ◕ᴥ◕ ʔ✿ Only restore if tooltip is actually missing and we're over a bag item ✿ʕ ◕ᴥ◕ ʔ
     local mouseFrame = GetMouseFocus()
@@ -869,5 +722,24 @@ SlashCmdList["TOOLTIPCOORD"] = function()
     
     print("|cFF00FFFF  Tooltip Visible:|r " .. tostring(GameTooltip:IsVisible()))
 end
+
+-- ʕ •ᴥ•ʔ✿ Track manually queried items ✿ʕ•ᴥ•ʔ
+if not _G.MANUAL_BOE_QUERIES then
+    _G.MANUAL_BOE_QUERIES = {}
+end
+
+-- ʕ ◕ᴥ◕ ʔ✿ Flag to prevent tooltip restoration interference ✿ʕ ◕ᴥ◕ ʔ
+if not _G.MANUAL_TOOLTIP_ACTIVE then
+    _G.MANUAL_TOOLTIP_ACTIVE = false
+end
+
+-- ʕ ◕ᴥ◕ ʔ✿ Flag to prevent tooltip restoration interference ✿ʕ ◕ᴥ◕ ʔ
+if not _G.MANUAL_PROCESSING_ACTIVE then
+    _G.MANUAL_PROCESSING_ACTIVE = false
+end
+
+
+
+
 
 
