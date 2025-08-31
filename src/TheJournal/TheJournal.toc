@@ -2,7 +2,7 @@
 ## Title: |cffFFFF00The|r |cffFF4500Journal|r
 ## Notes: This journal will bring many attunes along its path, hold it safe.
 ## Author: Qt
-## Version: 1.2.0
+## Version: 1.2.3
 ## SavedVariables: Journal_FriendCache
 ## SavedVariablesPerCharacter: Journal_charDB
 

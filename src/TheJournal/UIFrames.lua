@@ -599,6 +599,9 @@ local function InvalidateItemsCache(dungeonName)
     lastCacheKey = nil
 end
 
+-- Export InvalidateItemsCache to global scope for use by other modules
+_G.InvalidateItemsCache = InvalidateItemsCache
+
 -- Function to clear old cache entries (keep last 5 dungeons with multiple filter combinations)
 local function CleanupItemsCache()
     local cacheCount = 0

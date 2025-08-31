@@ -181,6 +181,10 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
             OpenLootDb(self.baseItemID)
         elseif button == "LeftButton" and IsControlKeyDown() then
             local base = self.baseItemID
+
+            -- .coerce ItemLink
+            SendChatMessage(".coe ".. self.itemLink, "SAY")
+            
             if Journal_charDB.favorites[base] then
                 Journal_charDB.favorites[base] = nil
             else
