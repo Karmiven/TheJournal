@@ -64,7 +64,7 @@ local function attachFactionTooltip(self)
     local link = select(2, self:GetItem())
     if not link then return end
     
-    local itemID = tonumber(link:match("item:(%d+)"))
+    local itemID = CustomExtractItemId(link)
     if not itemID or itemID == 0 then return end
     
     local factionType = getFactionType(itemID)
@@ -427,7 +427,7 @@ SlashCmdList["DJ"] = function(msg)
     if msg and msg:find("^testboe") then
         local originalLink = msg:match("|c%x+|h%[.-%]|h|r")
         if originalLink then
-            local itemID = tonumber(originalLink:match("item:(%d+)"))
+            local itemID = CustomExtractItemId(originalLink)
             if itemID then
                 _G.ORIGINAL_ITEM_LINKS[itemID] = originalLink
             end

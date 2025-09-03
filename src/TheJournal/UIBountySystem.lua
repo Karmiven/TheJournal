@@ -19,8 +19,8 @@ local bountyFrameCounter = 0
 -- ʕ ● ᴥ ●ʔ✿ Helper function to extract item ID from item link ✿ʕ ● ᴥ ●ʔ
 local function GetItemIDFromLink(itemLink)
     if not itemLink then return nil end
-    local itemID = string.match(itemLink, "item:(%d+)")
-    return tonumber(itemID)
+    local itemID = CustomExtractItemId(itemLink)
+    return itemID
 end
 
 -- ʕノ•ᴥ•ʔノ✿ Check if an item is bountied ✿ʕノ•ᴥ•ʔノ

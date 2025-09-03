@@ -43,55 +43,71 @@ function UIBagScanner.ScanAllBags()
     lastScanTime = currentTime
     needsFullScan = false
     
-    -- ʕ •ᴥ•ʔ✿ Clear previous scan data ✿ʕ •ᴥ•ʔ
+    -- Clear previous scan data
     bagItemHash = {}
     bagItemCounts = {}
     
-    -- ʕ •ᴥ•ʔ✿ Scan all bags (0-4 are standard bags, -1 is bank if open) ✿ʕ •ᴥ•ʔ
-    local bagsToScan = {0, 1, 2, 3, 4}
+    -- Define bag ranges as constants
+    local PLAYER_BAGS = {0, 1, 2, 3, 4}
+    local BANK_BAGS = {5, 6, 7, 8, 9, 10, 11, -1} -- -1 is main bank bag
+    local EQUIPMENT_SLOTS = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
     
-    -- ʕ •ᴥ•ʔ✿ Include bank bags if bank is open ✿ʕ •ᴥ•ʔ
-    if BankFrame and BankFrame:IsShown() then
-        for i = 5, 11 do
-            table.insert(bagsToScan, i)
+    -- Helper function to extract item ID consistently
+    local function ExtractItemID(itemLink)
+        if CustomExtractItemId then
+            return CustomExtractItemId(itemLink)
+        else
+            return tonumber(itemLink:match("item:(%d+)"))
         end
-        table.insert(bagsToScan, -1) -- Main bank bag
     end
     
-    for _, bagID in ipairs(bagsToScan) do
+    -- Helper function to scan a single bag
+    local function ScanBag(bagID)
         local numSlots = GetContainerNumSlots(bagID)
-        if numSlots and numSlots > 0 then
-            for slot = 1, numSlots do
-                local itemLink = GetContainerItemLink(bagID, slot)
-                if itemLink then
-                    local itemID = tonumber(itemLink:match("item:(%d+)"))
-                    if itemID then
-                        local _, itemCount = GetContainerItemInfo(bagID, slot)
-                        itemCount = itemCount or 1
-                        
-                        -- ʕ •ᴥ•ʔ✿ Store in hash table for O(1) lookup ✿ʕ •ᴥ•ʔ
-                        bagItemHash[itemID] = true
-                        bagItemCounts[itemID] = (bagItemCounts[itemID] or 0) + itemCount
-                    end
+        if not numSlots or numSlots <= 0 then
+            return
+        end
+        
+        for slot = 1, numSlots do
+            local itemLink = GetContainerItemLink(bagID, slot)
+            if itemLink then
+                local itemID = ExtractItemID(itemLink)
+                if itemID then
+                    local _, itemCount = GetContainerItemInfo(bagID, slot)
+                    itemCount = itemCount or 1
+                    
+                    bagItemHash[itemID] = true
+                    bagItemCounts[itemID] = (bagItemCounts[itemID] or 0) + itemCount
                 end
             end
         end
     end
     
-    -- ʕ •ᴥ•ʔ✿ Scan equipped gear (slots 0-19) ✿ʕ •ᴥ•ʔ
-    for slot = 0, 19 do
+    -- Scan player bags
+    for _, bagID in ipairs(PLAYER_BAGS) do
+        ScanBag(bagID)
+    end
+    
+    -- Scan bank bags if bank is open
+    if BankFrame and BankFrame:IsShown() then
+        for _, bagID in ipairs(BANK_BAGS) do
+            ScanBag(bagID)
+        end
+    end
+    
+    -- Scan equipped gear
+    for _, slot in ipairs(EQUIPMENT_SLOTS) do
         local itemLink = GetInventoryItemLink("player", slot)
         if itemLink then
-            local itemID = tonumber(itemLink:match("item:(%d+)"))
+            local itemID = ExtractItemID(itemLink)
             if itemID then
-                -- ʕ •ᴥ•ʔ✿ Equipped items count as 1 ✿ʕ •ᴥ•ʔ
                 bagItemHash[itemID] = true
                 bagItemCounts[itemID] = (bagItemCounts[itemID] or 0) + 1
             end
         end
     end
     
-    -- ʕ •ᴥ•ʔ✿ Trigger UI update if journal is open ✿ʕ •ᴥ•ʔ
+    -- Trigger UI update if journal is open
     if _G.currentDungeon and _G.LoadDungeonDetail then
         UIBagScanner.UpdateJournalDisplay()
     end

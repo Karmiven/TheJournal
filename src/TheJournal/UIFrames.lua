@@ -312,8 +312,8 @@ local BOUNTY_ICON = {
 -- Helper function to extract item ID from item link
 local function GetItemIDFromLink(itemLink)
     if not itemLink then return nil end
-    local itemID = string.match(itemLink, "item:(%d+)")
-    return tonumber(itemID)
+    local itemID = CustomExtractItemId(itemLink)
+    return itemID
 end
 
 -- Check if an item is bountied

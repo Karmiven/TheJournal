@@ -16,6 +16,70 @@ local table_remove = table.remove
 local string_match = string.match
 local string_find = string.find
 
+-- Ty namira
+local function GetBHunterItemEntry()
+    return select(1, select(1, select(9, BHunterFrame:GetChildren()):GetChildren()))
+end
+
+local function itemEntryEntry()
+    local frame = _G["BHunterFrame-Tab2-Item"]
+    if frame then
+        for i, v in pairs({frame:GetChildren()}) do
+            print("Child " .. i .. ": " .. tostring(v))
+            print("Type: " .. v:GetObjectType())
+        end
+    end
+    if frame then
+        return select(1, frame:GetChildren())
+    end
+end
+
+local function SetBHunterItemByLink(itemLink)
+    if not(BHunterFrame:IsShown()) then return end
+    
+    local itemEntry = GetBHunterItemEntry()
+    if not itemEntry then
+        print("|cffFFD700BH Hunter:|r Could not access item slot.")
+        return
+    end
+    
+    -- Extract item ID and get item info
+    local itemID = CustomExtractItemId(itemLink)
+    if not itemID then
+        print("|cffFFD700BH Hunter:|r Could not extract item ID from link.")
+        return
+    end
+    
+    local itemName, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo(itemID)
+    if not itemName or not itemTexture then
+        print("|cffFFD700BH Hunter:|r Could not get item info.")
+        return
+    end
+    
+    local frame = _G["BHunterFrame-Tab2-Item"]
+    if frame then
+        -- Create or get the icon texture
+        local iconTexture = frame.bhIcon
+        if not iconTexture then
+            iconTexture = frame:CreateTexture("BHunterItemIcon", "ARTWORK")
+            iconTexture:SetSize(38, 38)
+            iconTexture:SetPoint("LEFT", frame, "LEFT", 0, 0)  -- 5px from left edge
+            frame.bhIcon = iconTexture  -- Store reference
+            --print("|cffFFD700BH Hunter Debug:|r Created new icon texture")
+        end
+        -- Set the icon texture
+        iconTexture:SetTexture(itemTexture)
+        end
+    
+    itemEntry.itemId = itemID
+    itemEntry.itemLink = itemLink
+    itemEntry.rewardType = "item" 
+    itemEntry.hasItem = 1
+    itemEntryEntry()
+    
+    print("|cff00ff00BH Hunter:|r Item set to: " .. itemLink)
+end
+
 -- ʕ •ᴥ•ʔ✿ Coordinated Tooltip Positioning (respects TooltipCoordinator) ✿ʕ•ᴥ•ʔ
 function UIItemsManager.ForceTooltipPosition(anchorFrame)
     if not anchorFrame or not GameTooltip:IsShown() then return end
@@ -176,6 +240,7 @@ function UIItemsManager.AcquireItemButton(dIndex, iIndex)
 
     btn:SetScript("OnClick", function(self, button)
         if button == "LeftButton" and IsShiftKeyDown() and self.itemLink then
+            SetBHunterItemByLink(self.itemLink)
             ChatEdit_InsertLink(self.itemLink)
         elseif button == "LeftButton" and IsAltKeyDown() and self.baseItemID then
             OpenLootDb(self.baseItemID)
