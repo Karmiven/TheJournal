@@ -249,7 +249,7 @@ function UIBOETooltipEnhancement.ProcessBOETooltip(tooltip, link)
         return
     end
 
-    local itemID = tonumber(link:match("item:(%d+)"))
+    local itemID = CustomExtractItemId(link)
     if not itemID then return end
 
     -- Check if we should show BOE info (auto enabled OR manually queried)
@@ -393,7 +393,7 @@ function UIBOETooltipEnhancement.EnhanceTooltipWithFriendStatus(tooltip, link)
         return
     end
 
-    local itemID = tonumber(link:match("item:(%d+)"))
+    local itemID = CustomExtractItemId(link)
     if not itemID then
         return
     end
@@ -572,7 +572,7 @@ if originalSlashCmdList then
         if msg and msg:find("^testboe") then
             local originalLink = msg:match("|c%x+|h%[.-%]|h|r")
             if originalLink then
-                local itemID = tonumber(originalLink:match("item:(%d+)"))
+                local itemID = CustomExtractItemId(originalLink)
                 if itemID then
                     _G.ORIGINAL_ITEM_LINKS[itemID] = originalLink
                 end

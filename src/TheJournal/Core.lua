@@ -314,7 +314,7 @@ local function HookChatEditBox()
         if text and text:match("/testboe") then
             local itemLink = text:match("|c%x+|h%[.-%]|h|r")
             if itemLink then
-                local itemID = tonumber(itemLink:match("item:(%d+)"))
+                local itemID = CustomExtractItemId(itemLink)
                 if itemID then
                     if not _G.ORIGINAL_ITEM_LINKS then
                         _G.ORIGINAL_ITEM_LINKS = {}
