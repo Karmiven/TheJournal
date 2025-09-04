@@ -56,21 +56,18 @@ local function SetBHunterItemByLink(itemLink)
         return
     end
     
-    local frame = _G["BHunterFrame-Tab2-Item"]
+    local frame = _G["BHunterFrame-Tab2-ItemIconTexture"]
     if frame then
-        -- Create or get the icon texture
-        local iconTexture = frame.bhIcon
-        if not iconTexture then
-            iconTexture = frame:CreateTexture("BHunterItemIcon", "ARTWORK")
-            iconTexture:SetSize(38, 38)
-            iconTexture:SetPoint("LEFT", frame, "LEFT", 0, 0)  -- 5px from left edge
-            frame.bhIcon = iconTexture  -- Store reference
-            --print("|cffFFD700BH Hunter Debug:|r Created new icon texture")
-        end
         -- Set the icon texture
-        iconTexture:SetTexture(itemTexture)
-        end
+        frame:SetTexture(itemTexture)
+    end
     
+    local frame = _G["BHunterFrame-Tab2-ItemName"]
+	if frame then
+		-- Set the item name
+		frame:SetText(itemName)
+	end
+
     itemEntry.itemId = itemID
     itemEntry.itemLink = itemLink
     itemEntry.rewardType = "item" 
