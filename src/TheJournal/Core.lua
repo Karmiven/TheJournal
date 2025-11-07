@@ -2377,7 +2377,19 @@ SendAddonMessage = function(prefix, message, chatType, target, priority)
     -- Only warn on very high rates to avoid spam
     local messagesThisMinute = #ADDON_MESSAGE_STATS.currentMinute
     if messagesThisMinute >= ADDON_MESSAGE_STATS.maxThreshold then
-        print("|cFFFF0000[DJ WARNING]|r High message rate: " .. messagesThisMinute .. " messages/minute!")
+        -- ʕ •ᴥ•ʔ✿ Count prefixes in recent messages to identify the source ✿ʕ •ᴥ•ʔ
+        local prefixCounts = {}
+        for _, msg in ipairs(ADDON_MESSAGE_STATS.currentMinute) do
+            prefixCounts[msg.prefix] = (prefixCounts[msg.prefix] or 0) + 1
+        end
+        
+        local prefixBreakdown = {}
+        for pfx, count in pairs(prefixCounts) do
+            table.insert(prefixBreakdown, pfx .. "(" .. count .. ")")
+        end
+        
+        local prefixInfo = table.concat(prefixBreakdown, ", ")
+        print("|cFFFF0000[DJ WARNING]|r |cFF00FFFF[TheJournal]|r High message rate: " .. messagesThisMinute .. " messages/minute! Prefix: |cFFFFFF00" .. prefix .. "|r | Recent prefixes: " .. prefixInfo)
     end
 
     -- Call original function
