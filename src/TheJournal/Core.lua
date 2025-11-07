@@ -314,7 +314,7 @@ local function HookChatEditBox()
         if text and text:match("/testboe") then
             local itemLink = text:match("|c%x+|h%[.-%]|h|r")
             if itemLink then
-                local itemID = tonumber(itemLink:match("item:(%d+)"))
+                local itemID = CustomExtractItemId(itemLink)
                 if itemID then
                     if not _G.ORIGINAL_ITEM_LINKS then
                         _G.ORIGINAL_ITEM_LINKS = {}
@@ -1404,13 +1404,22 @@ local function OnAddonMessage(prefix, message, channel, sender)
                 ITEM_QUERY_RESPONSES[itemID] = {}
             end
 
-            ITEM_QUERY_RESPONSES[itemID][responder] = {
+            local responseData = {
                 needsItem = needsItem == 1,
                 canUpgrade = canUpgrade == 1,
                 needsAffixesOnly = needsAffixesOnly == 1,
                 currentForge = currentForge,
                 timestamp = GetTime()
             }
+            
+            ITEM_QUERY_RESPONSES[itemID][responder] = responseData
+            
+            -- ʕ •ᴥ•ʔ✿ Save to persistent cache ✿ʕ•ᴥ•ʔ
+            if _G.TheJournal_UIBOETooltipEnhancement and _G.TheJournal_UIBOETooltipEnhancement.SaveBOEResponse then
+                pcall(function()
+                    _G.TheJournal_UIBOETooltipEnhancement.SaveBOEResponse(itemID, responder, responseData)
+                end)
+            end
 
             -- Show the response in chat immediately with detailed forge/affix info
             local itemName = GetItemInfo(itemID) or ("Item " .. itemID)
@@ -1434,18 +1443,7 @@ local function OnAddonMessage(prefix, message, channel, sender)
                     print("|cFF00FF00[BOE DEBUG]|r Received response from " .. responder .. ": " .. statusText)
                 end
             end
-
-            -- Clear old responses after 30 seconds (use simple timer for WotLK compatibility)
-            local cleanupFrame = CreateFrame("Frame")
-            cleanupFrame:SetScript("OnUpdate", function(self, elapsed)
-                self.elapsed = (self.elapsed or 0) + elapsed
-                if self.elapsed >= 30 then
-                    if ITEM_QUERY_RESPONSES[itemID] and ITEM_QUERY_RESPONSES[itemID][responder] then
-                        ITEM_QUERY_RESPONSES[itemID][responder] = nil
-                    end
-                    self:SetScript("OnUpdate", nil)
-                end
-            end)
+            -- ʕ •ᴥ•ʔ✿ Removed 30-second cleanup - now handled by persistent cache system ✿ʕ•ᴥ•ʔ
         end
     end
 end
@@ -1776,8 +1774,15 @@ local function PerformBOETest(itemID, itemLink, isAutomatic)
 
     _G.QueryItemFromFriends(itemID, itemLink)
 
-    -- Clear old responses for this item
-    if ITEM_QUERY_RESPONSES[itemID] then
+    -- ʕ •ᴥ•ʔ✿ Mark item as queried in persistent cache ✿ʕ•ᴥ•ʔ
+    if _G.TheJournal_UIBOETooltipEnhancement and _G.TheJournal_UIBOETooltipEnhancement.MarkItemQueried then
+        pcall(function()
+            _G.TheJournal_UIBOETooltipEnhancement.MarkItemQueried(itemID)
+        end)
+    end
+
+    -- ʕ ◕ᴥ◕ ʔ✿ Initialize responses table if needed (don't clear existing responses) ✿ʕ ◕ᴥ◕ ʔ
+    if not ITEM_QUERY_RESPONSES[itemID] then
         ITEM_QUERY_RESPONSES[itemID] = {}
     end
 
@@ -2372,30 +2377,19 @@ SendAddonMessage = function(prefix, message, chatType, target, priority)
     -- Only warn on very high rates to avoid spam
     local messagesThisMinute = #ADDON_MESSAGE_STATS.currentMinute
     if messagesThisMinute >= ADDON_MESSAGE_STATS.maxThreshold then
-        -- Analyze which addons are contributing to the high message rate
-        local addonCounts = {}
+        -- ʕ •ᴥ•ʔ✿ Count prefixes in recent messages to identify the source ✿ʕ •ᴥ•ʔ
+        local prefixCounts = {}
         for _, msg in ipairs(ADDON_MESSAGE_STATS.currentMinute) do
-            addonCounts[msg.prefix] = (addonCounts[msg.prefix] or 0) + 1
+            prefixCounts[msg.prefix] = (prefixCounts[msg.prefix] or 0) + 1
         end
         
-        -- Sort addons by message count (highest first)
-        local sortedAddons = {}
-        for prefix, count in pairs(addonCounts) do
-            table.insert(sortedAddons, {prefix = prefix, count = count})
-        end
-        table.sort(sortedAddons, function(a, b) return a.count > b.count end)
-        
-        -- Build detailed warning message
-        local warningMsg = "|cFFFF0000[DJ WARNING]|r High message rate: " .. messagesThisMinute .. " messages/minute!"
-        if #sortedAddons > 0 then
-            warningMsg = warningMsg .. " Top sources:"
-            for i = 1, math.min(3, #sortedAddons) do
-                local addon = sortedAddons[i]
-                warningMsg = warningMsg .. " " .. addon.prefix .. "(" .. addon.count .. ")"
-            end
+        local prefixBreakdown = {}
+        for pfx, count in pairs(prefixCounts) do
+            table.insert(prefixBreakdown, pfx .. "(" .. count .. ")")
         end
         
-        print(warningMsg)
+        local prefixInfo = table.concat(prefixBreakdown, ", ")
+        print("|cFFFF0000[DJ WARNING]|r |cFF00FFFF[TheJournal]|r High message rate: " .. messagesThisMinute .. " messages/minute! Prefix: |cFFFFFF00" .. prefix .. "|r | Recent prefixes: " .. prefixInfo)
     end
 
     -- Call original function

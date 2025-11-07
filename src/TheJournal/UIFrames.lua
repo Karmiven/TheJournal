@@ -312,8 +312,8 @@ local BOUNTY_ICON = {
 -- Helper function to extract item ID from item link
 local function GetItemIDFromLink(itemLink)
     if not itemLink then return nil end
-    local itemID = string.match(itemLink, "item:(%d+)")
-    return tonumber(itemID)
+    local itemID = CustomExtractItemId(itemLink)
+    return itemID
 end
 
 -- Check if an item is bountied
@@ -598,6 +598,9 @@ local function InvalidateItemsCache(dungeonName)
     end
     lastCacheKey = nil
 end
+
+-- Export InvalidateItemsCache to global scope for use by other modules
+_G.InvalidateItemsCache = InvalidateItemsCache
 
 -- Function to clear old cache entries (keep last 5 dungeons with multiple filter combinations)
 local function CleanupItemsCache()
